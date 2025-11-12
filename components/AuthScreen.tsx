@@ -126,14 +126,13 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Logo - Optional, can be replaced with actual logo */}
+          {/* Logo */}
           <View className="px-6 pt-6">
-            <Text
-              className="text-3xl font-bold"
-              style={{ color: '#00c2ff' }}
-            >
-              Goal Getter
-            </Text>
+            <Image
+              source={require('@/assets/images/logo.png')}
+              style={{ width: 160, height: 40 }}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Content Container */}

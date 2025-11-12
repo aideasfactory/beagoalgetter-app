@@ -35,7 +35,7 @@ export const Onboarding = ({ onGetStarted, onLogin }: OnboardingProps) => {
   const slides: OnboardingSlide[] = [
     {
       id: '1',
-      icon: 'target',
+      icon: 'disc-outline',
       title: 'Create Challenges',
       description: 'Set personal or group goals and track your progress every single day.',
       color: '#00c2ff',
@@ -112,7 +112,7 @@ export const Onboarding = ({ onGetStarted, onLogin }: OnboardingProps) => {
       <View style={{ flex: 1, padding: 24 }}>
         {/* Logo at top */}
         <Image
-          source={require('@/assets/images/logo_white.png')}
+          source={require('@/assets/images/logo.png')}
           style={{ width: 160, height: 40, marginTop: 40 }}
           resizeMode="contain"
         />
