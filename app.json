@@ -1,0 +1,75 @@
+{
+  "expo": {
+    "version": "1.0.0",
+    "name": "Goal Getter",
+    "slug": "goal-getter",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "goalgetter",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "bundleIdentifier": "com.goalgetter.goalgetter"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.goalgetter.goalgetter"
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png",
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "@react-native-google-signin/google-signin"
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "YOUR_ORGANIZATION_NAME",
+          "project": "YOUR_PROJECT_NAME"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          },
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 26,
+            "buildToolsVersion": "35.0.0"
+          }
+        }
+      ],
+      "expo-secure-store",
+      "expo-apple-authentication",
+      "expo-notifications",
+      "expo-localization"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6f3c64d4-85f3-4b4d-9354-8a5bd78807f0"
+      }
+    },
+    "owner": "goalgetter"
+  }
+}
