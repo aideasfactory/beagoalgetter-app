@@ -106,9 +106,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 20,
     gap: 4,
+    overflow: 'hidden',
   },
   tabContentActive: {
     backgroundColor: 'rgba(0, 194, 255, 0.15)',
+    borderRadius: 20,
   },
   tabLabel: {
     fontSize: 11,
