@@ -337,7 +337,7 @@ export default function ProfileMain() {
 
         {/* Settings Button */}
         <TouchableOpacity
-          onPress={() => router.push('/profile/settings')}
+          onPress={() => router.push('/settings')}
           className="bg-[#1a1a1a] mx-4 mb-32 bg-white/5 border border-white/10 rounded-xl p-4 flex-row items-center justify-between"
         >
           <View className="flex-row items-center gap-3 bg-[#1a1a1a]">
