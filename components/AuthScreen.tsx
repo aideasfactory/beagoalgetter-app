@@ -109,7 +109,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
         <View className="absolute inset-0">
           <Image
             source={{
-              uri: 'https://images.unsplash.com/photo-1667791275929-5701d83734c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+              uri: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1080',
             }}
             className="w-full h-full"
             resizeMode="cover"

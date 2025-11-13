@@ -36,8 +36,8 @@ export const Onboarding = ({ onGetStarted, onLogin }: OnboardingProps) => {
     {
       id: '1',
       icon: 'disc-outline',
-      title: 'Create Challenges',
-      description: 'Set personal or group goals and track your progress every single day.',
+      title: 'Be a Goal Getter',
+      description: 'Set goals. Stay accountable.',
       color: '#00c2ff',
       image: 'https://images.unsplash.com/photo-1596913152332-e56f2cc8165c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwcnVubmluZyUyMHRyYWNrfGVufDF8fHx8MTc2MjQyMTU4NHww&ixlib=rb-4.1.0&q=80&w=1080',
     },
@@ -45,17 +45,17 @@ export const Onboarding = ({ onGetStarted, onLogin }: OnboardingProps) => {
       id: '2',
       icon: 'trending-up',
       title: 'Track Progress',
-      description: 'Build streaks, earn ability points, and visualize your journey to success.',
+      description: 'Set personal or group goals and track your progress every single day\n\nBuild streaks, earn ability points, and visualize your journey to success.\n\nJoin friends, compete on leaderboards, and celebrate wins together.',
       color: '#00c2ff',
       image: 'https://images.unsplash.com/photo-1620188500179-32ac33c60848?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxneW0lMjB3b3Jrb3V0JTIwdHJhaW5pbmd8ZW58MXx8fHwxNzYyMzE4MzEzfDA&ixlib=rb-4.1.0&q=80&w=1080',
     },
     {
       id: '3',
       icon: 'people',
-      title: 'Stay Consistent',
-      description: 'Join friends, compete on leaderboards, and celebrate wins together.',
+      title: 'Challenge Yourself',
+      description: 'Join in a 5k a day challenge or a 100 push-ups a day challenge.\n\nChallenge yourself to read 10 pages a day or to meditate for 10 minutes a day.\n\nDrink 8 glasses of water a day, challenge yourself to be more active every day.',
       color: '#00c2ff',
-      image: 'https://images.unsplash.com/photo-1710301431051-ee6923af04aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHx0ZWFtJTIwc3BvcnRzJTIwdG9nZXRoZXJ8ZW58MXx8fHwxNzYyNDIxNTg1fDA&ixlib=rb-4.1.0&q=80&w=1080',
+      image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=1080',
     },
   ];
 

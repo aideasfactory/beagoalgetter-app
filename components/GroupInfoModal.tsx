@@ -74,13 +74,13 @@ export function GroupInfoModal({ visible, onClose, group }: GroupInfoModalProps)
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="p-6 space-y-6">
             {/* About Section */}
-            <View>
+            <View className="mb-6">
               <Text className="text-white text-lg font-bold mb-2">About</Text>
               <Text className="text-white/60 text-sm leading-relaxed">{group.description}</Text>
             </View>
 
             {/* Info Grid */}
-            <View className="flex-row gap-3">
+            <View className="flex-row gap-3 mb-6">
               <View className="flex-1 bg-white/5 rounded-xl p-4 border border-white/10">
                 <View className="flex-row items-center gap-2 mb-1">
                   <Ionicons name="location" size={16} color="rgba(255,255,255,0.6)" />
@@ -96,32 +96,7 @@ export function GroupInfoModal({ visible, onClose, group }: GroupInfoModalProps)
                 <Text className="text-white font-medium">{group.founded}</Text>
               </View>
             </View>
-
-            {/* Group Stats */}
-            <View>
-              <Text className="text-white text-lg font-bold mb-3">Group Stats</Text>
-              <View className="flex-row gap-3">
-                <View className="flex-1 rounded-xl p-4 items-center" style={{ backgroundColor: '#00c2ff' }}>
-                  <Text className="text-black text-2xl font-bold mb-1">
-                    {group.stats.totalRuns}
-                  </Text>
-                  <Text className="text-black/80 text-xs">Total Runs</Text>
-                </View>
-                <View className="flex-1 rounded-xl p-4 items-center" style={{ backgroundColor: '#84cc16' }}>
-                  <Text className="text-black text-2xl font-bold mb-1">
-                    {group.stats.totalDistance}
-                  </Text>
-                  <Text className="text-black/80 text-xs">Distance</Text>
-                </View>
-                <View className="flex-1 rounded-xl p-4 items-center" style={{ backgroundColor: '#a855f7' }}>
-                  <Text className="text-black text-2xl font-bold mb-1">
-                    {group.stats.activeMembers}
-                  </Text>
-                  <Text className="text-black/80 text-xs">Active</Text>
-                </View>
-              </View>
-            </View>
-
+ 
             {/* Recent Members */}
             <View>
               <Text className="text-white text-lg font-bold mb-3">Recent Members</Text>

@@ -16,7 +16,7 @@ export function SearchBar({
   textInputProps,
 }: SearchBarProps) {
   return (
-    <View className="flex-row items-center bg-white/5 border border-white/20 rounded-xl px-4 py-3">
+    <View className="flex-row items-center bg-white/5 border border-white/20 rounded-xl px-2 py-1">
       <Ionicons name="search" size={20} color="rgba(255,255,255,0.4)" />
       <TextInput
         value={value}

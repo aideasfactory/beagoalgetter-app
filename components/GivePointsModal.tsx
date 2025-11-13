@@ -41,9 +41,6 @@ export function GivePointsModal({ visible, onClose, post, onConfirm }: GivePoint
           <View className="flex-row items-center justify-between">
             <View>
               <Text className="text-white text-xl font-bold">Give Ability Points</Text>
-              <Text className="text-white/60 text-sm">
-                Reward {post.user.name} for their achievement
-              </Text>
             </View>
             <TouchableOpacity onPress={onClose} className="w-10 h-10 items-center justify-center">
               <Ionicons name="close" size={28} color="white" />
@@ -62,6 +59,7 @@ export function GivePointsModal({ visible, onClose, post, onConfirm }: GivePoint
                 contentFit="cover"
               />
             </View>
+            
             <View className="flex-1">
               <Text className="text-white font-bold">{post.user.name}</Text>
               <Text className="text-white/60 text-sm">{post.challenge.name}</Text>
@@ -80,7 +78,9 @@ export function GivePointsModal({ visible, onClose, post, onConfirm }: GivePoint
               </View>
             </View>
           </View>
-
+          <Text className="text-white/60 text-sm">
+                Reward {post.user.name} for their achievement, we believe people should be rewarded for their efforts, so every week you will get 15 ability points to give to firends and team members.
+              </Text>
           {/* Points Selection */}
           <View className="mb-6">
             <Text className="text-white/60 text-sm mb-3">Select Points to Give</Text>

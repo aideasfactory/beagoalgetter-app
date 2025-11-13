@@ -84,16 +84,6 @@ export function ChallengePreviewModal({
               </Text>
             </View>
           </View>
-
-          {/* View Challenge Button */}
-          <TouchableOpacity
-            onPress={onViewChallenge}
-            className="rounded-xl py-6 items-center"
-            style={{ backgroundColor: '#00c2ff' }}
-            activeOpacity={0.8}
-          >
-            <Text className="text-black text-lg font-bold">View Challenge</Text>
-          </TouchableOpacity>
         </View>
       </SafeAreaView>
     </Modal>

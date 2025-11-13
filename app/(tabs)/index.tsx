@@ -237,7 +237,7 @@ export default function HomeScreen() {
         <View className="flex-row items-center justify-between">
           {/* Logo */}
           <Image
-            source={require('@/assets/images/logo_white.png')}
+            source={require('@/assets/images/logo.png')}
             style={{ width: 120, height: 32 }}
             resizeMode="contain"
           />
@@ -306,7 +306,7 @@ export default function HomeScreen() {
         ))}
 
         {/* Bottom spacing for tab bar */}
-        <View style={{ height: 100 }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       {/* Modals */}

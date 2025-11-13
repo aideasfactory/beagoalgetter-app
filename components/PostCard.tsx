@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +39,14 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick }: PostCardProps) {
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(post.likes);
+
+  const handleLike = () => {
+    console.log('Like clicked for post:', post.id);
+    setIsLiked(!isLiked);
+    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+  };
   return (
     <View className="rounded-2xl overflow-hidden bg-[#1a1a1a] border border-white/10 mb-4">
       {/* Success/Fail Ribbon - Top Right Corner */}
@@ -133,9 +141,13 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick }:
         {/* Post Actions */}
         <View className="flex-row items-center gap-6 pt-3 border-t border-white/10">
           {/* Like Button */}
-          <TouchableOpacity className="flex-row items-center gap-2">
-            <Ionicons name="heart-outline" size={20} color="rgba(255,255,255,0.6)" />
-            <Text className="text-white/60 text-sm">{post.likes}</Text>
+          <TouchableOpacity onPress={handleLike} className="flex-row items-center gap-2">
+            <Ionicons 
+              name={isLiked ? "heart" : "heart-outline"} 
+              size={20} 
+              color={isLiked ? "#ef4444" : "rgba(255,255,255,0.6)"} 
+            />
+            <Text className="text-white/60 text-sm">{likeCount}</Text>
           </TouchableOpacity>
 
           {/* Give Points Button */}
