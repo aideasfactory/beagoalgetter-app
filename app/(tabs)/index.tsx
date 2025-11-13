@@ -210,9 +210,7 @@ export default function HomeScreen() {
 
   const handleViewChallenge = () => {
     if (selectedChallenge) {
-      // Navigate to challenge details
-      console.log('Navigate to challenge:', selectedChallenge.id);
-      // router.push(`/challenge/${selectedChallenge.id}`);
+      router.push(`/challenge/${selectedChallenge.id}`);
       setSelectedChallenge(null);
     }
   };

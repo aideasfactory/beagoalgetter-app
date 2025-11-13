@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SearchBar } from '@/components/SearchBar';
 import { ChallengeCard, Challenge } from '@/components/ChallengeCard';
+import { JoinChallengeModal } from '@/components/JoinChallengeModal';
 
 // Mock challenge data - will be replaced with Supabase data later
 const mockChallenges: Challenge[] = [
@@ -105,6 +106,8 @@ type FilterType = 'All' | 'Personal' | 'Group';
 export default function ChallengesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+  const [showJoinModal, setShowJoinModal] = useState(false);
 
   // Filter and search challenges
   const filteredChallenges = useMemo(() => {
@@ -129,9 +132,29 @@ export default function ChallengesScreen() {
   }, [searchQuery, activeFilter]);
 
   const handleChallengePress = (challengeId: string) => {
-    // TODO: Navigate to challenge details when screen is created
-    Alert.alert('Challenge Details', `Challenge ID: ${challengeId}\nChallenge details screen coming soon!`);
-    // router.push(`/challenge/${challengeId}`);
+    const challenge = mockChallenges.find(c => c.id === challengeId);
+    if (!challenge) return;
+
+    // If user has joined the challenge, navigate to details
+    if (challenge.isJoined) {
+      router.push(`/challenge/${challengeId}`);
+    } else {
+      // If not joined, show join modal
+      setSelectedChallenge(challenge);
+      setShowJoinModal(true);
+    }
+  };
+
+  const handleJoinChallenge = (challengeId: string) => {
+    // TODO: Implement Supabase join logic
+    Alert.alert('Success!', 'You have joined the challenge!', [
+      {
+        text: 'View Challenge',
+        onPress: () => router.push(`/challenge/${challengeId}`),
+      },
+      { text: 'OK', style: 'cancel' },
+    ]);
+    console.log('Joined challenge:', challengeId);
   };
 
   const handleCreateChallenge = () => {
@@ -256,6 +279,17 @@ export default function ChallengesScreen() {
       >
         <Ionicons name="add" size={32} color="black" />
       </TouchableOpacity>
+
+      {/* Join Challenge Modal */}
+      <JoinChallengeModal
+        visible={showJoinModal}
+        onClose={() => {
+          setShowJoinModal(false);
+          setSelectedChallenge(null);
+        }}
+        challenge={selectedChallenge}
+        onJoin={handleJoinChallenge}
+      />
     </SafeAreaView>
   );
 }

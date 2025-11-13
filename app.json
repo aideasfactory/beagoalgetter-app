@@ -19,14 +19,24 @@
     "ios": {
       "supportsTablet": false,
       "usesAppleSignIn": true,
-      "bundleIdentifier": "com.goalgetter.goalgetter"
+      "bundleIdentifier": "com.goalgetter.goalgetter",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Goal Getter needs access to your photo library to upload progress images for your challenges.",
+        "NSCameraUsageDescription": "Goal Getter needs access to your camera to take progress photos for your challenges."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.goalgetter.goalgetter"
+      "package": "com.goalgetter.goalgetter",
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
@@ -55,6 +65,12 @@
             "minSdkVersion": 26,
             "buildToolsVersion": "35.0.0"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Goal Getter needs access to your photos to upload progress images for your challenges."
         }
       ],
       "expo-secure-store",
