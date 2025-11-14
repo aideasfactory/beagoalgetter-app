@@ -13,6 +13,7 @@ interface ChallengeData {
   description: string;
   duration: string;
   durationType: 'days' | 'weeks';
+  startDate: Date;
   challengeType: 'personal' | 'group';
   selectedGroup: string | null;
   image: string | null;
@@ -39,6 +40,7 @@ export default function CreateChallengeScreen() {
     description: '',
     duration: '30',
     durationType: 'days',
+    startDate: new Date(),
     challengeType: 'personal',
     selectedGroup: null,
     image: null,
@@ -192,6 +194,7 @@ export default function CreateChallengeScreen() {
               description: challengeData.description,
               duration: challengeData.duration,
               durationType: challengeData.durationType,
+              startDate: challengeData.startDate,
               challengeType: challengeData.challengeType,
               selectedGroup: challengeData.selectedGroup,
               image: challengeData.image,

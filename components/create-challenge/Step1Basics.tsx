@@ -1,7 +1,9 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface Step1BasicsProps {
   data: {
@@ -9,6 +11,7 @@ interface Step1BasicsProps {
     description: string;
     duration: string;
     durationType: 'days' | 'weeks';
+    startDate: Date;
     challengeType: 'personal' | 'group';
     selectedGroup: string | null;
     image: string | null;
@@ -23,6 +26,8 @@ const mockGroups = [
 ];
 
 export function Step1Basics({ data, onUpdate }: Step1BasicsProps) {
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -34,6 +39,24 @@ export function Step1Basics({ data, onUpdate }: Step1BasicsProps) {
     if (!result.canceled && result.assets[0]) {
       onUpdate({ image: result.assets[0].uri });
     }
+  };
+
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      onUpdate({ startDate: selectedDate });
+    }
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
   };
 
   return (
@@ -128,6 +151,45 @@ export function Step1Basics({ data, onUpdate }: Step1BasicsProps) {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
+
+      {/* Start Date */}
+      <View className="mb-6">
+        <Text className="text-white mb-2 font-medium">Start Date *</Text>
+        <TouchableOpacity
+          onPress={() => setShowDatePicker(true)}
+          className="bg-white/5 border border-white/20 rounded-xl px-4 py-3 flex-row items-center justify-between"
+        >
+          <View className="flex-row items-center gap-3">
+            <Ionicons name="calendar-outline" size={20} color="rgba(255,255,255,0.6)" />
+            <Text className="text-white">{formatDate(data.startDate)}</Text>
+          </View>
+          <Ionicons name="chevron-down" size={20} color="rgba(255,255,255,0.4)" />
+        </TouchableOpacity>
+        
+        {showDatePicker && (
+          <DateTimePicker
+            value={data.startDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateChange}
+            minimumDate={new Date()}
+            textColor="white"
+            themeVariant="dark"
+          />
+        )}
+        
+        {Platform.OS === 'ios' && showDatePicker && (
+          <View className="mt-2 flex-row justify-end">
+            <TouchableOpacity
+              onPress={() => setShowDatePicker(false)}
+              className="px-4 py-2 rounded-lg"
+              style={{ backgroundColor: '#00c2ff' }}
+            >
+              <Text className="text-black font-bold">Done</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
       {/* Challenge Type */}
