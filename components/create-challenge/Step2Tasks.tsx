@@ -8,6 +8,7 @@ interface Task {
   id: string;
   title: string;
   description: string;
+  items: string[];
   isRecurring: boolean;
   days: string[];
   documents: string[];
@@ -34,12 +35,14 @@ const DAYS_OF_WEEK = [
 
 export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
   const [currentLinks, setCurrentLinks] = React.useState<Record<string, string>>({});
+  const [currentItems, setCurrentItems] = React.useState<Record<string, string>>({});
 
   const addTask = () => {
     const newTask: Task = {
       id: Date.now().toString(),
       title: '',
       description: '',
+      items: [],
       isRecurring: false,
       days: [],
       documents: [],
@@ -160,6 +163,28 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
     }
   };
 
+  const addItem = (taskId: string) => {
+    const item = currentItems[taskId]?.trim();
+    if (item) {
+      const task = data.tasks.find(t => t.id === taskId);
+      if (task) {
+        updateTask(taskId, {
+          items: [...(task.items || []), item]
+        });
+        setCurrentItems({ ...currentItems, [taskId]: '' });
+      }
+    }
+  };
+
+  const removeItem = (taskId: string, index: number) => {
+    const task = data.tasks.find(t => t.id === taskId);
+    if (task) {
+      updateTask(taskId, {
+        items: (task.items || []).filter((_, i) => i !== index)
+      });
+    }
+  };
+
   return (
     <ScrollView className="flex-1 bg-black px-6 py-6" showsVerticalScrollIndicator={false}>
       {/* Upload AI-Generated Plan Card */}
@@ -221,6 +246,44 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
               className="bg-black border border-white/20 rounded-lg px-3 py-2 text-white"
               style={{ textAlignVertical: 'top' }}
             />
+          </View>
+
+          {/* Task Items */}
+          <View className="mb-3">
+            <Text className="text-white/60 text-sm mb-2">Checklist Items</Text>
+            <View className="flex-row gap-2">
+              <TextInput
+                value={currentItems[task.id] || ''}
+                onChangeText={(text) => setCurrentItems({ ...currentItems, [task.id]: text })}
+                placeholder="Add an item to check off..."
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white"
+                onSubmitEditing={() => addItem(task.id)}
+              />
+              <TouchableOpacity
+                onPress={() => addItem(task.id)}
+                className="items-center justify-center rounded-lg px-3"
+                style={{ backgroundColor: '#00c2ff' }}
+              >
+                <Ionicons name="add" size={24} color="black" />
+              </TouchableOpacity>
+            </View>
+            {/* Display added items */}
+            {task.items && task.items.length > 0 && (
+              <View className="mt-2 gap-1.5">
+                {task.items.map((item, itemIndex) => (
+                  <View key={itemIndex} className="flex-row items-center justify-between p-2.5 rounded-lg border border-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
+                    <View className="flex-row items-center gap-2 flex-1">
+                      <Ionicons name="checkmark-circle-outline" size={18} color="rgba(255,255,255,0.6)" />
+                      <Text className="text-white text-sm flex-1">{item}</Text>
+                    </View>
+                    <TouchableOpacity onPress={() => removeItem(task.id, itemIndex)}>
+                      <Ionicons name="close-circle" size={20} color="rgba(255,255,255,0.4)" />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
 
           {/* Recurring Toggle */}

@@ -104,90 +104,95 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
           </View>
         </View>
 
-        {/* Today's Tasks */}
-        <View className='my-6'>
-          <Text className="text-white text-lg font-bold mb-4">Today's Tasks</Text>
-          
-          <View className="space-y-3">
-            {tasks.map((task) => (
-              <TouchableOpacity
-                key={task.id}
-                onPress={() => toggleTask(task.id)}
-                className="p-4 rounded-xl border-2 mb-3"
-                style={
-                  task.completed 
-                    ? { backgroundColor: '#e0f7ff', borderColor: '#a0e0ff' }
-                    : { backgroundColor: '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' }
-                }
-              >
-                <View className="flex-row items-center justify-between">
+        <View className='my-6 bg-white/5 border border-white/10 rounded-2xl p-4'>
+          <Text className="text-white text-lg font-bold">This is the task title</Text>
+          <Text className="text-white text-base mb-4">This is the task description</Text>
+
+            {/* Today's Tasks */}
+            <View className='mb-6'>
+              <View className="space-y-3">
+                {tasks.map((task) => (
+                  <TouchableOpacity
+                    key={task.id}
+                    onPress={() => toggleTask(task.id)}
+                    className="p-4 rounded-xl border-2 mb-3"
+                    style={
+                      task.completed 
+                        ? { backgroundColor: '#e0f7ff', borderColor: '#a0e0ff' }
+                        : { backgroundColor: '#1a1a1a', borderColor: 'rgba(255,255,255,0.1)' }
+                    }
+                  >
+                    <View className="flex-row items-center justify-between">
+                      <View className="flex-row items-center gap-3 flex-1">
+                        <View 
+                          className="w-6 h-6 rounded-full border-2 items-center justify-center"
+                          style={
+                            task.completed 
+                              ? { backgroundColor: '#00c2ff', borderColor: '#00c2ff' }
+                              : { borderColor: '#cbd5e1' }
+                          }
+                        >
+                          {task.completed && <Ionicons name="checkmark" size={16} color="white" />}
+                        </View>
+                        <Text 
+                          className={task.completed ? 'text-slate-500 line-through' : 'text-white'}
+                          style={{ flex: 1 }}
+                        >
+                          {task.title}
+                        </Text>
+                      </View>
+                      {task.required && !task.completed && (
+                        <View className="bg-amber-100 px-2 py-1 rounded-full">
+                          <Text className="text-amber-700 text-xs font-bold">Required</Text>
+                        </View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Task Resources */}
+            <View className="">
+              <Text className="text-white text-lg font-bold mb-3">Resources</Text>
+              <View className="space-y-3">
+                <TouchableOpacity
+                  onPress={handleDownloadDocument}
+                  className="mb-3 flex-row items-center justify-between p-4 rounded-xl bg-[#1a1a1a] border border-white/15"
+                >
                   <View className="flex-row items-center gap-3 flex-1">
-                    <View 
-                      className="w-6 h-6 rounded-full border-2 items-center justify-center"
-                      style={
-                        task.completed 
-                          ? { backgroundColor: '#00c2ff', borderColor: '#00c2ff' }
-                          : { borderColor: '#cbd5e1' }
-                      }
-                    >
-                      {task.completed && <Ionicons name="checkmark" size={16} color="white" />}
+                    <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
+                      <Ionicons name="document-text-outline" size={22} color="white" />
                     </View>
-                    <Text 
-                      className={task.completed ? 'text-slate-500 line-through' : 'text-white'}
-                      style={{ flex: 1 }}
-                    >
-                      {task.title}
-                    </Text>
+                    <View className="flex-1">
+                      <Text className="text-white font-semibold">Download today's guide</Text>
+                      <Text className="text-white/60 text-xs">Mock document attached to today's tasks</Text>
+                    </View>
                   </View>
-                  {task.required && !task.completed && (
-                    <View className="bg-amber-100 px-2 py-1 rounded-full">
-                      <Text className="text-amber-700 text-xs font-bold">Required</Text>
+                  <Ionicons name="download-outline" size={20} color="white" />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleWatchYoutube}
+                  className="flex-row items-center justify-between p-4 rounded-xl bg-[#1a1a1a] border border-white/15"
+                >
+                  <View className="flex-row items-center gap-3 flex-1">
+                    <View className="w-10 h-10 rounded-full bg-red-600/80 items-center justify-center">
+                      <Ionicons name="logo-youtube" size={22} color="white" />
                     </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
+                    <View className="flex-1">
+                      <Text className="text-white font-semibold">Watch today's video</Text>
+                      <Text className="text-white/60 text-xs">Mock YouTube link for task instructions</Text>
+                    </View>
+                  </View>
+                  <Ionicons name="play-circle-outline" size={22} color="white" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
         </View>
 
-        {/* Task Resources */}
-        <View className="mb-6">
-          <Text className="text-white text-lg font-bold mb-3">Today's Resources</Text>
-          <View className="space-y-3">
-            <TouchableOpacity
-              onPress={handleDownloadDocument}
-              className="mb-3 flex-row items-center justify-between p-4 rounded-xl bg-[#1a1a1a] border border-white/15"
-            >
-              <View className="flex-row items-center gap-3 flex-1">
-                <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
-                  <Ionicons name="document-text-outline" size={22} color="white" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-white font-semibold">Download today's guide</Text>
-                  <Text className="text-white/60 text-xs">Mock document attached to today's tasks</Text>
-                </View>
-              </View>
-              <Ionicons name="download-outline" size={20} color="white" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleWatchYoutube}
-              className="flex-row items-center justify-between p-4 rounded-xl bg-[#1a1a1a] border border-white/15"
-            >
-              <View className="flex-row items-center gap-3 flex-1">
-                <View className="w-10 h-10 rounded-full bg-red-600/80 items-center justify-center">
-                  <Ionicons name="logo-youtube" size={22} color="white" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-white font-semibold">Watch today's video</Text>
-                  <Text className="text-white/60 text-xs">Mock YouTube link for task instructions</Text>
-                </View>
-              </View>
-              <Ionicons name="play-circle-outline" size={22} color="white" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
+      
         {/* Photo Evidence */}
         <View className='mb-6'>
           <Text className="text-white text-lg font-bold mb-3">Add Photo Evidence (Optional)</Text>
