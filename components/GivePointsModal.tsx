@@ -127,7 +127,7 @@ export function GivePointsModal({ visible, onClose, post, onConfirm }: GivePoint
           {/* Confirm Button */}
           <TouchableOpacity
             onPress={handleConfirm}
-            className="rounded-xl py-6 items-center"
+            className="rounded-xl py-4 items-center"
             style={{ backgroundColor: '#00c2ff' }}
             activeOpacity={0.8}
           >

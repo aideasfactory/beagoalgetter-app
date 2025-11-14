@@ -49,11 +49,11 @@ export function NotificationsModal({ visible, onClose, notifications }: Notifica
 
         {/* Notifications List */}
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="p-4 space-y-2">
+          <View className="p-4 space-y-2 mb-3">
             {notifications.map((notification) => (
               <View
                 key={notification.id}
-                className="p-4 rounded-xl border"
+                className="p-4 rounded-xl border mb-3"
                 style={{
                   backgroundColor: notification.read ? 'rgba(255,255,255,0.05)' : '#00c2ff20',
                   borderColor: notification.read ? 'rgba(255,255,255,0.1)' : '#00c2ff40',

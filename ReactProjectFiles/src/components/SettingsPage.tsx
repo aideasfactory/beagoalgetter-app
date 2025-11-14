@@ -108,43 +108,6 @@ export default function SettingsPage({ onBack, onLogout }: SettingsPageProps) {
             </div>
           </Card>
         </div>
-
-        {/* Auto-Post Settings */}
-        <div>
-          <h3 className="text-slate-900 mb-4">Auto-Post to Social Media</h3>
-          <Card className="p-4 bg-white divide-y divide-slate-100">
-            <div className="py-3 first:pt-0 last:pb-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-slate-900">Auto-post success to Instagram</div>
-                  <div className="text-sm text-slate-500">Share your wins automatically</div>
-                </div>
-                <Switch />
-              </div>
-            </div>
-
-            <div className="py-3 first:pt-0 last:pb-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-slate-900">Auto-post success to Twitter</div>
-                  <div className="text-sm text-slate-500">Tweet your achievements</div>
-                </div>
-                <Switch />
-              </div>
-            </div>
-
-            <div className="py-3 first:pt-0 last:pb-0">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-slate-900">Include photos in posts</div>
-                  <div className="text-sm text-slate-500">Share proof images</div>
-                </div>
-                <Switch defaultChecked />
-              </div>
-            </div>
-          </Card>
-        </div>
-
         {/* Account Settings */}
         <div>
           <h3 className="text-slate-900 mb-4">Account</h3>
@@ -155,17 +118,6 @@ export default function SettingsPage({ onBack, onLogout }: SettingsPageProps) {
                 <div className="text-slate-900 text-left">Change Password</div>
               </div>
               <ChevronRight className="w-5 h-5 text-slate-400" />
-            </button>
-
-            <button className="py-3 first:pt-0 last:pb-0 w-full flex items-center justify-between hover:bg-slate-50 -mx-4 px-4 transition-colors">
-              <div className="flex items-center gap-3">
-                <Globe className="w-5 h-5 text-slate-600" />
-                <div className="text-slate-900 text-left">Language</div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-500">English</span>
-                <ChevronRight className="w-5 h-5 text-slate-400" />
-              </div>
             </button>
           </Card>
         </div>

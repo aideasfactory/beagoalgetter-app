@@ -39,7 +39,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView className="flex-1 bg-black">
       {/* Header */}
-      <View className="px-4 py-4 border-b border-white/10">
+      <View className="p-6 border-b border-white/10">
         <View className="flex-row items-center gap-3">
           <TouchableOpacity
             onPress={() => router.back()}
@@ -116,130 +116,6 @@ export default function SettingsScreen() {
                   />
                 </View>
               </View>
-            </View>
-          </View>
-
-          {/* Auto-Post to Social Media */}
-          <View className="my-4">
-            <Text className="text-white/60 text-sm mb-3 uppercase tracking-wider">
-              Auto-Post to Social Media
-            </Text>
-            <View className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-              {/* Instagram */}
-              <View className="px-4 py-4 border-b border-white/10">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
-                    <Text className="text-white font-medium">Auto-post to Instagram</Text>
-                    <Text className="text-white/50 text-sm">Share your wins automatically</Text>
-                  </View>
-                  <Switch
-                    value={autoPostInstagram}
-                    onValueChange={setAutoPostInstagram}
-                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
-                    thumbColor="white"
-                  />
-                </View>
-              </View>
-
-              {/* Twitter */}
-              <View className="px-4 py-4 border-b border-white/10">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
-                    <Text className="text-white font-medium">Auto-post to Twitter</Text>
-                    <Text className="text-white/50 text-sm">Tweet your achievements</Text>
-                  </View>
-                  <Switch
-                    value={autoPostTwitter}
-                    onValueChange={setAutoPostTwitter}
-                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
-                    thumbColor="white"
-                  />
-                </View>
-              </View>
-
-              {/* Include Photos */}
-              <View className="px-4 py-4">
-                <View className="flex-row items-center justify-between">
-                  <View className="flex-1">
-                    <Text className="text-white font-medium">Include photos in posts</Text>
-                    <Text className="text-white/50 text-sm">Share proof images</Text>
-                  </View>
-                  <Switch
-                    value={includePhotos}
-                    onValueChange={setIncludePhotos}
-                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
-                    thumbColor="white"
-                  />
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Account Settings */}
-          <View className="my-4">
-            <Text className="text-white/60 text-sm mb-3 uppercase tracking-wider">
-              Account
-            </Text>
-            <View className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-              {/* Edit Profile */}
-              <TouchableOpacity 
-                className="px-4 py-4 border-b border-white/10 flex-row items-center justify-between active:bg-white/5"
-                onPress={() => {
-                  // Navigate to edit profile (to be implemented)
-                  Alert.alert('Coming Soon', 'Edit Profile feature will be available soon');
-                }}
-              >
-                <View className="flex-row items-center gap-3">
-                  <Ionicons name="person" size={20} color="rgba(255,255,255,0.6)" />
-                  <Text className="text-white font-medium">Edit Profile</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-              </TouchableOpacity>
-
-              {/* Privacy Settings */}
-              <TouchableOpacity 
-                className="px-4 py-4 border-b border-white/10 flex-row items-center justify-between active:bg-white/5"
-                onPress={() => {
-                  Alert.alert('Coming Soon', 'Privacy Settings will be available soon');
-                }}
-              >
-                <View className="flex-row items-center gap-3">
-                  <Ionicons name="lock-closed" size={20} color="rgba(255,255,255,0.6)" />
-                  <Text className="text-white font-medium">Privacy Settings</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-              </TouchableOpacity>
-
-              {/* Change Password */}
-              <TouchableOpacity 
-                className="px-4 py-4 border-b border-white/10 flex-row items-center justify-between active:bg-white/5"
-                onPress={() => {
-                  router.push('/forgot-password');
-                }}
-              >
-                <View className="flex-row items-center gap-3">
-                  <Ionicons name="key" size={20} color="rgba(255,255,255,0.6)" />
-                  <Text className="text-white font-medium">Change Password</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-              </TouchableOpacity>
-
-              {/* Language */}
-              <TouchableOpacity 
-                className="px-4 py-4 flex-row items-center justify-between active:bg-white/5"
-                onPress={() => {
-                  Alert.alert('Coming Soon', 'Language selection will be available soon');
-                }}
-              >
-                <View className="flex-row items-center gap-3">
-                  <Ionicons name="globe" size={20} color="rgba(255,255,255,0.6)" />
-                  <Text className="text-white font-medium">Language</Text>
-                </View>
-                <View className="flex-row items-center gap-2">
-                  <Text className="text-white/50 text-sm">English</Text>
-                  <Ionicons name="chevron-forward" size={20} color="rgba(255,255,255,0.4)" />
-                </View>
-              </TouchableOpacity>
             </View>
           </View>
 
