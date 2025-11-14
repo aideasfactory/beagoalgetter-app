@@ -195,25 +195,7 @@ export function AdminTab({ challengeId }: AdminTabProps) {
             </View>
           </View>
 
-          <View className="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
-            <Text className="text-white font-semibold mb-1">Coming soon</Text>
-            <Text className="text-white/60 text-sm">
-              You&apos;ll be able to manage tasks, teams, and participants for this challenge from here.
-            </Text>
-          </View>
-
-          <View className="gap-3 mt-4">
-            <View className="bg-white/5 border border-white/10 rounded-2xl p-4 opacity-60">
-              <View className="flex-row items-center gap-2 mb-1">
-                <Ionicons name="list" size={16} color="rgba(255,255,255,0.6)" />
-                <Text className="text-white font-semibold text-sm">Manage tasks</Text>
-              </View>
-              <Text className="text-white/60 text-xs">
-                Add, edit, or remove tasks for this challenge.
-              </Text>
-            </View>
-
-            <TouchableOpacity
+          <TouchableOpacity
               onPress={handleOpenTeamsModal}
               className="bg-white/5 border border-white/10 rounded-2xl p-4"
               activeOpacity={0.8}
@@ -227,10 +209,28 @@ export function AdminTab({ challengeId }: AdminTabProps) {
               </Text>
             </TouchableOpacity>
 
+          <View className="bg-white/5 border border-white/10 rounded-2xl p-4 mt-4">
+            <Text className="text-white font-semibold mb-1">Coming soon</Text>
+            <Text className="text-white/60 text-sm">
+              You&apos;ll be able to manage tasks, teams, and participants for this challenge from here.
+            </Text>
+          </View>
+
+          <View className="gap-3 mt-3">
+            <View className="bg-white/5 border border-white/10 rounded-2xl p-4 opacity-60">
+              <View className="flex-row items-center gap-2 mb-1">
+                <Ionicons name="list" size={16} color="rgba(255,255,255,0.6)" />
+                <Text className="text-white font-semibold text-sm">Manage tasks (Coming soon)</Text>
+              </View>
+              <Text className="text-white/60 text-xs">
+                Add, edit, or remove tasks for this challenge.
+              </Text>
+            </View>
+
             <View className="bg-white/5 border border-white/10 rounded-2xl p-4 opacity-60">
               <View className="flex-row items-center gap-2 mb-1">
                 <Ionicons name="megaphone" size={16} color="rgba(255,255,255,0.6)" />
-                <Text className="text-white font-semibold text-sm">Announcements</Text>
+                <Text className="text-white font-semibold text-sm">Announcements (Coming soon)</Text>
               </View>
               <Text className="text-white/60 text-xs">
                 Post updates that show up for everyone in the challenge.
@@ -238,16 +238,7 @@ export function AdminTab({ challengeId }: AdminTabProps) {
             </View>
           </View>
 
-          <View className="mt-8 items-start">
-            <TouchableOpacity
-              disabled
-              className="px-4 py-3 rounded-xl border border-dashed border-white/30 bg-white/5 opacity-60"
-            >
-              <Text className="text-white/70 text-sm font-medium">
-                Configure admin tools (coming soon)
-              </Text>
-            </TouchableOpacity>
-          </View>
+          
         </View>
       </ScrollView>
 
@@ -410,11 +401,12 @@ export function AdminTab({ challengeId }: AdminTabProps) {
 
               <TouchableOpacity
                 onPress={openCreateTeamModal}
-                className="flex-row items-center justify-center gap-2 p-4 border-2 border-dashed border-white/20 rounded-xl"
+                className="flex-row items-center justify-center gap-2 rounded-xl py-3"
+                style={{ backgroundColor: '#00c2ff' }}
                 activeOpacity={0.85}
               >
-                <Ionicons name="add-circle-outline" size={22} color="#00c2ff" />
-                <Text className="text-white font-medium text-sm">Create team</Text>
+                <Ionicons name="add" size={20} color="black" />
+                <Text className="text-black font-bold text-sm">Create team</Text>
               </TouchableOpacity>
 
               <View style={{ height: 80 }} />
