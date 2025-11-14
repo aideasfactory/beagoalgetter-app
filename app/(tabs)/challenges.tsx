@@ -158,9 +158,7 @@ export default function ChallengesScreen() {
   };
 
   const handleCreateChallenge = () => {
-    // TODO: Navigate to create challenge when screen is created
-    Alert.alert('Create Challenge', 'Create challenge screen coming soon!');
-    // router.push('/challenge/create');
+    router.push('/challenge/create');
   };
 
   const filters: FilterType[] = ['All', 'Personal', 'Group'];
