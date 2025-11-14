@@ -11,7 +11,13 @@ interface JoinChallengeModalProps {
   onJoin: (challengeId: string) => void;
 }
 
-export function JoinChallengeModal({ visible, onClose, challenge, onJoin }: JoinChallengeModalProps) {
+interface JoinChallengeContentProps {
+  challenge: Challenge;
+  onClose: () => void;
+  onJoin: (challengeId: string) => void;
+}
+
+export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallengeContentProps) {
   if (!challenge) return null;
 
   const handleJoin = () => {
@@ -43,13 +49,7 @@ export function JoinChallengeModal({ visible, onClose, challenge, onJoin }: Join
   };
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
-      <View className="flex-1 bg-black">
+    <View className="flex-1 bg-black">
         {/* Header with Image */}
         <View style={{ height: 300 }} className="relative">
           <Image
@@ -221,6 +221,20 @@ export function JoinChallengeModal({ visible, onClose, challenge, onJoin }: Join
           </TouchableOpacity>
         </View>
       </View>
+  );
+}
+
+export function JoinChallengeModal({ visible, onClose, challenge, onJoin }: JoinChallengeModalProps) {
+  if (!challenge) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={onClose}
+    >
+      <JoinChallengeContent challenge={challenge} onClose={onClose} onJoin={onJoin} />
     </Modal>
   );
 }

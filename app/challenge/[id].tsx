@@ -5,7 +5,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { TaskTrackerTab, LeaderboardTab, MessagesTab } from '@/components/challenge-tabs';
+import { TaskTrackerTab, LeaderboardTab, MessagesTab, AdminTab } from '@/components/challenge-tabs';
 
 // Mock challenge data (replace with Supabase query)
 const mockChallengeData = {
@@ -22,15 +22,20 @@ const mockChallengeData = {
   startDate: 'Oct 1, 2025',
   endDate: 'Oct 30, 2025',
   totalPoints: 1250,
+  createdById: 'user-1',
 };
 
 export default function ChallengeDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState<'tasks' | 'leaderboard' | 'messages'>('tasks');
+  const [activeTab, setActiveTab] = useState<'tasks' | 'leaderboard' | 'messages' | 'admin'>('tasks');
 
   // TODO: Fetch challenge data from Supabase using id
   const challenge = mockChallengeData;
- 
+  const currentUserId = 'user-1'; // TODO: Replace with authenticated user id
+  const isGroupChallenge = challenge.type === 'Group';
+  const isChallengeOwner = challenge.createdById === currentUserId;
+  const showLeaderboardTab = isGroupChallenge;
+  const showAdminTab = isGroupChallenge && isChallengeOwner;
 
   return (
     <View className="flex-1 bg-black">
@@ -163,23 +168,45 @@ export default function ChallengeDetailsScreen() {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => setActiveTab('leaderboard')}
-              className="flex-1 py-4 flex-row items-center justify-center gap-2"
-              style={{ 
-                borderBottomWidth: activeTab === 'leaderboard' ? 2 : 0, 
-                borderBottomColor: '#00c2ff' 
-              }}
-            >
-              <Ionicons 
-                name="bar-chart" 
-                size={16} 
-                color={activeTab === 'leaderboard' ? 'white' : 'rgba(255,255,255,0.6)'} 
-              />
-              <Text className={activeTab === 'leaderboard' ? 'text-white font-bold' : 'text-white/60'}>
-                Leaderboard
-              </Text>
-            </TouchableOpacity>
+            {showLeaderboardTab && (
+              <TouchableOpacity
+                onPress={() => setActiveTab('leaderboard')}
+                className="flex-1 py-4 flex-row items-center justify-center gap-2"
+                style={{
+                  borderBottomWidth: activeTab === 'leaderboard' ? 2 : 0,
+                  borderBottomColor: '#00c2ff',
+                }}
+              >
+                <Ionicons
+                  name="bar-chart"
+                  size={16}
+                  color={activeTab === 'leaderboard' ? 'white' : 'rgba(255,255,255,0.6)'}
+                />
+                <Text className={activeTab === 'leaderboard' ? 'text-white font-bold' : 'text-white/60'}>
+                  Leaderboard
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {showAdminTab && (
+              <TouchableOpacity
+                onPress={() => setActiveTab('admin')}
+                className="flex-1 py-4 flex-row items-center justify-center gap-2"
+                style={{
+                  borderBottomWidth: activeTab === 'admin' ? 2 : 0,
+                  borderBottomColor: '#00c2ff',
+                }}
+              >
+                <Ionicons
+                  name="settings"
+                  size={16}
+                  color={activeTab === 'admin' ? 'white' : 'rgba(255,255,255,0.6)'}
+                />
+                <Text className={activeTab === 'admin' ? 'text-white font-bold' : 'text-white/60'}>
+                  Admin
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* <TouchableOpacity
               onPress={() => setActiveTab('messages')}
@@ -204,7 +231,8 @@ export default function ChallengeDetailsScreen() {
         {/* Tab Content */}
         <View style={{ minHeight: 600 }}>
           {activeTab === 'tasks' && <TaskTrackerTab challengeId={id} />}
-          {activeTab === 'leaderboard' && <LeaderboardTab challengeId={id} />}
+          {activeTab === 'leaderboard' && showLeaderboardTab && <LeaderboardTab challengeId={id} />}
+          {activeTab === 'admin' && showAdminTab && <AdminTab challengeId={id} />}
           {/* {activeTab === 'messages' && <MessagesTab challengeId={id} />} */}
         </View>
 

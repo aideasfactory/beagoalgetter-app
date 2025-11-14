@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, Alert, Modal, TextInput, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SearchBar } from '@/components/SearchBar';
 import { ChallengeCard, Challenge } from '@/components/ChallengeCard';
-import { JoinChallengeModal } from '@/components/JoinChallengeModal';
+import { JoinChallengeModal, JoinChallengeContent } from '@/components/JoinChallengeModal';
 
 // Mock challenge data - will be replaced with Supabase data later
 const mockChallenges: Challenge[] = [
@@ -20,7 +20,7 @@ const mockChallenges: Challenge[] = [
     totalDays: 30,
     currentStreak: 15,
     members: 12,
-    status: 'active',
+    status: 'completed',
     endDate: 'Nov 30',
     isJoined: true,
   },
@@ -37,7 +37,7 @@ const mockChallenges: Challenge[] = [
     members: 1,
     status: 'active',
     endDate: 'Nov 30',
-    isJoined: false,
+    isJoined: true,
   },
   {
     id: 'c3',
@@ -67,7 +67,7 @@ const mockChallenges: Challenge[] = [
     members: 24,
     status: 'active',
     endDate: 'Nov 20',
-    isJoined: false,
+    isJoined: true,
   },
   {
     id: 'c5',
@@ -95,7 +95,7 @@ const mockChallenges: Challenge[] = [
     totalDays: 30,
     currentStreak: 25,
     members: 15,
-    status: 'active',
+    status: 'completed',
     endDate: 'Nov 25',
     isJoined: true,
   },
@@ -108,6 +108,11 @@ export default function ChallengesScreen() {
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showJoinByCodeModal, setShowJoinByCodeModal] = useState(false);
+  const [joinCode, setJoinCode] = useState('');
+  const [joinCodeError, setJoinCodeError] = useState('');
+  const [joinByCodeChallenge, setJoinByCodeChallenge] = useState<Challenge | null>(null);
+  const [hideCompleted, setHideCompleted] = useState(true);
 
   // Filter and search challenges
   const filteredChallenges = useMemo(() => {
@@ -116,6 +121,11 @@ export default function ChallengesScreen() {
     // Apply type filter
     if (activeFilter !== 'All') {
       filtered = filtered.filter(challenge => challenge.type === activeFilter);
+    }
+
+    // Hide completed challenges when toggle is enabled
+    if (hideCompleted) {
+      filtered = filtered.filter((challenge) => challenge.status !== 'completed');
     }
 
     // Apply search query
@@ -129,7 +139,7 @@ export default function ChallengesScreen() {
     }
 
     return filtered;
-  }, [searchQuery, activeFilter]);
+  }, [searchQuery, activeFilter, hideCompleted]);
 
   const handleChallengePress = (challengeId: string) => {
     const challenge = mockChallenges.find(c => c.id === challengeId);
@@ -168,11 +178,59 @@ export default function ChallengesScreen() {
     return mockChallenges.filter(c => c.type === filter).length;
   };
 
+  const handleOpenJoinByCode = () => {
+    setShowJoinByCodeModal(true);
+    setJoinCode('');
+    setJoinCodeError('');
+    setJoinByCodeChallenge(null);
+  };
+
+  const resolveJoinCode = (code: string): Challenge | null => {
+    const trimmed = code.trim().toLowerCase();
+    const codeToChallengeId: Record<string, string> = {
+      '1234': 'c4',
+      'water': 'c4',
+    };
+
+    const challengeId = codeToChallengeId[trimmed];
+    if (!challengeId) return null;
+
+    return mockChallenges.find((c) => c.id === challengeId) ?? null;
+  };
+
+  const handleSubmitJoinCode = () => {
+    const challenge = resolveJoinCode(joinCode);
+    if (!challenge) {
+      setJoinCodeError('Code not recognized. Please check and try again.');
+      return;
+    }
+
+    setJoinByCodeChallenge(challenge);
+    setJoinCodeError('');
+  };
+
+  const handleCloseJoinByCodeModal = () => {
+    setShowJoinByCodeModal(false);
+    setJoinCode('');
+    setJoinCodeError('');
+    setJoinByCodeChallenge(null);
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-black">
       {/* Header */}
       <View className="px-4 py-4 border-b border-white/10">
-        <Text className="text-white text-2xl font-bold mb-4">Challenges</Text>
+        <View className="flex-row items-center justify-between mb-4">
+          <Text className="text-white text-2xl font-bold">Challenges</Text>
+          <TouchableOpacity
+            onPress={handleOpenJoinByCode}
+            className="flex-row items-center px-4 py-2 rounded-full border border-white/20 bg-white/5"
+            activeOpacity={0.8}
+          >
+            <Ionicons name="enter-outline" size={18} color="#00c2ff" />
+            <Text className="text-white font-medium ml-2">Join</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Search Bar */}
         <SearchBar
@@ -186,10 +244,10 @@ export default function ChallengesScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        className="flex-grow-0 border-b border-white/10"
+        className="flex-grow-0"
         contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
       >
-        <View className="flex-row gap-2">
+        <View className="flex-row items-center gap-2">
           {filters.map((filter) => (
             <TouchableOpacity
               key={filter}
@@ -212,6 +270,17 @@ export default function ChallengesScreen() {
           ))}
         </View>
       </ScrollView>
+
+      {/* Hide completed row */}
+      <View className="px-4 pb-2 pt-1 border-b border-white/10 flex-row items-center justify-between">
+        <Text className="text-white/70 text-xs">Hide completed challenges</Text>
+        <Switch
+          value={hideCompleted}
+          onValueChange={setHideCompleted}
+          thumbColor={hideCompleted ? '#000000' : '#f4f3f4'}
+          trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#00c2ff' }}
+        />
+      </View>
 
       {/* Challenge Grid */}
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -277,6 +346,121 @@ export default function ChallengesScreen() {
       >
         <Ionicons name="add" size={32} color="black" />
       </TouchableOpacity>
+
+      {/* Join by Code Modal */}
+      <Modal
+        visible={showJoinByCodeModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCloseJoinByCodeModal}
+      >
+        {joinByCodeChallenge ? (
+          <JoinChallengeContent
+            challenge={joinByCodeChallenge}
+            onClose={handleCloseJoinByCodeModal}
+            onJoin={handleJoinChallenge}
+          />
+        ) : (
+          <View className="flex-1 bg-black">
+            <View className="px-4 pt-12 pb-4 border-b border-white/10 flex-row items-center justify-between">
+              <Text className="text-white text-2xl font-bold">Join Challenge</Text>
+              <TouchableOpacity
+                onPress={handleCloseJoinByCodeModal}
+                className="w-9 h-9 rounded-full bg-white/10 items-center justify-center"
+                activeOpacity={0.8}
+              >
+                <Ionicons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView className="flex-1 px-4 py-6" keyboardShouldPersistTaps="handled">
+              <View className="mb-8">
+                <Text className="text-white text-xl font-semibold mb-2">Join with a code</Text>
+                <Text className="text-white/60">
+                  Paste a code from a friend, coach, or team to unlock a private challenge.
+                </Text>
+              </View>
+
+              <View className="bg-white/5 border border-white/15 rounded-2xl p-4 mb-8">
+                <View className="flex-row items-center mb-4">
+                  <View className="w-10 h-10 rounded-full bg-[#00c2ff20] items-center justify-center mr-3">
+                    <Ionicons name="key-outline" size={22} color="#00c2ff" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white font-semibold">Invite code</Text>
+                    <Text className="text-white/50 text-xs mt-0.5">
+                      Codes are usually 4–8 characters long.
+                    </Text>
+                  </View>
+                </View>
+
+                <TextInput
+                  value={joinCode}
+                  onChangeText={(text) => {
+                    setJoinCode(text.toUpperCase());
+                    setJoinCodeError('');
+                  }}
+                  placeholder="E.g. 1234"
+                  placeholderTextColor="rgba(255,255,255,0.4)"
+                  className="w-full rounded-xl border border-white/20 px-4 py-3 text-white bg-black/60 text-center tracking-[4px] text-lg"
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  keyboardType="default"
+                  maxLength={8}
+                />
+
+                {joinCodeError ? (
+                  <Text className="text-red-400 text-xs mt-2 text-center">{joinCodeError}</Text>
+                ) : null}
+
+                <View className="flex-row flex-wrap items-center justify-center gap-2 mt-4">
+                  <Text className="text-white/40 text-xs">Try a demo code:</Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setJoinCode('1234');
+                      setJoinCodeError('');
+                    }}
+                    className="px-3 py-1 rounded-full bg-white/10 border border-white/20"
+                    activeOpacity={0.8}
+                  >
+                    <Text className="text-white text-xs font-medium">1234</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View className="mt-auto">
+                <TouchableOpacity
+                  onPress={handleSubmitJoinCode}
+                  disabled={!joinCode.trim()}
+                  className="rounded-xl py-4 items-center flex-row justify-center gap-2"
+                  style={{ backgroundColor: joinCode.trim() ? '#00c2ff' : 'rgba(255,255,255,0.2)' }}
+                  activeOpacity={joinCode.trim() ? 0.8 : 1}
+                >
+                  <Ionicons
+                    name="arrow-forward-circle"
+                    size={22}
+                    color={joinCode.trim() ? '#000000' : 'rgba(0,0,0,0.4)'}
+                  />
+                  <Text
+                    className="font-bold text-lg"
+                    style={{ color: joinCode.trim() ? '#000000' : 'rgba(0,0,0,0.4)' }}
+                  >
+                    Continue
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleCloseJoinByCodeModal}
+                  className="mt-4 items-center"
+                  activeOpacity={0.7}
+                >
+                  <Text className="text-white/50 text-sm">Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        )}
+      </Modal>
 
       {/* Join Challenge Modal */}
       <JoinChallengeModal
