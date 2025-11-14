@@ -277,7 +277,7 @@ export default function ChallengesScreen() {
         <Switch
           value={hideCompleted}
           onValueChange={setHideCompleted}
-          thumbColor={hideCompleted ? '#000000' : '#f4f3f4'}
+          thumbColor={hideCompleted ? '#00c2ff' : '#f4f3f4'}
           trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#00c2ff' }}
         />
       </View>

@@ -74,6 +74,14 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
     }
   };
 
+  const handleDownloadDocument = () => {
+    Alert.alert('Download Guide', "This is a mock download for today's task guide.");
+  };
+
+  const handleWatchYoutube = () => {
+    Alert.alert('Watch Video', "This is a mock link to today's YouTube video.");
+  };
+
   return (
     <ScrollView className="flex-1 bg-black">
       <View className="p-6 space-y-6 pb-32">
@@ -139,6 +147,44 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
                 </View>
               </TouchableOpacity>
             ))}
+          </View>
+        </View>
+
+        {/* Task Resources */}
+        <View className="mb-6">
+          <Text className="text-white text-lg font-bold mb-3">Today's Resources</Text>
+          <View className="space-y-3">
+            <TouchableOpacity
+              onPress={handleDownloadDocument}
+              className="mb-3 flex-row items-center justify-between p-4 rounded-xl bg-[#1a1a1a] border border-white/15"
+            >
+              <View className="flex-row items-center gap-3 flex-1">
+                <View className="w-10 h-10 rounded-full bg-white/10 items-center justify-center">
+                  <Ionicons name="document-text-outline" size={22} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-semibold">Download today's guide</Text>
+                  <Text className="text-white/60 text-xs">Mock document attached to today's tasks</Text>
+                </View>
+              </View>
+              <Ionicons name="download-outline" size={20} color="white" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleWatchYoutube}
+              className="flex-row items-center justify-between p-4 rounded-xl bg-[#1a1a1a] border border-white/15"
+            >
+              <View className="flex-row items-center gap-3 flex-1">
+                <View className="w-10 h-10 rounded-full bg-red-600/80 items-center justify-center">
+                  <Ionicons name="logo-youtube" size={22} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-semibold">Watch today's video</Text>
+                  <Text className="text-white/60 text-xs">Mock YouTube link for task instructions</Text>
+                </View>
+              </View>
+              <Ionicons name="play-circle-outline" size={22} color="white" />
+            </TouchableOpacity>
           </View>
         </View>
 

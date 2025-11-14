@@ -181,10 +181,6 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
       {/* Daily Tasks Header */}
       <View className="flex-row items-center justify-between mb-4">
         <Text className="text-white font-bold">Daily Tasks</Text>
-        <TouchableOpacity onPress={addTask} className="flex-row items-center gap-1">
-          <Ionicons name="add" size={20} color="#00c2ff" />
-          <Text className="font-bold" style={{ color: '#00c2ff' }}>Add Task</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Tasks List */}
@@ -313,13 +309,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
                 keyboardType="url"
                 autoCapitalize="none"
               />
-              <TouchableOpacity
-                onPress={() => addYoutubeLink(task.id)}
-                className="w-10 h-10 rounded-lg items-center justify-center border border-white/20"
-                style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-              >
-                <Ionicons name="add" size={20} color="rgba(255,255,255,0.6)" />
-              </TouchableOpacity>
+             
             </View>
             {/* Display added links */}
             {task.youtubeLinks.length > 0 && (
