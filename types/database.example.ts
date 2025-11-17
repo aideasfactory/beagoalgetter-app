@@ -157,6 +157,12 @@ export interface LeaderboardEntry extends ChallengeParticipant {
   rank: number;
 }
 
+export interface NotificationWithUser extends Notification {
+  from_user_display_name: string | null;
+  from_user_avatar_url: string | null;
+  from_user_username: string | null;
+}
+
 // ================================================
 // API Service Examples
 // ================================================

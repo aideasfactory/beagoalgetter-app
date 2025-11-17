@@ -14,42 +14,8 @@ import {
   GroupInfoModal,
   GroupInfo,
 } from '@/components';
-
-// Mock notifications data
-const mockNotifications: Notification[] = [
-  {
-    id: 'n1',
-    type: 'like',
-    user: { name: 'Emma Williams', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma' },
-    message: 'liked your post',
-    post: 'Completed Day 15! Morning run + strength training ✓',
-    timestamp: '5 minutes ago',
-    read: false,
-  },
-  {
-    id: 'n2',
-    type: 'points',
-    user: { name: 'David Rodriguez', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David' },
-    message: 'gave you 10 ability points',
-    post: 'Week 1 done! Consistency is key 💪',
-    timestamp: '1 hour ago',
-    read: false,
-  },
-  {
-    id: 'n3',
-    type: 'challenge',
-    message: 'New challenge starting tomorrow: 30-Day Fitness Challenge',
-    timestamp: '2 hours ago',
-    read: true,
-  },
-  {
-    id: 'n4',
-    type: 'streak',
-    message: '🔥 You\'re on a 15-day streak! Keep it up!',
-    timestamp: '1 day ago',
-    read: true,
-  },
-];
+import type { NotificationWithUser } from '@/types/database.example';
+import { useUserNotifications } from '@/hooks';
 
 // Mock group data
 const boroRunnersGroup: GroupInfo = {
@@ -175,6 +141,32 @@ const mockPosts: Post[] = [
 type TabType = 'all' | 'my-challenges';
 
 export default function HomeScreen() {
+  const {
+    notifications: dbNotifications,
+    unreadCount,
+  } = useUserNotifications();
+
+  const mappedNotifications: Notification[] = useMemo(
+    () =>
+      dbNotifications.map((n: NotificationWithUser) => ({
+        id: n.id,
+        type: n.type as Notification['type'],
+        message: n.message,
+        user:
+          n.from_user_display_name || n.from_user_username || n.from_user_avatar_url
+            ? {
+                name:
+                  n.from_user_display_name ||
+                  n.from_user_username ||
+                  'Someone',
+                avatar: n.from_user_avatar_url || '',
+              }
+            : undefined,
+        timestamp: new Date(n.created_at).toLocaleString(),
+        read: n.read,
+      })),
+    [dbNotifications],
+  );
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengePreview | null>(null);
@@ -189,9 +181,6 @@ export default function HomeScreen() {
     }
     return mockPosts;
   }, [activeTab]);
-
-  // Count unread notifications
-  const unreadCount = mockNotifications.filter((n) => !n.read).length;
 
   const handleChallengeClick = (challengeId: string) => {
     // Find the challenge from the posts
@@ -311,7 +300,7 @@ export default function HomeScreen() {
       <NotificationsModal
         visible={showNotifications}
         onClose={() => setShowNotifications(false)}
-        notifications={mockNotifications}
+        notifications={mappedNotifications}
       />
 
       <ChallengePreviewModal

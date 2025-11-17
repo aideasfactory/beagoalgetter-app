@@ -638,6 +638,16 @@ SELECT
 FROM challenge_participants cp
 LEFT JOIN profiles pr ON cp.user_id = pr.id;
 
+-- View for notifications with from-user profile details
+CREATE OR REPLACE VIEW notifications_with_users AS
+SELECT
+    n.*,
+    pr_from.display_name AS from_user_display_name,
+    pr_from.avatar_url   AS from_user_avatar_url,
+    pr_from.username     AS from_user_username
+FROM notifications n
+LEFT JOIN profiles pr_from ON n.from_user_id = pr_from.id;
+
 -- ================================================
 -- STORAGE BUCKETS
 -- ================================================

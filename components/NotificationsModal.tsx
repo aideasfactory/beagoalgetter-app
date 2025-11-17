@@ -22,7 +22,6 @@ interface NotificationsModalProps {
   onClose: () => void;
   notifications: Notification[];
 }
-
 export function NotificationsModal({ visible, onClose, notifications }: NotificationsModalProps) {
   return (
     <Modal
