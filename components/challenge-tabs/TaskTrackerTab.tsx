@@ -3,6 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert } from 'reac
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 interface TaskTrackerTabProps {
   challengeId: string;
@@ -15,6 +16,14 @@ interface Task {
   required: boolean;
 }
 
+type MoodType = 'very-sad' | 'sad' | 'neutral' | 'happy' | 'very-happy';
+
+interface MoodOption {
+  id: MoodType;
+  label: string;
+  color: string;
+}
+
 const mockTodaysTasks: Task[] = [
   { id: 't1', title: '20 minutes cardio', completed: true, required: true },
   { id: 't2', title: '3 sets of strength training', completed: true, required: true },
@@ -22,11 +31,113 @@ const mockTodaysTasks: Task[] = [
   { id: 't4', title: 'Drink 8 glasses of water', completed: false, required: false },
 ];
 
+const MOOD_OPTIONS: MoodOption[] = [
+  { id: 'very-sad', label: 'Very Sad', color: '#ef4444' },
+  { id: 'sad', label: 'Sad', color: '#f97316' },
+  { id: 'neutral', label: 'Okay', color: '#eab308' },
+  { id: 'happy', label: 'Happy', color: '#84cc16' },
+  { id: 'very-happy', label: 'Great', color: '#22c55e' },
+];
+
+function MoodFace({ mood, color, isSelected }: { mood: MoodType; color: string; isSelected: boolean }) {
+  const size = 48;
+  const opacity = isSelected ? 1 : 0.4;
+
+  // Face circle background
+  const faceColor = isSelected ? color : 'rgba(255,255,255,0.5)';
+  
+  return (
+    <Svg width={size} height={size} viewBox="0 0 100 100">
+      {/* Face circle */}
+      <Circle cx="50" cy="50" r="45" fill={faceColor} opacity={opacity} />
+      
+      {/* Eyes */}
+      <Circle cx="35" cy="40" r="5" fill={isSelected ? '#000' : '#fff'} opacity={opacity} />
+      <Circle cx="65" cy="40" r="5" fill={isSelected ? '#000' : '#fff'} opacity={opacity} />
+      
+      {/* Mouth - varies by mood */}
+      {mood === 'very-sad' && (
+        <>
+          {/* Deep frown */}
+          <Path
+            d="M 30 75 Q 50 65 70 75"
+            stroke={isSelected ? '#000' : '#fff'}
+            strokeWidth="3"
+            fill="none"
+            opacity={opacity}
+          />
+          {/* Sad eyebrows */}
+          <Path d="M 25 30 L 40 33" stroke={isSelected ? '#000' : '#fff'} strokeWidth="3" opacity={opacity} />
+          <Path d="M 75 30 L 60 33" stroke={isSelected ? '#000' : '#fff'} strokeWidth="3" opacity={opacity} />
+        </>
+      )}
+      
+      {mood === 'sad' && (
+        <>
+          {/* Slight frown */}
+          <Path
+            d="M 30 70 Q 50 63 70 70"
+            stroke={isSelected ? '#000' : '#fff'}
+            strokeWidth="3"
+            fill="none"
+            opacity={opacity}
+          />
+          {/* Slightly sad eyebrows */}
+          <Path d="M 28 32 L 38 34" stroke={isSelected ? '#000' : '#fff'} strokeWidth="2.5" opacity={opacity} />
+          <Path d="M 72 32 L 62 34" stroke={isSelected ? '#000' : '#fff'} strokeWidth="2.5" opacity={opacity} />
+        </>
+      )}
+      
+      {mood === 'neutral' && (
+        <>
+          {/* Straight line mouth */}
+          <Path
+            d="M 30 65 L 70 65"
+            stroke={isSelected ? '#000' : '#fff'}
+            strokeWidth="3"
+            opacity={opacity}
+          />
+        </>
+      )}
+      
+      {mood === 'happy' && (
+        <>
+          {/* Smile */}
+          <Path
+            d="M 30 60 Q 50 70 70 60"
+            stroke={isSelected ? '#000' : '#fff'}
+            strokeWidth="3"
+            fill="none"
+            opacity={opacity}
+          />
+        </>
+      )}
+      
+      {mood === 'very-happy' && (
+        <>
+          {/* Big smile */}
+          <Path
+            d="M 25 55 Q 50 75 75 55"
+            stroke={isSelected ? '#000' : '#fff'}
+            strokeWidth="3"
+            fill="none"
+            opacity={opacity}
+          />
+          {/* Happy eyes - crescents */}
+          <Path d="M 28 38 Q 35 43 42 38" stroke={isSelected ? '#000' : '#fff'} strokeWidth="3" fill="none" opacity={opacity} />
+          <Path d="M 58 38 Q 65 43 72 38" stroke={isSelected ? '#000' : '#fff'} strokeWidth="3" fill="none" opacity={opacity} />
+        </>
+      )}
+    </Svg>
+  );
+}
+
 export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
   const [tasks, setTasks] = useState<Task[]>(mockTodaysTasks);
   const [note, setNote] = useState('');
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [currentStreak, setCurrentStreak] = useState(15);
+  const [selectedMood, setSelectedMood] = useState<MoodType | null>(null);
 
   const completedCount = tasks.filter(t => t.completed).length;
   const requiredTasks = tasks.filter(t => t.required);
@@ -141,11 +252,11 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
                           {task.title}
                         </Text>
                       </View>
-                      {task.required && !task.completed && (
+                      {/* {task.required && !task.completed && (
                         <View className="bg-amber-100 px-2 py-1 rounded-full">
                           <Text className="text-amber-700 text-xs font-bold">Required</Text>
                         </View>
-                      )}
+                      )} */}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -240,6 +351,44 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
               className="pl-10 p-3 bg-[#1a1a1a] border border-white/20 rounded-xl text-white min-h-[120px]"
               style={{ textAlignVertical: 'top' }}
             />
+          </View>
+
+          {/* Mood Selector */}
+          <View className="mt-4">
+            <Text className="text-white/80 text-sm mb-3">How are you feeling?</Text>
+            <View className="flex-row justify-between items-center px-2">
+              {MOOD_OPTIONS.map((mood) => (
+                <TouchableOpacity
+                  key={mood.id}
+                  onPress={() => setSelectedMood(mood.id)}
+                  className="items-center"
+                  style={{ width: 60 }}
+                >
+                  <View 
+                    className="rounded-full p-2 mb-2"
+                    style={{
+                      backgroundColor: selectedMood === mood.id ? 'rgba(255,255,255,0.1)' : 'transparent',
+                      transform: selectedMood === mood.id ? [{ scale: 1.1 }] : [{ scale: 1 }],
+                    }}
+                  >
+                    <MoodFace 
+                      mood={mood.id} 
+                      color={mood.color} 
+                      isSelected={selectedMood === mood.id} 
+                    />
+                  </View>
+                  <Text 
+                    className="text-xs text-center"
+                    style={{ 
+                      color: selectedMood === mood.id ? mood.color : 'rgba(255,255,255,0.4)',
+                      fontWeight: selectedMood === mood.id ? 'bold' : 'normal',
+                    }}
+                  >
+                    {mood.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
       </View>

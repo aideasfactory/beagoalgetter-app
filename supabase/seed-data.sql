@@ -19,7 +19,7 @@
 -- Make sure these IDs match real auth.users IDs
 
 /*
-INSERT INTO profiles (id, display_name, username, avatar_url, bio, total_streaks, total_ability_points, challenges_completed)
+INSERT INTO profiles (id, display_name, username, avatar_url, bio, longest_streak, total_ability_points, challenges_completed)
 VALUES 
     ('user-id-1', 'Alex Johnson', 'alexj', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex', 'Fitness enthusiast and goal setter', 15, 245, 3),
     ('user-id-2', 'Sam Rodriguez', 'samr', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sam', 'Always up for a challenge', 22, 380, 5),
@@ -31,7 +31,7 @@ ON CONFLICT (id) DO NOTHING;
 -- SAMPLE GROUPS
 -- ================================================
 
-INSERT INTO groups (id, name, description, logo_emoji, color, location, founded, created_by)
+INSERT INTO groups (id, name, description, logo, color, location, founded, created_by)
 VALUES 
     (
         'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d',
@@ -95,15 +95,15 @@ VALUES
         'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800',
         NULL
     ),
-    -- Team challenge
+    -- Group challenge with teams
     (
         'f6a7b8c9-d1e2-4f5a-8b9c-7d6e5f4a3b2c',
         'Team Transformation: 8-Week Fitness Sprint',
         'Two teams compete to see who can achieve the most consistent workout routine over 8 weeks',
-        'team',
+        'group',
         8,
         'weeks',
-        NULL,
+        'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d',
         'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800',
         NULL
     ),
@@ -214,20 +214,22 @@ VALUES
     );
 
 -- ================================================
--- SAMPLE TEAMS (for Team Transformation challenge)
+-- SAMPLE TEAMS (belong to groups, not challenges)
 -- ================================================
+-- Teams are part of the Iron Warriors Gym group
+-- Users can be assigned to teams when joining group challenges
 
-INSERT INTO teams (id, challenge_id, name, color)
+INSERT INTO teams (id, group_id, name, color)
 VALUES 
     (
         'b8c9d1e2-f3a4-4b5c-9d8e-7f6a5b4c3d2e',
-        'f6a7b8c9-d1e2-4f5a-8b9c-7d6e5f4a3b2c',
+        'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d',
         'Team Alpha',
         '#00c2ff'
     ),
     (
         'c9d1e2f3-a4b5-4c5d-8e9f-7a6b5c4d3e2f',
-        'f6a7b8c9-d1e2-4f5a-8b9c-7d6e5f4a3b2c',
+        'a1b2c3d4-e5f6-4a5b-9c8d-7e6f5a4b3c2d',
         'Team Beta',
         '#ef4444'
     )

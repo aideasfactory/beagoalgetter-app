@@ -48,38 +48,48 @@ migrations/
 #### 1. **profiles** (extends auth.users)
 - User profile information
 - Display name, avatar, bio, username
-- Stats: total_streaks, total_ability_points, challenges_completed
+- Stats: longest_streak, total_ability_points, challenges_completed, active_challenges, total_challenges
+- Settings: date_of_birth, notification_preferences, push_token, device
+- Flags: is_premium, is_active
 
 #### 2. **groups**
 - Community groups for group challenges
 - Created by users
-- Has name, description, logo emoji, color
+- Has name, description, logo, color, location, founded
+- Metadata: member_count, cover_image_url, website, social_links, is_verified
 
 #### 3. **challenges**
 - Main challenges table
-- Types: personal, team, group
-- Duration in days or weeks
-- Links to group if type is 'group'
+- Types: personal, group (team type removed - teams now belong to groups)
+- Duration in days or weeks, with start_date and end_date
+- Status: draft, active, completed, cancelled
+- Settings: is_public, join_code, requires_approval, reminder_frequency
+- Cached participant_count, links to group if type is 'group'
 
 #### 4. **tasks**
 - Tasks within challenges
 - Can be recurring (with specific days)
 - Ordered by order_index
+- Fields: required, attachments (JSONB), items (JSONB), is_active
 
 #### 5. **teams**
-- Teams within team-type challenges
+- Teams belong to groups (not challenges)
+- A group can have many teams
+- Users can be assigned to teams when joining group challenges
 - Has name and color
 
 #### 6. **challenge_participants**
 - Junction table for users in challenges
-- Tracks streak and ability points per challenge
-- Links to team if challenge is team-type
+- Tracks current_streak, longest_streak, and ability points per challenge
+- Status: active, paused, quit, completed, failed
+- Fields: joined_at, left_at, notes, quit_reason
+- Links to team if user is part of a team in a group challenge
 
 #### 7. **task_completions**
 - Records of task completions
 - Status: success or fail
 - Tracks ability points awarded
-- Includes optional notes
+- Includes optional notes and proof_image_url
 
 #### 8. **posts**
 - Social feed posts
@@ -149,7 +159,7 @@ profiles (1:1)
 
 The following PostgreSQL enums are defined:
 
-- **challenge_type**: `personal`, `team`, `group`
+- **challenge_type**: `personal`, `group` (team type removed - teams now belong to groups)
 - **duration_type**: `days`, `weeks`
 - **completion_status**: `success`, `fail`
 - **notification_type**: `like`, `points`, `challenge`, `streak`

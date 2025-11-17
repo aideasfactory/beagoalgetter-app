@@ -13,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ================================================
 
 -- Challenge types
-CREATE TYPE challenge_type AS ENUM ('personal', 'team', 'group');
+CREATE TYPE challenge_type AS ENUM ('personal', 'group');
 
 -- Duration types
 CREATE TYPE duration_type AS ENUM ('days', 'weeks');
@@ -34,9 +34,17 @@ CREATE TABLE profiles (
     avatar_url TEXT,
     bio TEXT,
     username TEXT UNIQUE,
-    total_streaks INTEGER DEFAULT 0,
+    longest_streak INTEGER DEFAULT 0,
     total_ability_points INTEGER DEFAULT 0,
     challenges_completed INTEGER DEFAULT 0,
+    active_challenges INTEGER DEFAULT 0,
+    total_challenges INTEGER DEFAULT 0,
+    date_of_birth DATE,
+    notification_preferences JSONB DEFAULT '{}',
+    push_token TEXT,
+    device TEXT CHECK (device IN ('ios', 'android')),
+    is_premium BOOLEAN DEFAULT false,
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -52,12 +60,18 @@ CREATE TABLE groups (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name TEXT NOT NULL,
     description TEXT,
-    logo_emoji TEXT,
+    logo TEXT,
     color TEXT,
     location TEXT,
     founded TEXT,
+    member_count INTEGER DEFAULT 0,
+    cover_image_url TEXT,
+    website TEXT,
+    social_links JSONB DEFAULT '{}',
+    is_verified BOOLEAN DEFAULT false,
     created_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index for created_by
@@ -74,6 +88,14 @@ CREATE TABLE challenges (
     type challenge_type NOT NULL,
     duration INTEGER NOT NULL,
     duration_type duration_type NOT NULL,
+    start_date DATE,
+    end_date DATE,
+    status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'active', 'completed', 'cancelled')),
+    is_public BOOLEAN DEFAULT true,
+    join_code TEXT,
+    requires_approval BOOLEAN DEFAULT false,
+    reminder_frequency TEXT,
+    participant_count INTEGER DEFAULT 0,
     group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
     image_url TEXT,
     created_by UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -99,7 +121,12 @@ CREATE TABLE tasks (
     is_recurring BOOLEAN DEFAULT false,
     recurring_days TEXT[] DEFAULT '{}',
     order_index INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    required BOOLEAN DEFAULT true,
+    attachments JSONB DEFAULT '[]',
+    items JSONB DEFAULT '[]',
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index for challenge_id
@@ -109,17 +136,19 @@ CREATE INDEX idx_tasks_order ON tasks(challenge_id, order_index);
 -- ================================================
 -- TEAMS TABLE
 -- ================================================
+-- Teams belong to groups, not challenges
+-- Users can be assigned to teams when joining group challenges
 
 CREATE TABLE teams (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    challenge_id UUID REFERENCES challenges(id) ON DELETE CASCADE NOT NULL,
+    group_id UUID REFERENCES groups(id) ON DELETE CASCADE NOT NULL,
     name TEXT NOT NULL,
     color TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Index for challenge_id
-CREATE INDEX idx_teams_challenge_id ON teams(challenge_id);
+-- Index for group_id
+CREATE INDEX idx_teams_group_id ON teams(group_id);
 
 -- ================================================
 -- CHALLENGE_PARTICIPANTS TABLE
@@ -130,9 +159,14 @@ CREATE TABLE challenge_participants (
     challenge_id UUID REFERENCES challenges(id) ON DELETE CASCADE NOT NULL,
     user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active', 'paused', 'quit', 'completed', 'failed')),
     joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    left_at TIMESTAMP WITH TIME ZONE,
     current_streak INTEGER DEFAULT 0,
+    longest_streak INTEGER DEFAULT 0,
     total_ability_points INTEGER DEFAULT 0,
+    notes TEXT,
+    quit_reason TEXT,
     UNIQUE(challenge_id, user_id)
 );
 
@@ -152,6 +186,7 @@ CREATE TABLE task_completions (
     challenge_id UUID REFERENCES challenges(id) ON DELETE CASCADE NOT NULL,
     completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     notes TEXT,
+    proof_image_url TEXT,
     ability_points_awarded INTEGER DEFAULT 0,
     status completion_status NOT NULL
 );
@@ -243,6 +278,18 @@ CREATE TRIGGER update_profiles_updated_at
 -- Trigger for challenges updated_at
 CREATE TRIGGER update_challenges_updated_at
     BEFORE UPDATE ON challenges
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for groups updated_at
+CREATE TRIGGER update_groups_updated_at
+    BEFORE UPDATE ON groups
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for tasks updated_at
+CREATE TRIGGER update_tasks_updated_at
+    BEFORE UPDATE ON tasks
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
@@ -411,14 +458,14 @@ CREATE POLICY "Teams are viewable by everyone"
     ON teams FOR SELECT
     USING (true);
 
--- Challenge creators can manage teams
-CREATE POLICY "Challenge creators can manage teams"
+-- Group creators can manage teams
+CREATE POLICY "Group creators can manage teams"
     ON teams FOR ALL
     USING (
         EXISTS (
-            SELECT 1 FROM challenges
-            WHERE challenges.id = teams.challenge_id
-            AND challenges.created_by = auth.uid()
+            SELECT 1 FROM groups
+            WHERE groups.id = teams.group_id
+            AND groups.created_by = auth.uid()
         )
     );
 
@@ -568,10 +615,12 @@ SELECT
     pr.display_name as user_name,
     pr.avatar_url as user_avatar,
     pr.username as user_username,
+    pr.longest_streak as user_streak,
+    pr.total_ability_points as user_ability_points,
     c.title as challenge_title,
     c.type as challenge_type,
     g.name as group_name,
-    g.logo_emoji as group_logo,
+    g.logo as group_logo,
     g.color as group_color
 FROM posts p
 LEFT JOIN profiles pr ON p.user_id = pr.id

@@ -15,9 +15,13 @@ SELECT
     username,
     avatar_url,
     bio,
-    total_streaks,
+    longest_streak,
     total_ability_points,
-    challenges_completed
+    challenges_completed,
+    active_challenges,
+    total_challenges,
+    is_premium,
+    is_active
 FROM profiles
 WHERE id = 'USER_ID';
 
@@ -35,7 +39,7 @@ SELECT
     username,
     avatar_url,
     total_ability_points,
-    total_streaks
+    longest_streak
 FROM profiles
 ORDER BY total_ability_points DESC
 LIMIT 10;
@@ -77,16 +81,17 @@ SELECT
     c.*,
     p.display_name as creator_name,
     g.name as group_name,
-    g.logo_emoji as group_logo,
+    g.logo as group_logo,
+    g.color as group_color,
     COUNT(DISTINCT cp.user_id) as total_participants,
     COUNT(DISTINCT t.id) as total_tasks
 FROM challenges c
 LEFT JOIN profiles p ON c.created_by = p.id
 LEFT JOIN groups g ON c.group_id = g.id
-LEFT JOIN challenge_participants cp ON c.id = cp.challenge_id
-LEFT JOIN tasks t ON c.id = t.challenge_id
+LEFT JOIN challenge_participants cp ON c.id = cp.challenge_id AND cp.status = 'active'
+LEFT JOIN tasks t ON c.id = t.challenge_id AND t.is_active = true
 WHERE c.id = 'CHALLENGE_ID'
-GROUP BY c.id, p.display_name, g.name, g.logo_emoji;
+GROUP BY c.id, p.display_name, g.name, g.logo, g.color;
 
 -- ================================================
 -- TASK QUERIES
@@ -146,17 +151,20 @@ SELECT
     p.username,
     p.avatar_url,
     cp.current_streak,
+    cp.longest_streak,
     cp.total_ability_points,
+    cp.status,
     t.name as team_name,
     t.color as team_color,
     RANK() OVER (ORDER BY cp.total_ability_points DESC, cp.current_streak DESC) as rank
 FROM challenge_participants cp
 LEFT JOIN profiles p ON cp.user_id = p.id
 LEFT JOIN teams t ON cp.team_id = t.id
-WHERE cp.challenge_id = 'CHALLENGE_ID'
+WHERE cp.challenge_id = 'CHALLENGE_ID' AND cp.status IN ('active', 'completed')
 ORDER BY rank ASC;
 
--- Get team leaderboard for a challenge
+-- Get team leaderboard for a group challenge
+-- Teams belong to groups, so we filter participants by challenge and team
 SELECT 
     t.id as team_id,
     t.name as team_name,
@@ -166,8 +174,8 @@ SELECT
     AVG(cp.current_streak) as avg_streak,
     RANK() OVER (ORDER BY SUM(cp.total_ability_points) DESC) as rank
 FROM teams t
-LEFT JOIN challenge_participants cp ON t.id = cp.team_id
-WHERE t.challenge_id = 'CHALLENGE_ID'
+LEFT JOIN challenge_participants cp ON t.id = cp.team_id AND cp.challenge_id = 'CHALLENGE_ID' AND cp.status = 'active'
+WHERE t.group_id = (SELECT group_id FROM challenges WHERE id = 'CHALLENGE_ID')
 GROUP BY t.id, t.name, t.color
 ORDER BY rank ASC;
 
@@ -282,17 +290,17 @@ GROUP BY g.id, p.display_name;
 
 -- Get user's overall stats
 SELECT 
-    p.total_streaks,
+    p.longest_streak,
     p.total_ability_points,
     p.challenges_completed,
-    COUNT(DISTINCT cp.challenge_id) as active_challenges,
+    p.active_challenges,
+    p.total_challenges,
     COUNT(DISTINCT po.id) as total_posts,
     SUM(po.likes_count) as total_likes_received
 FROM profiles p
-LEFT JOIN challenge_participants cp ON p.id = cp.user_id
 LEFT JOIN posts po ON p.id = po.user_id
 WHERE p.id = 'USER_ID'
-GROUP BY p.id, p.total_streaks, p.total_ability_points, p.challenges_completed;
+GROUP BY p.id, p.longest_streak, p.total_ability_points, p.challenges_completed, p.active_challenges, p.total_challenges;
 
 -- Get challenge completion stats
 SELECT 
