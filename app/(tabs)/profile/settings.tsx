@@ -1,8 +1,7 @@
 import { SettingsRow } from '@/components';
-import { useSession } from '@/context';
+import { useSession, useSubscription } from '@/context';
 import { sendPushNotification } from '@/Notifications';
 import { useProfile } from '@/hooks';
-import { showPaywall } from '@/utils/superwall';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
 import React from 'react';
@@ -13,6 +12,7 @@ export default function ProfileSettings() {
   const { t } = useTranslation();
   const { user } = useSession()
   const { profile, loading: profileLoading } = useProfile();
+  const { isPaid, showPaywall, isLoading: subscriptionLoading } = useSubscription();
 
   const handleTestError = async () => {
     try {
@@ -41,7 +41,7 @@ export default function ProfileSettings() {
   }
 
   const handlePresentPaywall = async () => {
-    if (profileLoading) {
+    if (profileLoading || subscriptionLoading) {
       Alert.alert('Please wait', 'Loading your profile...');
       return;
     }
@@ -51,12 +51,12 @@ export default function ProfileSettings() {
       return;
     }
 
-    if (profile.is_premium) {
+    if (isPaid) {
       Alert.alert('Premium active', 'You already have premium access.');
       return;
     }
 
-    await showPaywall('goal_getter', { userId: profile.id });
+    await showPaywall('goalgetter');
   };
 
 

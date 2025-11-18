@@ -1,4 +1,4 @@
-import { useSession } from '@/context';
+import { useSession, useSubscription } from '@/context';
 import { Stack, router } from 'expo-router';
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert } from 'react-native';
@@ -7,7 +7,6 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
 import { LoadingScreen } from '@/components';
 import { useProfile } from '@/hooks';
-import { showPaywall } from '@/utils/superwall';
 import type { ProfileBadges } from '@/types/database.example';
 
 // Circular Progress Component
@@ -68,6 +67,7 @@ function CircularProgress({
 export default function ProfileMain() {
   const { user } = useSession();
   const { profile, loading, error } = useProfile();
+  const { isPaid, showPaywall, isLoading: subscriptionLoading } = useSubscription();
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
@@ -153,7 +153,7 @@ export default function ProfileMain() {
   };
 
   const handleCreateGroupPress = async () => {
-    if (loading) {
+    if (loading || subscriptionLoading) {
       Alert.alert('Please wait', 'Loading your profile...');
       return;
     }
@@ -163,8 +163,9 @@ export default function ProfileMain() {
       return;
     }
 
-    if (!profile.is_premium) {
-      await showPaywall('create_group', { userId: profile.id });
+    // Check if user has paid subscription (pro or lifetime)
+    if (!isPaid) {
+      await showPaywall('goalgetter');
       return;
     }
 

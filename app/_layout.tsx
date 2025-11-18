@@ -1,4 +1,4 @@
-import { SessionProvider, useSession } from '@/context';
+import { SessionProvider, useSession, SubscriptionProvider } from '@/context';
 import Settings from '@/Settings';
 import { GoogleSignin } from '@/utils';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -69,7 +69,9 @@ export default function Root() {
   return (
     <I18nextProvider i18n={i18n}>
       <SessionProvider>
-        <RootNavigator />
+        <SubscriptionProvider>
+          <RootNavigator />
+        </SubscriptionProvider>
       </SessionProvider>
     </I18nextProvider>
   );

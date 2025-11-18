@@ -34,7 +34,13 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null;
   username: string | null;
-  is_premium: boolean;
+  
+  // Subscription fields
+  plan: 'free' | 'pro' | 'lifetime';
+  superwall_user_id: string | null;
+  current_product_id: string | null;
+  subscription_expires_at: string | null;
+  
   longest_streak: number;
   current_streak: number;
   total_ability_points: number;
