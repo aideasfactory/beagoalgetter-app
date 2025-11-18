@@ -100,32 +100,34 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-black" edges={['top']}>
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        {/* Background Image with Gradient Overlay */}
-        <View className="absolute inset-0">
-          <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1080',
-            }}
-            className="w-full h-full"
-            resizeMode="cover"
-          />
-          <LinearGradient
-            colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.8)', '#000000']}
-            locations={[0, 0.5, 1]}
-            className="absolute inset-0"
-          />
-        </View>
+    <View className="flex-1 bg-black">
+      {/* Background Image with Gradient Overlay */}
+      <View className="absolute inset-0">
+        <Image
+          source={{
+            uri: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=1080',
+          }}
+          className="w-full h-full"
+          resizeMode="cover"
+        />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.8)', '#000000']}
+          locations={[0, 0.5, 1]}
+          className="absolute inset-0"
+        />
+      </View>
 
-        <ScrollView
+      <SafeAreaView className="flex-1" edges={['top', 'left', 'right']}>
+        <KeyboardAvoidingView
           className="flex-1"
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           {/* Logo */}
           <View className="px-6 pt-6">
             <Image
@@ -330,8 +332,9 @@ export function AuthScreen({ mode }: AuthScreenProps) {
               )}
             </View>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </View>
   );
 }

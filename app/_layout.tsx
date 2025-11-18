@@ -105,14 +105,14 @@ function RootNavigator() {
       </Stack.Protected>
 
       <Stack.Protected guard={shouldShowApp}>
-        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack.Protected>
 
       <Stack.Protected guard={shouldShowAuth}>
-        <Stack.Screen name="initial" />
-        <Stack.Screen name="login"  />
-        <Stack.Screen name="signup" />
-        <Stack.Screen name="forgot-password" />
+        <Stack.Screen name="initial" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="signup" options={{ headerShown: false }} />
+        <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
       </Stack.Protected>
     </Stack>
   );
