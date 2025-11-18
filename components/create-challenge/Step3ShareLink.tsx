@@ -48,7 +48,7 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
             Ready to Publish?
           </Text>
           <Text className="text-white/60 text-base">
-            Once published, your challenge will be live and you'll get a shareable link to invite participants.
+            Once published, your challenge will be live and you&apos;ll get a shareable link to invite participants.
           </Text>
         </View>
 
@@ -75,7 +75,7 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
               <View className="flex-1">
                 <Text className="text-white font-medium mb-1">Get Shareable Link</Text>
                 <Text className="text-white/60 text-sm">
-                  You'll receive a unique link to share with anyone
+                  You&apos;ll receive a unique link to share with anyone
                 </Text>
               </View>
             </View>
@@ -199,7 +199,7 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
             <View className="flex-1">
               <Text className="text-white font-medium mb-1">Copy the Link</Text>
               <Text className="text-white/60 text-sm">
-                Tap the "Copy Link" button above
+                Tap the &quot;Copy Link&quot; button above
               </Text>
             </View>
           </View>

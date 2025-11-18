@@ -163,7 +163,7 @@ export function Step3InviteUsers({ data, onUpdate }: Step3InviteUsersProps) {
             </View>
             <Text className="text-white text-lg font-bold mb-2">No Users Found</Text>
             <Text className="text-white/60 text-center px-8">
-              No users match your search "{searchQuery}"
+              No users match your search {searchQuery}
             </Text>
           </View>
         )}

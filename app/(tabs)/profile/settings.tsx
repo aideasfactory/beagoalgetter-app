@@ -1,9 +1,10 @@
 import { SettingsRow } from '@/components';
 import { useSession } from '@/context';
 import { sendPushNotification } from '@/Notifications';
+import { useProfile } from '@/hooks';
+import { showPaywall } from '@/utils/superwall';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Stack, router } from 'expo-router';
-import Superwall from "expo-superwall/compat";
 import React from 'react';
 import { Alert, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 export default function ProfileSettings() {
   const { t } = useTranslation();
   const { user } = useSession()
+  const { profile, loading: profileLoading } = useProfile();
 
   const handleTestError = async () => {
     try {
@@ -38,14 +40,24 @@ export default function ProfileSettings() {
     }
   }
 
-  const handlePresentPaywall = async  () => {
-    Superwall.shared.register({ 
-      placement: 'test_event',
-      feature: () => {
-        console.log('hello world')
-      },
-    });
-  }
+  const handlePresentPaywall = async () => {
+    if (profileLoading) {
+      Alert.alert('Please wait', 'Loading your profile...');
+      return;
+    }
+
+    if (!profile) {
+      Alert.alert('No profile', 'You need to be signed in to view the paywall.');
+      return;
+    }
+
+    if (profile.is_premium) {
+      Alert.alert('Premium active', 'You already have premium access.');
+      return;
+    }
+
+    await showPaywall('goal_getter', { userId: profile.id });
+  };
 
 
   return (

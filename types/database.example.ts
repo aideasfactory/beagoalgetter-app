@@ -19,15 +19,29 @@ export type CompletionStatus = 'success' | 'fail';
 export type NotificationType = 'like' | 'points' | 'challenge' | 'streak';
 
 // Database Tables
+export interface ProfileBadges {
+  first_challenge: boolean;
+  streak_7_days: boolean;
+  streak_30_days: boolean;
+  team_player: boolean;
+  streak_100_days: boolean;
+  perfect_month: boolean;
+}
+
 export interface Profile {
   id: string;
   display_name: string | null;
   avatar_url: string | null;
   bio: string | null;
   username: string | null;
-  total_streaks: number;
+  is_premium: boolean;
+  longest_streak: number;
+  current_streak: number;
   total_ability_points: number;
   challenges_completed: number;
+  active_challenges: number;
+  total_challenges: number;
+  badges: ProfileBadges | null;
   created_at: string;
   updated_at: string;
 }

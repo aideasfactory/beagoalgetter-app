@@ -134,7 +134,7 @@ export function MessagesTab({ challengeId }: MessagesTabProps) {
               <Ionicons name="chatbox-outline" size={64} color="rgba(255,255,255,0.2)" />
               <Text className="text-white text-lg font-bold mt-4 mb-2">No messages yet</Text>
               <Text className="text-white/60 text-sm text-center">
-                The challenge owner hasn't posted any messages yet. Check back later!
+                The challenge owner hasn’t posted any messages yet. Check back later!
               </Text>
             </View>
           )}

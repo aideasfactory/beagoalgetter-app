@@ -131,7 +131,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
 
           {/* What You'll Get */}
           <View className="mb-6">
-            <Text className="text-white text-lg font-bold mb-4">What You'll Get</Text>
+            <Text className="text-white text-lg font-bold mb-4">What You’ll Get</Text>
             <View className="space-y-3">
               <View className="flex-row items-start gap-3">
                 <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: '#00c2ff20' }}>

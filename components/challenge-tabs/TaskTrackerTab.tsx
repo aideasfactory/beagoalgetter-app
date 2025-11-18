@@ -186,11 +186,11 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
   };
 
   const handleDownloadDocument = () => {
-    Alert.alert('Download Guide', "This is a mock download for today's task guide.");
+    Alert.alert('Download Guide', 'This is a mock download for today’s task guide.');
   };
 
   const handleWatchYoutube = () => {
-    Alert.alert('Watch Video', "This is a mock link to today's YouTube video.");
+    Alert.alert('Watch Video', 'This is a mock link to today’s YouTube video.');
   };
 
   return (
@@ -205,10 +205,10 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
                 <Text className="text-white">Current Streak</Text>
               </View>
               <Text className="text-white text-4xl font-bold">{currentStreak} days</Text>
-              <Text className="text-white/80 text-sm mt-1">Keep going! You're doing amazing!</Text>
+              <Text className="text-white/80 text-sm mt-1">Keep going! You’re doing amazing!</Text>
             </View>
             <View className="items-end">
-              <Text className="text-white/80 mb-1">Today's Progress</Text>
+              <Text className="text-white/80 mb-1">Today&apos;s Progress</Text>
               <Text className="text-white text-3xl font-bold">{completedCount}/{tasks.length}</Text>
               <Text className="text-white/80 text-xs mt-1">tasks completed</Text>
             </View>
@@ -276,8 +276,8 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
                       <Ionicons name="document-text-outline" size={22} color="white" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-white font-semibold">Download today's guide</Text>
-                      <Text className="text-white/60 text-xs">Mock document attached to today's tasks</Text>
+                      <Text className="text-white font-semibold">Download today’s guide</Text>
+                      <Text className="text-white/60 text-xs">Mock document attached to today’s tasks</Text>
                     </View>
                   </View>
                   <Ionicons name="download-outline" size={20} color="white" />
@@ -292,7 +292,7 @@ export function TaskTrackerTab({ challengeId }: TaskTrackerTabProps) {
                       <Ionicons name="logo-youtube" size={22} color="white" />
                     </View>
                     <View className="flex-1">
-                      <Text className="text-white font-semibold">Watch today's video</Text>
+                      <Text className="text-white font-semibold">Watch today’s video</Text>
                       <Text className="text-white/60 text-xs">Mock YouTube link for task instructions</Text>
                     </View>
                   </View>

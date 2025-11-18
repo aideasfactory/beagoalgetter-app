@@ -85,7 +85,7 @@ export default function ComponentTestScreen() {
           />
           {searchValue.length > 0 && (
             <Text className="text-white/60 text-sm mt-2">
-              Searching for: "{searchValue}"
+              Searching for: {searchValue}
             </Text>
           )}
         </View>

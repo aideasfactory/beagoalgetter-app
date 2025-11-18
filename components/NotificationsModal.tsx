@@ -91,7 +91,7 @@ export function NotificationsModal({ visible, onClose, notifications }: Notifica
                     </Text>
                     {notification.post && (
                       <Text className="text-white/60 text-xs mt-1 italic">
-                        "{notification.post}"
+                        {notification.post}
                       </Text>
                     )}
                     <Text className="text-white/40 text-xs mt-2">

@@ -5,6 +5,10 @@ import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Aler
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
+import { LoadingScreen } from '@/components';
+import { useProfile } from '@/hooks';
+import { showPaywall } from '@/utils/superwall';
+import type { ProfileBadges } from '@/types/database.example';
 
 // Circular Progress Component
 function CircularProgress({ 
@@ -63,6 +67,7 @@ function CircularProgress({
 
 export default function ProfileMain() {
   const { user } = useSession();
+  const { profile, loading, error } = useProfile();
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
@@ -85,23 +90,31 @@ export default function ProfileMain() {
     '#10b981', // Emerald
   ];
 
-  // Mock stats data - will be replaced with real data from Supabase
-  const userProfile = {
-    currentStreak: 15,
-    longestStreak: 45,
-    completedChallenges: 9,
-    totalChallenges: 12,
-    activeChallenges: 3,
-    totalPoints: 2450,
+  const longestStreak = profile?.longest_streak ?? 0;
+  const currentStreak = profile?.current_streak ?? longestStreak;
+  const completedChallenges = profile?.challenges_completed ?? 0;
+  const totalChallenges = profile?.total_challenges ?? completedChallenges;
+  const activeChallenges = profile?.active_challenges ?? 0;
+  const totalPoints = profile?.total_ability_points ?? 0;
+
+  const defaultBadges: ProfileBadges = {
+    first_challenge: false,
+    streak_7_days: false,
+    streak_30_days: false,
+    team_player: false,
+    streak_100_days: false,
+    perfect_month: false,
   };
 
+  const profileBadges: ProfileBadges = profile?.badges ?? defaultBadges;
+
   const badges = [
-    { id: 1, name: 'First\nChallenge', icon: '🎯', earned: true, color: '#1e3a5f' },
-    { id: 2, name: '7 Day Streak', icon: '🔥', earned: true, color: '#5f1e1e' },
-    { id: 3, name: '30 Day\nStreak', icon: '💪', earned: true, color: '#3a5f1e' },
-    { id: 4, name: 'Team Player', icon: '🤝', earned: true, color: '#4a1e5f' },
-    { id: 5, name: '100 Day\nStreak', icon: '🏆', earned: false, color: '#2a2a2a' },
-    { id: 6, name: 'Perfect\nMonth', icon: '⭐', earned: false, color: '#2a2a2a' },
+    { id: 1, name: 'First\nChallenge', icon: '🎯', earned: profileBadges.first_challenge, color: '#1e3a5f' },
+    { id: 2, name: '7 Day Streak', icon: '🔥', earned: profileBadges.streak_7_days, color: '#5f1e1e' },
+    { id: 3, name: '30 Day\nStreak', icon: '💪', earned: profileBadges.streak_30_days, color: '#3a5f1e' },
+    { id: 4, name: 'Team Player', icon: '🤝', earned: profileBadges.team_player, color: '#4a1e5f' },
+    { id: 5, name: '100 Day\nStreak', icon: '🏆', earned: profileBadges.streak_100_days, color: '#2a2a2a' },
+    { id: 6, name: 'Perfect\nMonth', icon: '⭐', earned: profileBadges.perfect_month, color: '#2a2a2a' },
   ];
 
   const socialConnections = [
@@ -111,10 +124,18 @@ export default function ProfileMain() {
   ];
 
   // Default avatar if none provided
-  const avatarUrl = user?.avatar_url || user?.user_metadata?.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Default';
-  const displayName = user?.user_metadata?.display_name || user?.full_name || 'Sarah Johnson';
-  const username = user?.user_metadata?.username || '@sarahj';
-  const bio = user?.user_metadata?.bio || 'Fitness enthusiast | Building consistency one day at a time 💪';
+  const avatarUrl =
+    profile?.avatar_url ||
+    user?.avatar_url ||
+    user?.user_metadata?.avatar_url ||
+    'https://api.dicebear.com/7.x/avataaars/svg?seed=Default';
+  const displayName =
+    profile?.display_name ||
+    user?.user_metadata?.display_name ||
+    user?.full_name ||
+    'Sarah Johnson';
+  const username = profile?.username || user?.user_metadata?.username || '@sarahj';
+  const bio = profile?.bio || user?.user_metadata?.bio || 'Fitness enthusiast | Building consistency one day at a time 💪';
 
   const handleCreateGroup = () => {
     if (!groupName || !groupDescription || !totalMembers) {
@@ -131,6 +152,33 @@ export default function ProfileMain() {
     setIsCreateGroupOpen(false);
   };
 
+  const handleCreateGroupPress = async () => {
+    if (loading) {
+      Alert.alert('Please wait', 'Loading your profile...');
+      return;
+    }
+
+    if (!profile) {
+      Alert.alert('No profile', 'You need to be signed in to create a group.');
+      return;
+    }
+
+    if (!profile.is_premium) {
+      await showPaywall('create_group', { userId: profile.id });
+      return;
+    }
+
+    setIsCreateGroupOpen(true);
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 bg-black">
+        <LoadingScreen />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView className="flex-1 bg-black">
       <Stack.Screen
@@ -140,6 +188,16 @@ export default function ProfileMain() {
       />
 
       <ScrollView className="flex-1">
+        {error && (
+          <View className="px-4 pt-4">
+            <View className="rounded-xl bg-red-900/40 border border-red-500/40 px-3 py-2">
+              <Text className="text-red-100 text-xs">
+                Failed to load profile. Pull to refresh or try again later.
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* Header */}
         <View className="items-center py-8">
           <TouchableOpacity className="relative">
@@ -168,8 +226,8 @@ export default function ProfileMain() {
           <View className="flex-row gap-4">
             <View className="flex-1 bg-[#1a1a1a] rounded-2xl p-6 border border-white/10 items-center">
               <CircularProgress
-                value={userProfile.currentStreak}
-                max={userProfile.longestStreak}
+                value={currentStreak}
+                max={longestStreak || 1}
                 color="#00c2ff"
                 label="Current Streak"
                 sublabel="days"
@@ -177,11 +235,11 @@ export default function ProfileMain() {
             </View>
             <View className="flex-1 bg-[#1a1a1a] rounded-2xl p-6 border border-white/10 items-center">
               <CircularProgress
-                value={userProfile.completedChallenges}
-                max={userProfile.totalChallenges}
+                value={completedChallenges}
+                max={totalChallenges || 1}
                 color="#84cc16"
                 label="Completed"
-                sublabel={`of ${userProfile.totalChallenges}`}
+                sublabel={totalChallenges ? `of ${totalChallenges}` : 'challenges'}
               />
             </View>
           </View>
@@ -197,7 +255,7 @@ export default function ProfileMain() {
                 <Ionicons name="trending-up" size={24} color="black" />
               </View>
               <Text className="text-4xl font-bold mb-1" style={{ color: '#00c2ff' }}>
-                {userProfile.longestStreak}
+                {longestStreak}
               </Text>
               <Text className="text-white/60 text-sm">Longest Streak</Text>
             </View>
@@ -208,7 +266,7 @@ export default function ProfileMain() {
                 <Ionicons name="medal" size={24} color="black" />
               </View>
               <Text className="text-4xl font-bold mb-1" style={{ color: '#84cc16' }}>
-                {userProfile.totalPoints}
+                {totalPoints}
               </Text>
               <Text className="text-white/60 text-sm">Total Points</Text>
             </View>
@@ -219,7 +277,7 @@ export default function ProfileMain() {
                 <Ionicons name="radio-button-on" size={24} color="black" />
               </View>
               <Text className="text-4xl font-bold mb-1" style={{ color: '#a855f7' }}>
-                {userProfile.activeChallenges}
+                {activeChallenges}
               </Text>
               <Text className="text-white/60 text-sm">Active Now</Text>
             </View>
@@ -230,7 +288,7 @@ export default function ProfileMain() {
                 <Ionicons name="trophy" size={24} color="black" />
               </View>
               <Text className="text-4xl font-bold mb-1" style={{ color: '#f97316' }}>
-                {userProfile.totalChallenges}
+                {totalChallenges}
               </Text>
               <Text className="text-white/60 text-sm">Total Challenges</Text>
             </View>
@@ -276,7 +334,7 @@ export default function ProfileMain() {
               </View>
             </View>
             <TouchableOpacity
-              onPress={() => setIsCreateGroupOpen(true)}
+              onPress={handleCreateGroupPress}
               className="rounded-xl py-4 items-center flex-row justify-center"
               style={{ backgroundColor: '#00c2ff' }}
             >
