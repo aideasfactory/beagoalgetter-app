@@ -1,0 +1,463 @@
+# Database Schema Documentation - Goal Getter
+
+This document provides a comprehensive overview of the Supabase database structure for the Goal Getter app.
+
+**Database:** PostgreSQL via Supabase
+**Schema file:** `supabase/schema.sql`
+**Migrations:** `supabase/migrations/`
+
+---
+
+## Quick Reference
+
+**Core Models:**
+- `profiles` → Extends `auth.users`, stores user data and stats
+- `groups` → Community groups that can host challenges
+- `challenges` → Personal or group challenges with tasks
+- `tasks` → Individual tasks within challenges
+- `challenge_participants` → Users joined to challenges
+- `task_completions` → Records of completed tasks
+- `posts` → Social feed posts (success/fail updates)
+- `notifications` → User notifications
+- `post_likes` → Like tracking for posts
+- `teams` → Teams within groups
+
+**Key Relationships:**
+```
+auth.users (1) ── (1) profiles (stats, badges, streaks)
+
+profiles ── (Many) challenges (created_by)
+         ── (Many) challenge_participants (joined challenges)
+         ── (Many) posts (authored)
+         ── (Many) notifications (received)
+
+groups (1) ── (Many) challenges (group challenges)
+           ── (Many) teams
+
+challenges (1) ── (Many) tasks
+              ── (Many) challenge_participants
+              ── (Many) posts
+              ── (Many) task_completions
+
+challenge_participants ── (0..1) teams (team assignment)
+```
+
+---
+
+## Custom Types (Enums)
+
+| Enum | Values |
+|------|--------|
+| `challenge_type` | `'personal'`, `'group'` |
+| `duration_type` | `'days'`, `'weeks'` |
+| `completion_status` | `'success'`, `'fail'` |
+| `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'` |
+
+---
+
+## Tables
+
+### 1. profiles
+
+Extends `auth.users` from Supabase authentication. Auto-created on user signup via trigger.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK, FK to auth.users(id) ON DELETE CASCADE | - | User ID from auth |
+| `display_name` | TEXT | nullable | null | User's display name |
+| `avatar_url` | TEXT | nullable | null | Profile picture URL |
+| `bio` | TEXT | nullable | null | User bio/description |
+| `username` | TEXT | UNIQUE, nullable | null | Unique username |
+| `longest_streak` | INTEGER | - | 0 | Best streak achieved |
+| `current_streak` | INTEGER | - | 0 | Current active streak |
+| `total_ability_points` | INTEGER | - | 0 | Total AP earned |
+| `challenges_completed` | INTEGER | - | 0 | Completed challenges count |
+| `active_challenges` | INTEGER | - | 0 | Currently active challenges |
+| `total_challenges` | INTEGER | - | 0 | Total challenges joined |
+| `date_of_birth` | DATE | nullable | null | User date of birth |
+| `notification_preferences` | JSONB | - | `'{}'` | Notification settings |
+| `badges` | JSONB | NOT NULL | `{first_challenge: false, streak_7_days: false, streak_30_days: false, team_player: false, streak_100_days: false, perfect_month: false}` | Badge flags |
+| `push_token` | TEXT | nullable | null | Push notification token |
+| `device` | TEXT | CHECK IN ('ios', 'android') | null | Device platform |
+| `is_premium` | BOOLEAN | - | false | Premium subscription status |
+| `is_active` | BOOLEAN | - | true | Account active status |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | - | NOW() | Last update (auto-trigger) |
+
+**Indexes:** `idx_profiles_username` on `username`
+**Triggers:** `update_profiles_updated_at` (auto-updates `updated_at`), `on_auth_user_created` (auto-creates profile)
+
+**RLS Policies:**
+- Profiles are viewable by everyone (SELECT)
+- Users can update own profile (UPDATE)
+- Users can insert own profile (INSERT)
+
+---
+
+### 2. groups
+
+Community groups that can host group challenges.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Group ID |
+| `name` | TEXT | NOT NULL | - | Group name |
+| `description` | TEXT | nullable | null | Group description |
+| `logo` | TEXT | nullable | null | Group logo |
+| `color` | TEXT | nullable | null | Group brand color |
+| `location` | TEXT | nullable | null | Group location |
+| `founded` | TEXT | nullable | null | Founding year/date |
+| `member_count` | INTEGER | - | 0 | Cached member count |
+| `cover_image_url` | TEXT | nullable | null | Cover photo URL |
+| `website` | TEXT | nullable | null | Group website |
+| `social_links` | JSONB | - | `'{}'` | Social media links |
+| `is_verified` | BOOLEAN | - | false | Verified badge |
+| `created_by` | UUID | FK to auth.users(id) ON DELETE SET NULL | null | Creator user ID |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | - | NOW() | Last update (auto-trigger) |
+
+**Indexes:** `idx_groups_created_by` on `created_by`
+**Triggers:** `update_groups_updated_at`
+
+**RLS Policies:**
+- Groups are viewable by everyone (SELECT)
+- Authenticated users can create groups (INSERT)
+- Group creators can update their groups (UPDATE)
+- Group creators can delete their groups (DELETE)
+
+---
+
+### 3. challenges
+
+Main challenges - personal or group-based.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Challenge ID |
+| `title` | TEXT | NOT NULL | - | Challenge title |
+| `description` | TEXT | nullable | null | Challenge description |
+| `type` | challenge_type | NOT NULL | - | personal/group |
+| `duration` | INTEGER | NOT NULL | - | Duration value |
+| `duration_type` | duration_type | NOT NULL | - | days/weeks |
+| `start_date` | DATE | nullable | null | Challenge start date |
+| `end_date` | DATE | nullable | null | Challenge end date |
+| `status` | TEXT | CHECK IN ('draft', 'active', 'completed', 'cancelled') | 'draft' | Challenge status |
+| `is_public` | BOOLEAN | - | true | Public vs private |
+| `join_code` | TEXT | nullable | null | Private join code |
+| `requires_approval` | BOOLEAN | - | false | Membership approval needed |
+| `reminder_frequency` | TEXT | nullable | null | Reminder settings |
+| `participant_count` | INTEGER | - | 0 | Cached participant count |
+| `group_id` | UUID | FK to groups(id) ON DELETE SET NULL | null | Associated group |
+| `image_url` | TEXT | nullable | null | Challenge cover image |
+| `created_by` | UUID | FK to auth.users(id) ON DELETE CASCADE | - | Creator user ID |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | - | NOW() | Last update (auto-trigger) |
+
+**Indexes:**
+- `idx_challenges_type` on `type`
+- `idx_challenges_created_by` on `created_by`
+- `idx_challenges_group_id` on `group_id`
+- `idx_challenges_created_at` on `created_at DESC`
+
+**Triggers:** `update_challenges_updated_at`
+
+**RLS Policies:**
+- Challenges are viewable by everyone (SELECT)
+- Authenticated users can create challenges (INSERT)
+- Challenge creators can update their challenges (UPDATE)
+- Challenge creators can delete their challenges (DELETE)
+
+---
+
+### 4. tasks
+
+Individual tasks within challenges.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Task ID |
+| `challenge_id` | UUID | FK to challenges(id) ON DELETE CASCADE, NOT NULL | - | Parent challenge |
+| `title` | TEXT | NOT NULL | - | Task title |
+| `description` | TEXT | nullable | null | Task description |
+| `is_recurring` | BOOLEAN | - | false | Recurring task flag |
+| `recurring_days` | TEXT[] | - | `'{}'` | Days of week for recurring |
+| `order_index` | INTEGER | - | 0 | Sort order |
+| `required` | BOOLEAN | - | true | Mandatory vs optional |
+| `attachments` | JSONB | - | `'[]'` | Task attachments |
+| `items` | JSONB | - | `'[]'` | Sub-items/checklist |
+| `is_active` | BOOLEAN | - | true | Can be temporarily disabled |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+| `updated_at` | TIMESTAMPTZ | - | NOW() | Last update (auto-trigger) |
+
+**Indexes:**
+- `idx_tasks_challenge_id` on `challenge_id`
+- `idx_tasks_order` on `(challenge_id, order_index)`
+
+**Triggers:** `update_tasks_updated_at`
+
+**RLS Policies:**
+- Tasks are viewable by everyone (SELECT)
+- Challenge creators can manage tasks (ALL)
+
+---
+
+### 5. teams
+
+Teams within groups (not challenges). Users assigned to teams when joining group challenges.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Team ID |
+| `group_id` | UUID | FK to groups(id) ON DELETE CASCADE, NOT NULL | - | Parent group |
+| `name` | TEXT | NOT NULL | - | Team name |
+| `color` | TEXT | nullable | null | Team color |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+
+**Indexes:** `idx_teams_group_id` on `group_id`
+
+**RLS Policies:**
+- Teams are viewable by everyone (SELECT)
+- Group creators can manage teams (ALL)
+
+---
+
+### 6. challenge_participants
+
+Junction table tracking users joined to challenges.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Participant ID |
+| `challenge_id` | UUID | FK to challenges(id) ON DELETE CASCADE, NOT NULL | - | Challenge ID |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | User ID |
+| `team_id` | UUID | FK to teams(id) ON DELETE SET NULL | null | Team assignment |
+| `status` | TEXT | CHECK IN ('active', 'paused', 'quit', 'completed', 'failed') | 'active' | Participation status |
+| `joined_at` | TIMESTAMPTZ | - | NOW() | Join timestamp |
+| `left_at` | TIMESTAMPTZ | nullable | null | When they left |
+| `current_streak` | INTEGER | - | 0 | Current streak in challenge |
+| `longest_streak` | INTEGER | - | 0 | Best streak in challenge |
+| `total_ability_points` | INTEGER | - | 0 | Points earned in challenge |
+| `notes` | TEXT | nullable | null | Personal notes |
+| `quit_reason` | TEXT | nullable | null | Why they quit |
+
+**Constraints:** UNIQUE(`challenge_id`, `user_id`)
+
+**Indexes:**
+- `idx_participants_challenge_id` on `challenge_id`
+- `idx_participants_user_id` on `user_id`
+- `idx_participants_team_id` on `team_id`
+
+**RLS Policies:**
+- Participants are viewable by everyone (SELECT)
+- Users can join challenges (INSERT where user_id = auth.uid)
+- Users can leave challenges (DELETE where user_id = auth.uid)
+- Challenge creators can manage participants (ALL)
+
+---
+
+### 7. task_completions
+
+Records of task completions by users.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Completion ID |
+| `task_id` | UUID | FK to tasks(id) ON DELETE CASCADE, NOT NULL | - | Task ID |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | User ID |
+| `challenge_id` | UUID | FK to challenges(id) ON DELETE CASCADE, NOT NULL | - | Challenge ID |
+| `completed_at` | TIMESTAMPTZ | - | NOW() | Completion timestamp |
+| `notes` | TEXT | nullable | null | User notes |
+| `proof_image_url` | TEXT | nullable | null | Photo proof |
+| `ability_points_awarded` | INTEGER | - | 0 | Points earned |
+| `status` | completion_status | NOT NULL | - | success/fail |
+
+**Indexes:**
+- `idx_completions_task_id` on `task_id`
+- `idx_completions_user_id` on `user_id`
+- `idx_completions_challenge_id` on `challenge_id`
+- `idx_completions_completed_at` on `completed_at DESC`
+
+**RLS Policies:**
+- Users can view relevant task completions (own + challenge participants)
+- Users can create their own task completions (INSERT)
+- Users can update their own task completions (UPDATE)
+- Users can delete their own task completions (DELETE)
+
+---
+
+### 8. posts
+
+Social feed posts tied to challenges.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Post ID |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | Author ID |
+| `challenge_id` | UUID | FK to challenges(id) ON DELETE CASCADE, NOT NULL | - | Challenge ID |
+| `message` | TEXT | NOT NULL | - | Post message |
+| `note` | TEXT | nullable | null | Additional note |
+| `image_url` | TEXT | nullable | null | Post image |
+| `type` | completion_status | NOT NULL | - | success/fail |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+| `likes_count` | INTEGER | - | 0 | Total likes (auto-updated via trigger) |
+| `ability_points_given` | INTEGER | - | 0 | Total AP given to post |
+
+**Indexes:**
+- `idx_posts_user_id` on `user_id`
+- `idx_posts_challenge_id` on `challenge_id`
+- `idx_posts_created_at` on `created_at DESC`
+- `idx_posts_type` on `type`
+
+**Triggers:** `on_post_like_added` (increment), `on_post_like_removed` (decrement)
+
+**RLS Policies:**
+- Posts are viewable by everyone (SELECT)
+- Users can create posts in their challenges (INSERT - must be participant)
+- Users can update their own posts (UPDATE)
+- Users can delete their own posts (DELETE)
+
+---
+
+### 9. notifications
+
+User notifications.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Notification ID |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | Recipient ID |
+| `type` | notification_type | NOT NULL | - | like/points/challenge/streak |
+| `message` | TEXT | NOT NULL | - | Notification message |
+| `from_user_id` | UUID | FK to auth.users(id) ON DELETE SET NULL | null | Sender ID |
+| `post_id` | UUID | FK to posts(id) ON DELETE CASCADE | null | Related post |
+| `read` | BOOLEAN | - | false | Read status |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+
+**Indexes:**
+- `idx_notifications_user_id` on `user_id`
+- `idx_notifications_read` on `(user_id, read)`
+- `idx_notifications_created_at` on `created_at DESC`
+
+**RLS Policies:**
+- Users can only view their own notifications (SELECT)
+- Anyone can create notifications (INSERT - for system notifications)
+- Users can update their own notifications (UPDATE - mark as read)
+- Users can delete their own notifications (DELETE)
+
+---
+
+### 10. post_likes
+
+Tracks who liked which posts.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Like ID |
+| `post_id` | UUID | FK to posts(id) ON DELETE CASCADE, NOT NULL | - | Post ID |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | User who liked |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Like timestamp |
+
+**Constraints:** UNIQUE(`post_id`, `user_id`)
+
+**Indexes:**
+- `idx_post_likes_post_id` on `post_id`
+- `idx_post_likes_user_id` on `user_id`
+
+**RLS Policies:**
+- Likes are viewable by everyone (SELECT)
+- Users can like posts (INSERT where user_id = auth.uid)
+- Users can unlike posts (DELETE where user_id = auth.uid)
+
+---
+
+## Database Views
+
+### posts_with_details
+Posts joined with user, challenge, and group information.
+
+**Fields:** All from `posts` + `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `group_name`, `group_logo`, `group_color`
+
+### challenge_leaderboard
+Ranked participants per challenge.
+
+**Fields:** All from `challenge_participants` + `display_name`, `avatar_url`, `username`, `rank` (computed via RANK() window function)
+
+### notifications_with_users
+Notifications with sender profile details.
+
+**Fields:** All from `notifications` + `from_user_display_name`, `from_user_avatar_url`, `from_user_username`
+
+---
+
+## Functions & Triggers
+
+| Function | Purpose | Trigger |
+|----------|---------|---------|
+| `update_updated_at_column()` | Auto-updates `updated_at` timestamp | ON UPDATE for profiles, challenges, groups, tasks |
+| `handle_new_user()` | Auto-creates profile on signup | AFTER INSERT on auth.users |
+| `increment_post_likes()` | Increments `likes_count` on posts | AFTER INSERT on post_likes |
+| `decrement_post_likes()` | Decrements `likes_count` on posts | AFTER DELETE on post_likes |
+
+---
+
+## Storage Buckets
+
+| Bucket | Access | Purpose |
+|--------|--------|---------|
+| `avatars` | Public read, owner upload | User profile pictures |
+| `challenge-images` | Public read, auth upload | Challenge cover images |
+| `post-images` | Public read, auth upload | Post/completion images |
+
+---
+
+## Migrations Log
+
+| # | File | Description | Date |
+|---|------|-------------|------|
+| 001 | `001_add_profile_streak_and_badges.sql` | Added `current_streak` and `badges` JSONB to profiles | - |
+
+---
+
+## Entity Relationship Diagram
+
+```
+auth.users (1) ──── (1) profiles
+                         │
+                         ├── creates ──── (Many) groups
+                         │                   │
+                         │                   ├── (Many) teams
+                         │                   │
+                         │                   └── (Many) challenges
+                         │                        │
+                         ├── creates ──── (Many) challenges
+                         │                   │
+                         │                   ├── (Many) tasks
+                         │                   │
+                         │                   ├── (Many) challenge_participants
+                         │                   │       │
+                         │                   │       └── (0..1) teams
+                         │                   │
+                         │                   ├── (Many) task_completions
+                         │                   │
+                         │                   └── (Many) posts
+                         │                        │
+                         │                        └── (Many) post_likes
+                         │
+                         ├── joins ──── (Many) challenge_participants
+                         │
+                         ├── authors ── (Many) posts
+                         │
+                         └── receives ── (Many) notifications
+```
+
+---
+
+## Notes for Development
+
+1. **All IDs are UUIDs** - generated via `uuid_generate_v4()`
+2. **RLS is enabled on ALL tables** - queries always run as the authenticated user
+3. **Cached counts** - `likes_count`, `participant_count`, `member_count` are denormalized for performance
+4. **Timestamps** - All use `TIMESTAMP WITH TIME ZONE` (stored as UTC)
+5. **Badges** - Stored as JSONB boolean flags on the `profiles` table
+6. **Auto-triggers** - `updated_at` is auto-managed, profile is auto-created on signup
+7. **Views** - Use `posts_with_details`, `challenge_leaderboard`, `notifications_with_users` for complex queries

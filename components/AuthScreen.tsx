@@ -150,42 +150,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
                   : 'Continue your streak'}
               </Text>
             </View>
-
-            {/* Social Auth Buttons */}
-            <View className="flex-row gap-3 mb-6">
-              {/* Google */}
-              <TouchableOpacity
-                onPress={handleGoogleSignIn}
-                className="flex-1 bg-white/10 border border-white/20 rounded-xl p-4 items-center backdrop-blur-xl"
-                activeOpacity={0.7}
-              >
-                <Image
-                  source={require('@/assets/images/google_icon.png')}
-                  style={{ width: 24, height: 24 }}
-                />
-              </TouchableOpacity>
-
-              {/* Email / Magic Link */}
-              <TouchableOpacity
-                onPress={handleMagicLink}
-                className="flex-1 bg-white/10 border border-white/20 rounded-xl p-4 items-center backdrop-blur-xl"
-                activeOpacity={0.7}
-              >
-                <Ionicons name="mail" size={24} color="white" />
-              </TouchableOpacity>
-
-              {/* Apple */}
-              {Platform.OS === 'ios' && (
-                <TouchableOpacity
-                  onPress={handleAppleSignIn}
-                  className="flex-1 bg-white/10 border border-white/20 rounded-xl p-4 items-center backdrop-blur-xl"
-                  activeOpacity={0.7}
-                >
-                  <Ionicons name="logo-apple" size={24} color="white" />
-                </TouchableOpacity>
-              )}
-            </View>
-
+ 
             {/* Divider */}
             <View className="flex-row items-center my-6">
               <View className="flex-1 h-[1px] bg-white/10" />
