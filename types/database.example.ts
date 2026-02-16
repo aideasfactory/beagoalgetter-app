@@ -131,6 +131,8 @@ export interface ChallengeParticipant {
   total_ability_points: number;
 }
 
+export type MoodType = 'very-sad' | 'sad' | 'neutral' | 'happy' | 'very-happy';
+
 export interface TaskCompletion {
   id: string;
   task_id: string;
@@ -138,6 +140,8 @@ export interface TaskCompletion {
   challenge_id: string;
   completed_at: string;
   notes: string | null;
+  proof_image_url: string | null;
+  mood: MoodType | null;
   ability_points_awarded: number;
   status: CompletionStatus;
 }

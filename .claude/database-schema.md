@@ -180,7 +180,7 @@ Individual tasks within challenges.
 | `title` | TEXT | NOT NULL | - | Task title |
 | `description` | TEXT | nullable | null | Task description |
 | `is_recurring` | BOOLEAN | - | false | Recurring task flag |
-| `recurring_days` | TEXT[] | - | `'{}'` | Days of week for recurring |
+| `recurring_days` | TEXT[] | - | `'{}'` | ISO 8601 day numbers (1=Mon, 7=Sun) |
 | `order_index` | INTEGER | - | 0 | Sort order |
 | `required` | BOOLEAN | - | true | Mandatory vs optional |
 | `attachments` | JSONB | - | `'[]'` | Task attachments |
@@ -268,6 +268,7 @@ Records of task completions by users.
 | `completed_at` | TIMESTAMPTZ | - | NOW() | Completion timestamp |
 | `notes` | TEXT | nullable | null | User notes |
 | `proof_image_url` | TEXT | nullable | null | Photo proof |
+| `mood` | TEXT | nullable | null | User mood: very-sad, sad, neutral, happy, very-happy |
 | `ability_points_awarded` | INTEGER | - | 0 | Points earned |
 | `status` | completion_status | NOT NULL | - | success/fail |
 
@@ -415,6 +416,7 @@ Notifications with sender profile details.
 | # | File | Description | Date |
 |---|------|-------------|------|
 | 001 | `001_add_profile_streak_and_badges.sql` | Added `current_streak` and `badges` JSONB to profiles | - |
+| 002 | `002_add_mood_and_convert_recurring_days.sql` | Added `mood` TEXT to task_completions; converted `recurring_days` from day names to ISO 8601 numbers | 2026-02-16 |
 
 ---
 

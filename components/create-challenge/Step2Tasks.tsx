@@ -23,14 +23,15 @@ interface Step2TasksProps {
   onUpdate: (updates: Partial<Step2TasksProps['data']>) => void;
 }
 
+// ISO 8601 day numbers: 1=Monday through 7=Sunday
 const DAYS_OF_WEEK = [
-  { id: 'monday', label: 'M', full: 'Monday' },
-  { id: 'tuesday', label: 'T', full: 'Tuesday' },
-  { id: 'wednesday', label: 'W', full: 'Wednesday' },
-  { id: 'thursday', label: 'T', full: 'Thursday' },
-  { id: 'friday', label: 'F', full: 'Friday' },
-  { id: 'saturday', label: 'S', full: 'Saturday' },
-  { id: 'sunday', label: 'S', full: 'Sunday' },
+  { id: '1', label: 'M', full: 'Monday' },
+  { id: '2', label: 'T', full: 'Tuesday' },
+  { id: '3', label: 'W', full: 'Wednesday' },
+  { id: '4', label: 'T', full: 'Thursday' },
+  { id: '5', label: 'F', full: 'Friday' },
+  { id: '6', label: 'S', full: 'Saturday' },
+  { id: '7', label: 'S', full: 'Sunday' },
 ];
 
 export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {

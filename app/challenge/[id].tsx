@@ -1,41 +1,52 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TaskTrackerTab, LeaderboardTab, MessagesTab, AdminTab } from '@/components/challenge-tabs';
-
-// Mock challenge data (replace with Supabase query)
-const mockChallengeData = {
-  id: 'c1',
-  title: '30-Day Fitness Challenge',
-  description: 'Build consistency with daily workouts and healthy habits. Track your progress, stay accountable, and achieve your fitness goals together!',
-  image: 'https://images.unsplash.com/photo-1758520705189-a6b56a7ae832?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwcnVubmluZyUyMG1vdGl2YXRpb258ZW58MXx8fHwxNzYyMjg5MTg4fDA&ixlib=rb-4.1.0&q=80&w=1080',
-  type: 'Group',
-  progress: 50,
-  daysCompleted: 15,
-  totalDays: 30,
-  currentStreak: 15,
-  members: 12,
-  startDate: 'Oct 1, 2025',
-  endDate: 'Oct 30, 2025',
-  totalPoints: 1250,
-  createdById: 'user-1',
-};
+import { useChallengeDetail } from '@/hooks/useChallengeDetail';
+import { useSession } from '@/context/auth';
 
 export default function ChallengeDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useSession();
+  const { challenge, loading, error, refetch } = useChallengeDetail(id);
   const [activeTab, setActiveTab] = useState<'tasks' | 'leaderboard' | 'messages' | 'admin'>('tasks');
 
-  // TODO: Fetch challenge data from Supabase using id
-  const challenge = mockChallengeData;
-  const currentUserId = 'user-1'; // TODO: Replace with authenticated user id
-  const isGroupChallenge = challenge.type === 'Group';
-  const isChallengeOwner = challenge.createdById === currentUserId;
+  if (loading) {
+    return (
+      <View className="flex-1 bg-black items-center justify-center">
+        <ActivityIndicator size="large" color="#00c2ff" />
+      </View>
+    );
+  }
+
+  if (error || !challenge) {
+    return (
+      <View className="flex-1 bg-black items-center justify-center px-6">
+        <Ionicons name="alert-circle-outline" size={48} color="rgba(255,255,255,0.4)" />
+        <Text className="text-white/60 mt-4 mb-4 text-center">
+          {error || 'Challenge not found'}
+        </Text>
+        <TouchableOpacity
+          onPress={refetch}
+          className="px-6 py-3 rounded-xl"
+          style={{ backgroundColor: '#00c2ff' }}
+        >
+          <Text className="text-black font-bold">Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const currentUserId = user?.id || '';
+  const isGroupChallenge = challenge.type === 'group';
+  const isChallengeOwner = challenge.created_by === currentUserId;
   const showLeaderboardTab = isGroupChallenge;
   const showAdminTab = isGroupChallenge && isChallengeOwner;
+  const typeLabel = challenge.type === 'personal' ? 'Personal' : 'Group';
 
   return (
     <View className="flex-1 bg-black">
@@ -43,12 +54,18 @@ export default function ChallengeDetailsScreen() {
         {/* Hero Image Header */}
         <View style={{ height: 480, position: 'relative' }}>
           {/* Background Image */}
-          <Image
-            source={{ uri: challenge.image }}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-          />
-          
+          {challenge.image_url ? (
+            <Image
+              source={{ uri: challenge.image_url }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+            />
+          ) : (
+            <View className="w-full h-full bg-white/5 items-center justify-center">
+              <Ionicons name="trophy" size={64} color="rgba(255,255,255,0.2)" />
+            </View>
+          )}
+
           {/* Dark Gradient Overlay */}
           <LinearGradient
             colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.5)', '#000000']}
@@ -74,7 +91,7 @@ export default function ChallengeDetailsScreen() {
             <View className="flex-row items-center mb-3">
               <View className="bg-white/10 px-3 py-1 rounded-full border border-white/20">
                 <Text className="text-white text-xs font-bold">
-                  {challenge.type} • {challenge.members} members
+                  {typeLabel} • {challenge.participant_count} members
                 </Text>
               </View>
             </View>
@@ -109,7 +126,7 @@ export default function ChallengeDetailsScreen() {
                 <View className="w-10 h-10 rounded-xl mb-2 items-center justify-center" style={{ backgroundColor: '#a855f7' }}>
                   <Ionicons name="people" size={20} color="black" />
                 </View>
-                <Text className="text-white font-bold mb-1">{challenge.members}</Text>
+                <Text className="text-white font-bold mb-1">{challenge.participant_count}</Text>
                 <Text className="text-white/80 text-xs">Active</Text>
               </View>
 
@@ -118,8 +135,8 @@ export default function ChallengeDetailsScreen() {
                 <View className="w-10 h-10 rounded-xl mb-2 items-center justify-center" style={{ backgroundColor: '#f97316' }}>
                   <Ionicons name="calendar" size={20} color="black" />
                 </View>
-                <Text className="text-white font-bold mb-1">{challenge.totalDays - challenge.daysCompleted}</Text>
-                <Text className="text-white/80 text-xs">Remaining</Text>
+                <Text className="text-white font-bold mb-1">{challenge.daysRemaining}</Text>
+                <Text className="text-white/80 text-xs">Days</Text>
               </View>
             </View>
           </View>
@@ -135,7 +152,7 @@ export default function ChallengeDetailsScreen() {
               </Text>
             </View>
             <View className="h-3 bg-white/10 rounded-full overflow-hidden">
-              <View 
+              <View
                 className="h-full rounded-full"
                 style={{ width: `${challenge.progress}%`, backgroundColor: '#00c2ff' }}
               />
@@ -153,15 +170,15 @@ export default function ChallengeDetailsScreen() {
             <TouchableOpacity
               onPress={() => setActiveTab('tasks')}
               className="flex-1 py-4 flex-row items-center justify-center gap-2"
-              style={{ 
-                borderBottomWidth: activeTab === 'tasks' ? 2 : 0, 
-                borderBottomColor: '#00c2ff' 
+              style={{
+                borderBottomWidth: activeTab === 'tasks' ? 2 : 0,
+                borderBottomColor: '#00c2ff'
               }}
             >
-              <Ionicons 
-                name="checkbox" 
-                size={16} 
-                color={activeTab === 'tasks' ? 'white' : 'rgba(255,255,255,0.6)'} 
+              <Ionicons
+                name="checkbox"
+                size={16}
+                color={activeTab === 'tasks' ? 'white' : 'rgba(255,255,255,0.6)'}
               />
               <Text className={activeTab === 'tasks' ? 'text-white font-bold' : 'text-white/60'}>
                 Tasks
@@ -211,15 +228,15 @@ export default function ChallengeDetailsScreen() {
             {/* <TouchableOpacity
               onPress={() => setActiveTab('messages')}
               className="flex-1 py-4 flex-row items-center justify-center gap-2"
-              style={{ 
-                borderBottomWidth: activeTab === 'messages' ? 2 : 0, 
-                borderBottomColor: '#00c2ff' 
+              style={{
+                borderBottomWidth: activeTab === 'messages' ? 2 : 0,
+                borderBottomColor: '#00c2ff'
               }}
             >
-              <Ionicons 
-                name="chatbox" 
-                size={16} 
-                color={activeTab === 'messages' ? 'white' : 'rgba(255,255,255,0.6)'} 
+              <Ionicons
+                name="chatbox"
+                size={16}
+                color={activeTab === 'messages' ? 'white' : 'rgba(255,255,255,0.6)'}
               />
               <Text className={activeTab === 'messages' ? 'text-white font-bold' : 'text-white/60'}>
                 Messages
@@ -230,7 +247,14 @@ export default function ChallengeDetailsScreen() {
 
         {/* Tab Content */}
         <View style={{ minHeight: 600 }}>
-          {activeTab === 'tasks' && <TaskTrackerTab challengeId={id} />}
+          {activeTab === 'tasks' && (
+            <TaskTrackerTab
+              challengeId={id}
+              challengeTitle={challenge.title}
+              currentStreak={challenge.currentStreak}
+              onDayCompleted={refetch}
+            />
+          )}
           {activeTab === 'leaderboard' && showLeaderboardTab && <LeaderboardTab challengeId={id} />}
           {activeTab === 'admin' && showAdminTab && <AdminTab challengeId={id} />}
           {/* {activeTab === 'messages' && <MessagesTab challengeId={id} />} */}
