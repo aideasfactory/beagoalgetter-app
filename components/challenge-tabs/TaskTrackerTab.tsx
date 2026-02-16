@@ -315,7 +315,7 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
 
         {/* Task Cards - one per task */}
         {localTasks.map((task) => (
-          <View key={task.id} className='my-3 bg-white/5 border border-white/10 rounded-2xl p-4'>
+          <View key={task.id} className='my-3 bg-white/5'>
             <Text className="text-white text-lg font-bold">{task.title}</Text>
             {task.description && (
               <Text className="text-white/60 text-base mb-4">{task.description}</Text>

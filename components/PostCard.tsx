@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,7 @@ export interface Post {
   timestamp: string;
   likes: number;
   abilityPointsGiven: number;
+  isLiked?: boolean;
 }
 
 interface PostCardProps {
@@ -36,16 +37,26 @@ interface PostCardProps {
   onChallengeClick: (challengeId: string) => void;
   onGivePoints: (post: Post) => void;
   onGroupClick?: (group: NonNullable<Post['group']>) => void;
+  onLike?: (postId: string, liked: boolean) => void;
 }
 
-export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick }: PostCardProps) {
-  const [isLiked, setIsLiked] = useState(false);
+const APP_ICON = require('@/assets/images/icon.png');
+
+export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, onLike }: PostCardProps) {
+  const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likes);
 
+  // Sync with parent state (reverts optimistic update on network failure)
+  useEffect(() => { setIsLiked(post.isLiked ?? false); }, [post.isLiked]);
+  useEffect(() => { setLikeCount(post.likes); }, [post.likes]);
+
+  const avatarSource = post.user.avatar ? { uri: post.user.avatar } : APP_ICON;
+
   const handleLike = () => {
-    console.log('Like clicked for post:', post.id);
-    setIsLiked(!isLiked);
-    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+    setLikeCount(prev => newLiked ? prev + 1 : prev - 1);
+    onLike?.(post.id, newLiked);
   };
   return (
     <View className="rounded-2xl overflow-hidden bg-[#1a1a1a] border border-white/10 mb-4">
@@ -91,7 +102,7 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick }:
             {/* User Avatar */}
             <View className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10">
               <Image
-                source={{ uri: post.user.avatar }}
+                source={avatarSource}
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
               />

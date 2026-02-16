@@ -1,4 +1,6 @@
 import { useState, useCallback } from 'react';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 import { supabase } from '@/supabase';
 import { useSession } from '@/context/auth';
 import type { MoodType } from '@/types/database.example';
@@ -26,13 +28,14 @@ async function uploadProofImage(userId: string, imageUri: string): Promise<strin
   const mimeExt = ext === 'jpg' ? 'jpeg' : ext;
   const fileName = `${userId}/${Date.now()}.${ext}`;
 
-  // Read the file as a blob for upload
-  const response = await fetch(imageUri);
-  const blob = await response.blob();
+  // Read the file as base64 and decode to ArrayBuffer for reliable RN upload
+  const base64 = await FileSystem.readAsStringAsync(imageUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
 
   const { error: uploadError } = await supabase.storage
     .from('post-images')
-    .upload(fileName, blob, { contentType: `image/${mimeExt}` });
+    .upload(fileName, decode(base64), { contentType: `image/${mimeExt}` });
 
   if (uploadError) throw uploadError;
 

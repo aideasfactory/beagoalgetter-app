@@ -20,6 +20,7 @@ This document provides a comprehensive overview of the Supabase database structu
 - `posts` → Social feed posts (success/fail updates)
 - `notifications` → User notifications
 - `post_likes` → Like tracking for posts
+- `post_ability_points` → Ability points tracking for posts
 - `teams` → Teams within groups
 
 **Key Relationships:**
@@ -371,12 +372,43 @@ Tracks who liked which posts.
 
 ---
 
+### 11. post_ability_points
+
+Tracks which users gave ability points to which posts.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Record ID |
+| `post_id` | UUID | FK to posts(id) ON DELETE CASCADE, NOT NULL | - | Post receiving points |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | User giving points |
+| `points` | INTEGER | NOT NULL, CHECK > 0 | - | Number of points given |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Timestamp |
+
+**Constraints:** UNIQUE(`post_id`, `user_id`)
+
+**Indexes:**
+- `idx_post_ability_points_post_id` on `post_id`
+- `idx_post_ability_points_user_id` on `user_id`
+
+**Triggers:**
+- `on_ability_points_added` — Recalculates `posts.ability_points_given` as SUM of all points for that post (AFTER INSERT)
+- `on_ability_points_updated` — Same recalculation (AFTER UPDATE)
+- `on_ability_points_removed` — Same recalculation (AFTER DELETE)
+
+**RLS Policies:**
+- Ability points are viewable by everyone (SELECT)
+- Users can give ability points (INSERT where user_id = auth.uid)
+- Users can update their own ability points (UPDATE where user_id = auth.uid)
+- Users can remove their own ability points (DELETE where user_id = auth.uid)
+
+---
+
 ## Database Views
 
 ### posts_with_details
-Posts joined with user, challenge, and group information.
+Posts joined with user, challenge, and group information. The `ability_points_given` field is computed as `SUM(points)` from `post_ability_points` (not the cached column on `posts`).
 
-**Fields:** All from `posts` + `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `group_name`, `group_logo`, `group_color`
+**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `group_id`, `group_name`, `group_logo`, `group_color`
 
 ### challenge_leaderboard
 Ranked participants per challenge.
@@ -398,6 +430,7 @@ Notifications with sender profile details.
 | `handle_new_user()` | Auto-creates profile on signup | AFTER INSERT on auth.users |
 | `increment_post_likes()` | Increments `likes_count` on posts | AFTER INSERT on post_likes |
 | `decrement_post_likes()` | Decrements `likes_count` on posts | AFTER DELETE on post_likes |
+| `recalculate_post_ability_points()` | Recalculates `ability_points_given` on posts as SUM | AFTER INSERT/UPDATE/DELETE on post_ability_points |
 
 ---
 
@@ -417,6 +450,9 @@ Notifications with sender profile details.
 |---|------|-------------|------|
 | 001 | `001_add_profile_streak_and_badges.sql` | Added `current_streak` and `badges` JSONB to profiles | - |
 | 002 | `002_add_mood_and_convert_recurring_days.sql` | Added `mood` TEXT to task_completions; converted `recurring_days` from day names to ISO 8601 numbers | 2026-02-16 |
+| 003 | `003_update_posts_view_add_participant_count.sql` | Updated `posts_with_details` view to add `challenge_participant_count` and `group_id` columns | 2026-02-16 |
+| 004 | `004_add_post_ability_points.sql` | Added `post_ability_points` table with triggers to auto-sum into `posts.ability_points_given` | 2026-02-16 |
+| 005 | `005_update_posts_view_ability_points_sum.sql` | Updated `posts_with_details` view to compute `ability_points_given` as SUM from `post_ability_points` instead of using cached column | 2026-02-16 |
 
 ---
 

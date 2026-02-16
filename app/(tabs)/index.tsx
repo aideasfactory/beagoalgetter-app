@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, ScrollView, Text, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -15,128 +15,9 @@ import {
   GroupInfo,
 } from '@/components';
 import type { NotificationWithUser } from '@/types/database.example';
-import { useUserNotifications } from '@/hooks';
-
-// Mock group data
-const boroRunnersGroup: GroupInfo = {
-  name: 'Boro Runners',
-  logo: '🏃',
-  color: '#991b1b',
-  description:
-    'A community of passionate runners from Middlesbrough committed to staying active, supporting each other, and crushing fitness goals together. Whether you\'re training for your first 5K or your tenth marathon, we\'re here to motivate and inspire!',
-  members: 247,
-  challenges: 12,
-  founded: 'January 2024',
-  location: 'Middlesbrough, UK',
-  stats: {
-    totalRuns: 1842,
-    totalDistance: '12,438 km',
-    activeMembers: 189,
-  },
-  recentMembers: [
-    { name: 'Sarah Johnson', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
-    { name: 'David Rodriguez', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David' },
-    { name: 'Emma Williams', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma' },
-    { name: 'Mike Chen', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike' },
-  ],
-};
-
-// Mock feed posts data
-const mockPosts: Post[] = [
-  {
-    id: '1',
-    user: {
-      name: 'Sarah Johnson',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-      streak: 15,
-      abilityPoints: 245,
-    },
-    challenge: {
-      id: 'c1',
-      name: '30-Day Fitness Challenge',
-      type: 'Group',
-      members: 12,
-    },
-    group: {
-      name: 'Boro Runners',
-      logo: '🏃',
-      color: '#991b1b',
-    },
-    type: 'success',
-    message: 'Completed Day 15! Morning run + strength training ✓',
-    image: 'https://images.unsplash.com/photo-1758684050596-15a238d24202?w=600',
-    note: 'Felt amazing today! The morning run was tough but worth it.',
-    timestamp: '2 hours ago',
-    likes: 23,
-    abilityPointsGiven: 5,
-  },
-  {
-    id: '2',
-    user: {
-      name: 'Mike Chen',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
-      streak: 0,
-      abilityPoints: 180,
-    },
-    challenge: {
-      id: 'c2',
-      name: 'Read 20 Pages Daily',
-      type: 'Personal',
-      members: 1,
-    },
-    type: 'fail',
-    message: 'Missed Day 8 - Streak reset to 0',
-    timestamp: '5 hours ago',
-    likes: 8,
-    abilityPointsGiven: 0,
-  },
-  {
-    id: '3',
-    user: {
-      name: 'Emma Williams',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emma',
-      streak: 22,
-      abilityPoints: 310,
-    },
-    challenge: {
-      id: 'c3',
-      name: 'No Sugar November',
-      type: 'Group',
-      members: 8,
-    },
-    type: 'success',
-    message: 'Day 22 complete! Resisted birthday cake at the office 🎉',
-    timestamp: '1 day ago',
-    likes: 45,
-    abilityPointsGiven: 12,
-  },
-  {
-    id: '4',
-    user: {
-      name: 'David Rodriguez',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
-      streak: 7,
-      abilityPoints: 95,
-    },
-    challenge: {
-      id: 'c1',
-      name: '30-Day Fitness Challenge',
-      type: 'Group',
-      members: 12,
-    },
-    group: {
-      name: 'Boro Runners',
-      logo: '🏃',
-      color: '#991b1b',
-    },
-    type: 'success',
-    message: 'Week 1 done! Consistency is key 💪',
-    image: 'https://images.unsplash.com/photo-1689007669034-9ef988d89742?w=600',
-    timestamp: '1 day ago',
-    likes: 31,
-    abilityPointsGiven: 8,
-  },
-];
+import { useUserNotifications, useFeedPosts } from '@/hooks';
+import type { FeedPost } from '@/hooks/useFeedPosts';
+import { groupService, postService } from '@/services';
 
 type TabType = 'all' | 'my-challenges';
 
@@ -167,35 +48,41 @@ export default function HomeScreen() {
       })),
     [dbNotifications],
   );
+
   const [activeTab, setActiveTab] = useState<TabType>('all');
+  const { posts, loading, refreshing, error, refetch, handleLike } = useFeedPosts(activeTab);
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengePreview | null>(null);
   const [givePointsPost, setGivePointsPost] = useState<Post | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null);
 
-  // Filter posts based on active tab (mock filter for now)
-  const filteredPosts = useMemo(() => {
-    if (activeTab === 'my-challenges') {
-      // Filter to only show posts from challenges the user is in (c1 in this example)
-      return mockPosts.filter((post) => post.challenge.id === 'c1' || post.challenge.id === 'c2');
-    }
-    return mockPosts;
-  }, [activeTab]);
+  const handleChallengeClick = useCallback(
+    async (challengeId: string) => {
+      const post = posts.find((p) => p.challenge.id === challengeId);
+      if (post) {
+        // Show modal immediately with basic data
+        setSelectedChallenge({
+          id: post.challenge.id,
+          name: post.challenge.name,
+          type: post.challenge.type,
+          members: post.challenge.members,
+        });
 
-  const handleChallengeClick = (challengeId: string) => {
-    // Find the challenge from the posts
-    const post = mockPosts.find((p) => p.challenge.id === challengeId);
-    if (post) {
-      setSelectedChallenge({
-        id: post.challenge.id,
-        name: post.challenge.name,
-        type: post.challenge.type,
-        members: post.challenge.members,
-        duration: '30 Days',
-        completionPercentage: 45,
-      });
-    }
-  };
+        // Fetch description in background
+        try {
+          const description = await postService.getChallengeDescription(challengeId);
+          if (description) {
+            setSelectedChallenge((prev) =>
+              prev && prev.id === challengeId ? { ...prev, description } : prev,
+            );
+          }
+        } catch {
+          // Description fetch failed — modal shows fallback text
+        }
+      }
+    },
+    [posts],
+  );
 
   const handleViewChallenge = () => {
     if (selectedChallenge) {
@@ -208,14 +95,82 @@ export default function HomeScreen() {
     setGivePointsPost(post);
   };
 
-  const handleConfirmPoints = (points: number) => {
-    console.log(`Gave ${points} points to ${givePointsPost?.user.name}`);
-    setGivePointsPost(null);
-  };
+  const handleConfirmPoints = useCallback(
+    async (points: number) => {
+      if (!givePointsPost) return;
+      try {
+        await postService.giveAbilityPoints(givePointsPost.id, points);
+      } catch {
+        // Points save failed silently — trigger still shows success alert
+      }
+      setGivePointsPost(null);
+    },
+    [givePointsPost],
+  );
 
-  const handleGroupClick = (group: NonNullable<Post['group']>) => {
-    setSelectedGroup(boroRunnersGroup);
-  };
+  const handleGroupClick = useCallback(
+    async (group: NonNullable<Post['group']>) => {
+      // Find the post with this group to get the groupId
+      const post = posts.find(
+        (p): p is FeedPost => p.group?.name === group.name && !!(p as FeedPost).groupId,
+      );
+      const groupId = post?.groupId;
+
+      if (!groupId) {
+        // Fallback: show modal with basic info from the post
+        setSelectedGroup({
+          name: group.name,
+          logo: group.logo,
+          color: group.color,
+          description: '',
+          members: 0,
+          challenges: 0,
+          founded: '',
+          location: '',
+          stats: { totalRuns: 0, totalDistance: '0', activeMembers: 0 },
+          recentMembers: [],
+        });
+        return;
+      }
+
+      try {
+        const [groupData, challengeCount] = await Promise.all([
+          groupService.getGroupById(groupId),
+          groupService.getGroupChallengeCount(groupId),
+        ]);
+
+        if (groupData) {
+          setSelectedGroup({
+            name: groupData.name,
+            logo: groupData.logo || group.logo,
+            color: groupData.color || group.color,
+            description: groupData.description || '',
+            members: groupData.member_count,
+            challenges: challengeCount,
+            founded: groupData.founded || '',
+            location: groupData.location || '',
+            stats: { totalRuns: 0, totalDistance: '0', activeMembers: groupData.member_count },
+            recentMembers: [],
+          });
+        }
+      } catch {
+        // Fallback to basic info from post on error
+        setSelectedGroup({
+          name: group.name,
+          logo: group.logo,
+          color: group.color,
+          description: '',
+          members: 0,
+          challenges: 0,
+          founded: '',
+          location: '',
+          stats: { totalRuns: 0, totalDistance: '0', activeMembers: 0 },
+          recentMembers: [],
+        });
+      }
+    },
+    [posts],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-black">
@@ -281,16 +236,55 @@ export default function HomeScreen() {
       </View>
 
       {/* Feed */}
-      <ScrollView className="flex-1 px-4 py-6" showsVerticalScrollIndicator={false}>
-        {filteredPosts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            onChallengeClick={handleChallengeClick}
-            onGivePoints={handleGivePoints}
-            onGroupClick={handleGroupClick}
+      <ScrollView
+        className="flex-1 px-4 py-6"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={refetch}
+            tintColor="#00c2ff"
+            colors={['#00c2ff']}
           />
-        ))}
+        }
+      >
+        {loading ? (
+          <View className="flex-1 items-center justify-center py-20">
+            <ActivityIndicator size="large" color="#00c2ff" />
+          </View>
+        ) : error ? (
+          <View className="flex-1 items-center justify-center py-20">
+            <Ionicons name="alert-circle-outline" size={48} color="rgba(255,255,255,0.4)" />
+            <Text className="text-white/60 text-base mt-4 mb-4">Failed to load posts</Text>
+            <TouchableOpacity
+              onPress={refetch}
+              className="px-6 py-2 rounded-lg"
+              style={{ backgroundColor: '#00c2ff' }}
+            >
+              <Text className="text-black font-bold">Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : posts.length === 0 ? (
+          <View className="flex-1 items-center justify-center py-20">
+            <Ionicons name="newspaper-outline" size={48} color="rgba(255,255,255,0.4)" />
+            <Text className="text-white/60 text-base mt-4">
+              {activeTab === 'my-challenges'
+                ? 'No posts from your challenges yet'
+                : 'No posts yet'}
+            </Text>
+          </View>
+        ) : (
+          posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              onChallengeClick={handleChallengeClick}
+              onGivePoints={handleGivePoints}
+              onGroupClick={handleGroupClick}
+              onLike={handleLike}
+            />
+          ))
+        )}
 
         {/* Bottom spacing for tab bar */}
         <View style={{ height: 120 }} />

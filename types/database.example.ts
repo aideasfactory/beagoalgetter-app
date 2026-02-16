@@ -182,8 +182,12 @@ export interface PostWithDetails extends Post {
   user_name: string;
   user_avatar: string;
   user_username: string;
+  user_streak: number;
+  user_ability_points: number;
   challenge_title: string;
   challenge_type: ChallengeType;
+  challenge_participant_count: number;
+  group_id: string | null;
   group_name: string | null;
   group_logo: string | null;
   group_color: string | null;

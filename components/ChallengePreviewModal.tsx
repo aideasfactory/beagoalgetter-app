@@ -10,6 +10,7 @@ export interface ChallengePreview {
   members: number;
   duration?: string;
   completionPercentage?: number;
+  description?: string;
 }
 
 interface ChallengePreviewModalProps {
@@ -56,8 +57,8 @@ export function ChallengePreviewModal({
           <View className="rounded-xl p-6 shadow-lg mb-6" style={{ backgroundColor: '#14b8a6' }}>
             <Text className="text-white text-lg font-bold mb-2">Challenge Details</Text>
             <Text className="text-white/90 text-sm leading-relaxed">
-              Join your teammates in completing daily tasks and building consistent habits. Track
-              your progress, earn ability points, and celebrate wins together!
+              {challenge.description ||
+                'Join your teammates in completing daily tasks and building consistent habits. Track your progress, earn ability points, and celebrate wins together!'}
             </Text>
           </View>
 
