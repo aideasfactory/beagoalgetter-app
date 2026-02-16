@@ -1,109 +1,21 @@
-import React, { useState, useMemo } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, Alert, Modal, TextInput, Switch } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, ScrollView, Text, TouchableOpacity, Alert, Modal, TextInput, Switch, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { SearchBar } from '@/components/SearchBar';
-import { ChallengeCard, Challenge } from '@/components/ChallengeCard';
+import { ChallengeCard } from '@/components/ChallengeCard';
+import type { Challenge } from '@/components/ChallengeCard';
 import { JoinChallengeModal, JoinChallengeContent } from '@/components/JoinChallengeModal';
-
-// Mock challenge data - will be replaced with Supabase data later
-const mockChallenges: Challenge[] = [
-  {
-    id: 'c1',
-    title: '30-Day Fitness Challenge',
-    description: 'Daily workouts and healthy habits',
-    image: 'https://images.unsplash.com/photo-1758684050596-15a238d24202?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwbW90aXZhdGlvbiUyMHJ1bm5lcnxlbnwxfHx8fDE3NjE5MTIxMjN8MA&ixlib=rb-4.1.0&q=80&w=400',
-    type: 'Group',
-    progress: 50,
-    daysCompleted: 15,
-    totalDays: 30,
-    currentStreak: 15,
-    members: 12,
-    status: 'completed',
-    endDate: 'Nov 30',
-    isJoined: true,
-  },
-  {
-    id: 'c2',
-    title: 'Read 20 Pages Daily',
-    description: 'Build a consistent reading habit',
-    image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
-    type: 'Personal',
-    progress: 27,
-    daysCompleted: 8,
-    totalDays: 30,
-    currentStreak: 0,
-    members: 1,
-    status: 'active',
-    endDate: 'Nov 30',
-    isJoined: true,
-  },
-  {
-    id: 'c3',
-    title: 'Morning Meditation',
-    description: '10 minutes of mindfulness each morning',
-    image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400',
-    type: 'Personal',
-    progress: 100,
-    daysCompleted: 21,
-    totalDays: 21,
-    currentStreak: 21,
-    members: 1,
-    status: 'completed',
-    endDate: 'Oct 21',
-    isJoined: true,
-  },
-  {
-    id: 'c4',
-    title: 'Water Challenge',
-    description: 'Drink 8 glasses of water daily',
-    image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400',
-    type: 'Group',
-    progress: 85,
-    daysCompleted: 17,
-    totalDays: 20,
-    currentStreak: 12,
-    members: 24,
-    status: 'active',
-    endDate: 'Nov 20',
-    isJoined: true,
-  },
-  {
-    id: 'c5',
-    title: 'Yoga Streak',
-    description: 'Daily yoga practice for flexibility',
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=400',
-    type: 'Personal',
-    progress: 60,
-    daysCompleted: 18,
-    totalDays: 30,
-    currentStreak: 18,
-    members: 1,
-    status: 'active',
-    endDate: 'Dec 15',
-    isJoined: true,
-  },
-  {
-    id: 'c6',
-    title: 'Community Running Club',
-    description: 'Run together, stay motivated',
-    image: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=400',
-    type: 'Group',
-    progress: 90,
-    daysCompleted: 27,
-    totalDays: 30,
-    currentStreak: 25,
-    members: 15,
-    status: 'completed',
-    endDate: 'Nov 25',
-    isJoined: true,
-  },
-];
+import { useChallenges, useLookupByJoinCode, useJoinChallenge } from '@/hooks/useChallenges';
 
 type FilterType = 'All' | 'Personal' | 'Group';
 
 export default function ChallengesScreen() {
+  const { challenges, loading, error, refetch } = useChallenges();
+  const { lookupByCode, loading: lookupLoading } = useLookupByJoinCode();
+  const { joinChallenge, loading: joinLoading } = useJoinChallenge();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
@@ -113,10 +25,17 @@ export default function ChallengesScreen() {
   const [joinCodeError, setJoinCodeError] = useState('');
   const [joinByCodeChallenge, setJoinByCodeChallenge] = useState<Challenge | null>(null);
   const [hideCompleted, setHideCompleted] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   // Filter and search challenges
   const filteredChallenges = useMemo(() => {
-    let filtered = mockChallenges;
+    let filtered = challenges;
 
     // Apply type filter
     if (activeFilter !== 'All') {
@@ -139,32 +58,32 @@ export default function ChallengesScreen() {
     }
 
     return filtered;
-  }, [searchQuery, activeFilter, hideCompleted]);
+  }, [challenges, searchQuery, activeFilter, hideCompleted]);
 
   const handleChallengePress = (challengeId: string) => {
-    const challenge = mockChallenges.find(c => c.id === challengeId);
-    if (!challenge) return;
-
-    // If user has joined the challenge, navigate to details
-    if (challenge.isJoined) {
-      router.push(`/challenge/${challengeId}`);
-    } else {
-      // If not joined, show join modal
-      setSelectedChallenge(challenge);
-      setShowJoinModal(true);
-    }
+    router.push(`/challenge/${challengeId}`);
   };
 
-  const handleJoinChallenge = (challengeId: string) => {
-    // TODO: Implement Supabase join logic
-    Alert.alert('Success!', 'You have joined the challenge!', [
-      {
-        text: 'View Challenge',
-        onPress: () => router.push(`/challenge/${challengeId}`),
-      },
-      { text: 'OK', style: 'cancel' },
-    ]);
-    console.log('Joined challenge:', challengeId);
+  const handleJoinChallenge = async (challengeId: string) => {
+    const success = await joinChallenge(challengeId);
+    if (success) {
+      Alert.alert('Success!', 'You have joined the challenge!', [
+        {
+          text: 'View Challenge',
+          onPress: () => {
+            refetch();
+            router.push(`/challenge/${challengeId}`);
+          },
+        },
+        {
+          text: 'OK',
+          style: 'cancel',
+          onPress: () => refetch(),
+        },
+      ]);
+    } else {
+      Alert.alert('Error', 'Failed to join the challenge. Please try again.');
+    }
   };
 
   const handleCreateChallenge = () => {
@@ -174,8 +93,8 @@ export default function ChallengesScreen() {
   const filters: FilterType[] = ['All', 'Personal', 'Group'];
 
   const getFilterCount = (filter: FilterType) => {
-    if (filter === 'All') return mockChallenges.length;
-    return mockChallenges.filter(c => c.type === filter).length;
+    if (filter === 'All') return challenges.length;
+    return challenges.filter(c => c.type === filter).length;
   };
 
   const handleOpenJoinByCode = () => {
@@ -185,28 +104,28 @@ export default function ChallengesScreen() {
     setJoinByCodeChallenge(null);
   };
 
-  const resolveJoinCode = (code: string): Challenge | null => {
-    const trimmed = code.trim().toLowerCase();
-    const codeToChallengeId: Record<string, string> = {
-      '1234': 'c4',
-      'water': 'c4',
-    };
+  const handleSubmitJoinCode = async () => {
+    if (!joinCode.trim()) return;
 
-    const challengeId = codeToChallengeId[trimmed];
-    if (!challengeId) return null;
+    try {
+      const challenge = await lookupByCode(joinCode);
+      if (!challenge) {
+        setJoinCodeError('Code not recognized. Please check and try again.');
+        return;
+      }
 
-    return mockChallenges.find((c) => c.id === challengeId) ?? null;
-  };
+      // Check if user already has this challenge
+      const alreadyJoined = challenges.some((c) => c.id === challenge.id);
+      if (alreadyJoined) {
+        setJoinCodeError('You have already joined this challenge.');
+        return;
+      }
 
-  const handleSubmitJoinCode = () => {
-    const challenge = resolveJoinCode(joinCode);
-    if (!challenge) {
-      setJoinCodeError('Code not recognized. Please check and try again.');
-      return;
+      setJoinByCodeChallenge(challenge);
+      setJoinCodeError('');
+    } catch {
+      setJoinCodeError('Something went wrong. Please try again.');
     }
-
-    setJoinByCodeChallenge(challenge);
-    setJoinCodeError('');
   };
 
   const handleCloseJoinByCodeModal = () => {
@@ -215,6 +134,50 @@ export default function ChallengesScreen() {
     setJoinCodeError('');
     setJoinByCodeChallenge(null);
   };
+
+  // Loading state
+  if (loading && !refreshing) {
+    return (
+      <SafeAreaView className="flex-1 bg-black">
+        <View className="px-4 py-4 border-b border-white/10">
+          <Text className="text-white text-2xl font-bold">Challenges</Text>
+        </View>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color="#00c2ff" />
+          <Text className="text-white/60 mt-4">Loading challenges...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error && challenges.length === 0) {
+    return (
+      <SafeAreaView className="flex-1 bg-black">
+        <View className="px-4 py-4 border-b border-white/10">
+          <Text className="text-white text-2xl font-bold">Challenges</Text>
+        </View>
+        <View className="flex-1 items-center justify-center px-8">
+          <View className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/20 items-center justify-center mb-4">
+            <Ionicons name="warning-outline" size={40} color="#ef4444" />
+          </View>
+          <Text className="text-white text-xl font-bold mb-2">Something went wrong</Text>
+          <Text className="text-white/60 text-center mb-6">{error}</Text>
+          <TouchableOpacity
+            onPress={refetch}
+            className="rounded-xl px-6 py-3"
+            style={{ backgroundColor: '#00c2ff' }}
+            activeOpacity={0.8}
+          >
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="refresh" size={20} color="black" />
+              <Text className="text-black font-bold">Retry</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-black">
@@ -283,7 +246,18 @@ export default function ChallengesScreen() {
       </View>
 
       {/* Challenge Grid */}
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00c2ff"
+            colors={['#00c2ff']}
+          />
+        }
+      >
         <View className="px-4 py-6">
           {filteredChallenges.length > 0 ? (
             <View className="flex-row flex-wrap gap-4">
@@ -400,7 +374,7 @@ export default function ChallengesScreen() {
                     setJoinCode(text.toUpperCase());
                     setJoinCodeError('');
                   }}
-                  placeholder="E.g. 1234"
+                  placeholder="E.g. ABC123"
                   placeholderTextColor="rgba(255,255,255,0.4)"
                   className="w-full rounded-xl border border-white/20 px-4 py-3 text-white bg-black/60 text-center tracking-[4px] text-lg"
                   autoCapitalize="characters"
@@ -412,40 +386,30 @@ export default function ChallengesScreen() {
                 {joinCodeError ? (
                   <Text className="text-red-400 text-xs mt-2 text-center">{joinCodeError}</Text>
                 ) : null}
-
-                <View className="flex-row flex-wrap items-center justify-center gap-2 mt-4">
-                  <Text className="text-white/40 text-xs">Try a demo code:</Text>
-                  <TouchableOpacity
-                    onPress={() => {
-                      setJoinCode('1234');
-                      setJoinCodeError('');
-                    }}
-                    className="px-3 py-1 rounded-full bg-white/10 border border-white/20"
-                    activeOpacity={0.8}
-                  >
-                    <Text className="text-white text-xs font-medium">1234</Text>
-                  </TouchableOpacity>
-                </View>
               </View>
 
               <View className="mt-auto">
                 <TouchableOpacity
                   onPress={handleSubmitJoinCode}
-                  disabled={!joinCode.trim()}
+                  disabled={!joinCode.trim() || lookupLoading}
                   className="rounded-xl py-4 items-center flex-row justify-center gap-2"
-                  style={{ backgroundColor: joinCode.trim() ? '#00c2ff' : 'rgba(255,255,255,0.2)' }}
+                  style={{ backgroundColor: joinCode.trim() && !lookupLoading ? '#00c2ff' : 'rgba(255,255,255,0.2)' }}
                   activeOpacity={joinCode.trim() ? 0.8 : 1}
                 >
-                  <Ionicons
-                    name="arrow-forward-circle"
-                    size={22}
-                    color={joinCode.trim() ? '#000000' : 'rgba(0,0,0,0.4)'}
-                  />
+                  {lookupLoading ? (
+                    <ActivityIndicator size="small" color="#000000" />
+                  ) : (
+                    <Ionicons
+                      name="arrow-forward-circle"
+                      size={22}
+                      color={joinCode.trim() ? '#000000' : 'rgba(0,0,0,0.4)'}
+                    />
+                  )}
                   <Text
                     className="font-bold text-lg"
-                    style={{ color: joinCode.trim() ? '#000000' : 'rgba(0,0,0,0.4)' }}
+                    style={{ color: joinCode.trim() && !lookupLoading ? '#000000' : 'rgba(0,0,0,0.4)' }}
                   >
-                    Continue
+                    {lookupLoading ? 'Looking up...' : 'Continue'}
                   </Text>
                 </TouchableOpacity>
 

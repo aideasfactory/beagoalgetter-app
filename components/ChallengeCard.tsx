@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +29,9 @@ const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2; // Account for padding (16*2) and gap (16)
 
 export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const showImage = challenge.image && !imageError;
+
   // Type badge colors
   const getTypeBadgeColor = () => {
     switch (challenge.type) {
@@ -55,11 +58,18 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
     >
       {/* Image Header */}
       <View style={{ height: 160 }} className="relative">
-        <Image
-          source={{ uri: challenge.image }}
-          style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-        />
+        {showImage ? (
+          <Image
+            source={{ uri: challenge.image }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <View className="w-full h-full bg-white/10 items-center justify-center">
+            <Ionicons name="trophy-outline" size={48} color="rgba(255,255,255,0.3)" />
+          </View>
+        )}
         
         {/* Gradient Overlay */}
         <LinearGradient

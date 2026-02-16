@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/supabase';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 
 interface TaskInput {
   id: string;
@@ -53,12 +55,13 @@ export function useCreateChallenge() {
       const fileExt = localUri.split('.').pop()?.toLowerCase() || 'jpg';
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-      const response = await fetch(localUri);
-      const blob = await response.blob();
+      const base64 = await FileSystem.readAsStringAsync(localUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
       const { error: uploadError } = await supabase.storage
         .from('challenge-images')
-        .upload(fileName, blob, {
+        .upload(fileName, decode(base64), {
           contentType: `image/${fileExt === 'png' ? 'png' : 'jpeg'}`,
           upsert: false,
         });
