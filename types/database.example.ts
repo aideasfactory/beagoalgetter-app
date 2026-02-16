@@ -71,11 +71,30 @@ export interface Challenge {
   type: ChallengeType;
   duration: number;
   duration_type: DurationType;
+  start_date: string | null;
+  end_date: string | null;
+  status: 'draft' | 'active' | 'completed' | 'cancelled';
+  is_public: boolean;
+  join_code: string | null;
+  requires_approval: boolean;
+  participant_count: number;
   group_id: string | null;
   image_url: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface TaskChecklistItem {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface TaskAttachment {
+  type: 'document' | 'youtube';
+  url: string;
+  name?: string;
 }
 
 export interface Task {
@@ -86,7 +105,12 @@ export interface Task {
   is_recurring: boolean;
   recurring_days: string[];
   order_index: number;
+  required: boolean;
+  items: TaskChecklistItem[];
+  attachments: TaskAttachment[];
+  is_active: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Team {

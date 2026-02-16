@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useCreateChallenge } from '@/hooks/useCreateChallenge';
 
 interface Step1BasicsProps {
   data: {
@@ -17,6 +18,7 @@ interface Step1BasicsProps {
     image: string | null;
   };
   onUpdate: (updates: Partial<Step1BasicsProps['data']>) => void;
+  onImageUploaded?: (imageUrl: string) => void;
 }
 
 const mockGroups = [
@@ -25,8 +27,9 @@ const mockGroups = [
   { id: '3', name: 'Fitness Warriors', members: 28 },
 ];
 
-export function Step1Basics({ data, onUpdate }: Step1BasicsProps) {
+export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const { uploadChallengeImage, isUploading } = useCreateChallenge();
 
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -37,7 +40,16 @@ export function Step1Basics({ data, onUpdate }: Step1BasicsProps) {
     });
 
     if (!result.canceled && result.assets[0]) {
-      onUpdate({ image: result.assets[0].uri });
+      const localUri = result.assets[0].uri;
+      onUpdate({ image: localUri });
+
+      // Upload to Supabase storage in background
+      try {
+        const publicUrl = await uploadChallengeImage(localUri);
+        onImageUploaded?.(publicUrl);
+      } catch (error: any) {
+        Alert.alert('Upload Failed', error?.message || 'Could not upload image. You can try again or continue without an image.');
+      }
     }
   };
 
@@ -72,12 +84,22 @@ export function Step1Basics({ data, onUpdate }: Step1BasicsProps) {
               style={{ width: '100%', height: 200, borderRadius: 12 }}
               contentFit="cover"
             />
-            <TouchableOpacity
-              onPress={() => onUpdate({ image: null })}
-              className="absolute top-2 right-2 w-8 h-8 bg-red-500 rounded-full items-center justify-center"
-            >
-              <Ionicons name="close" size={20} color="white" />
-            </TouchableOpacity>
+            {isUploading && (
+              <View className="absolute inset-0 items-center justify-center rounded-xl" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                <ActivityIndicator size="large" color="#00c2ff" />
+                <Text className="text-white text-sm mt-2">Uploading...</Text>
+              </View>
+            )}
+            {!isUploading && (
+              <TouchableOpacity
+                onPress={() => {
+                  onUpdate({ image: null });
+                }}
+                className="absolute top-2 right-2 w-8 h-8 bg-red-500 rounded-full items-center justify-center"
+              >
+                <Ionicons name="close" size={20} color="white" />
+              </TouchableOpacity>
+            )}
           </View>
         ) : (
           <TouchableOpacity

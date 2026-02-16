@@ -49,8 +49,8 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
   return (
     <TouchableOpacity
       onPress={() => onPress(challenge.id)}
-      className="rounded-2xl overflow-hidden bg-white/5 border border-white/10"
-      style={{ width: cardWidth }}
+      className="rounded-2xl overflow-hidden bg-white/5 border border-white/10 w-full"
+      
       activeOpacity={0.8}
     >
       {/* Image Header */}
@@ -165,11 +165,11 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
             activeOpacity={0.7}
           >
             <View
-              className="py-2 rounded-lg items-center"
+              className="py-1 rounded-lg items-center"
               style={{ backgroundColor: challenge.isJoined ? 'transparent' : '#00c2ff20' }}
             >
               <Text
-                className="text-xs font-semibold"
+                className="text-base font-semibold"
                 style={{ color: challenge.isJoined ? '#00c2ff' : '#00c2ff' }}
               >
                 {challenge.isJoined ? 'View' : 'Join'}

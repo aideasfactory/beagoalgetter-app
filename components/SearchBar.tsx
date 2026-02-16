@@ -23,7 +23,7 @@ export function SearchBar({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor="rgba(255,255,255,0.4)"
-        className="flex-1 text-white ml-3"
+        className="flex-1 text-white ml-3 py-3"
         {...textInputProps}
       />
       {value.length > 0 && (

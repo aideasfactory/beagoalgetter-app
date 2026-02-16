@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Step1Basics } from '@/components/create-challenge/Step1Basics';
 import { Step2Tasks } from '@/components/create-challenge/Step2Tasks';
 import { Step3ShareLink } from '@/components/create-challenge/Step3ShareLink';
+import { useCreateChallenge } from '@/hooks/useCreateChallenge';
 
 interface ChallengeData {
   // Step 1
@@ -17,23 +18,24 @@ interface ChallengeData {
   challengeType: 'personal' | 'group';
   selectedGroup: string | null;
   image: string | null;
+  imageUrl: string | null;
   // Step 2
   tasks: Array<{
     id: string;
     title: string;
     description: string;
+    items: string[];
     isRecurring: boolean;
     days: string[];
     documents: string[];
     youtubeLinks: string[];
   }>;
   usePDF: boolean;
-  // Step 3 - Challenge UUID for sharing (generated when publishing)
-  challengeUuid: string;
 }
 
 export default function CreateChallengeScreen() {
   const [step, setStep] = useState(1);
+  const { uploadChallengeImage, createChallenge, isUploading, isCreating } = useCreateChallenge();
   const [challengeData, setChallengeData] = useState<ChallengeData>({
     // Step 1
     title: '',
@@ -44,12 +46,14 @@ export default function CreateChallengeScreen() {
     challengeType: 'personal',
     selectedGroup: null,
     image: null,
+    imageUrl: null,
     // Step 2
     tasks: [
       {
         id: '1',
         title: '',
         description: '',
+        items: [],
         isRecurring: false,
         days: [],
         documents: [],
@@ -57,12 +61,19 @@ export default function CreateChallengeScreen() {
       },
     ],
     usePDF: false,
-    // Step 3 - Generate UUID for challenge
-    challengeUuid: Date.now().toString() + Math.random().toString(36).substr(2, 9),
   });
 
+  const isLoading = isUploading || isCreating;
+
   const updateData = (updates: Partial<ChallengeData>) => {
-    setChallengeData((prev) => ({ ...prev, ...updates }));
+    setChallengeData((prev) => {
+      const next = { ...prev, ...updates };
+      // Clear imageUrl when image is removed
+      if ('image' in updates && updates.image === null) {
+        next.imageUrl = null;
+      }
+      return next;
+    });
   };
 
   // Personal: 2 steps (Basic + Tasks)
@@ -100,7 +111,6 @@ export default function CreateChallengeScreen() {
         return true;
 
       case 3:
-        // Step 3 is just for sharing the link - no validation needed
         return true;
 
       default:
@@ -109,6 +119,7 @@ export default function CreateChallengeScreen() {
   };
 
   const handleNext = () => {
+    if (isLoading) return;
     if (!validateStep(step)) return;
 
     if (step < totalSteps) {
@@ -119,6 +130,7 @@ export default function CreateChallengeScreen() {
   };
 
   const handleBack = () => {
+    if (isLoading) return;
     if (step > 1) {
       setStep(step - 1);
     } else {
@@ -133,10 +145,57 @@ export default function CreateChallengeScreen() {
     }
   };
 
-  const handleComplete = () => {
-    // TODO: Save to Supabase
-    console.log('Challenge Data:', challengeData);
-     
+  const handleComplete = async () => {
+    if (isLoading) return;
+
+    try {
+      // Upload image if one was picked but not yet uploaded
+      let imageUrl = challengeData.imageUrl;
+      if (challengeData.image && !imageUrl) {
+        imageUrl = await uploadChallengeImage(challengeData.image);
+      }
+
+      // Create challenge + tasks + auto-join
+      const challengeId = await createChallenge({
+        title: challengeData.title,
+        description: challengeData.description,
+        duration: challengeData.duration,
+        durationType: challengeData.durationType,
+        startDate: challengeData.startDate,
+        challengeType: challengeData.challengeType,
+        selectedGroup: challengeData.selectedGroup,
+        imageUrl,
+        tasks: challengeData.tasks,
+      });
+
+      Alert.alert(
+        'Challenge Created!',
+        'Your challenge has been published successfully.',
+        [
+          {
+            text: 'View Challenge',
+            onPress: () => {
+              router.replace(`/challenge/${challengeId}`);
+            },
+          },
+          {
+            text: 'Back to Challenges',
+            onPress: () => {
+              router.back();
+            },
+          },
+        ]
+      );
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to create challenge. Please try again.'
+      );
+    }
+  };
+
+  const handleImageUploaded = (imageUrl: string) => {
+    updateData({ imageUrl: imageUrl || null });
   };
 
   const getStepTitle = () => {
@@ -161,7 +220,7 @@ export default function CreateChallengeScreen() {
             <Text className="text-white text-2xl font-bold">Create Challenge</Text>
             <Text className="text-white/60 text-sm mt-1">{getStepTitle()}</Text>
           </View>
-          <TouchableOpacity onPress={handleBack}>
+          <TouchableOpacity onPress={handleBack} disabled={isLoading}>
             <Ionicons name="close" size={28} color="white" />
           </TouchableOpacity>
         </View>
@@ -200,6 +259,7 @@ export default function CreateChallengeScreen() {
               image: challengeData.image,
             }}
             onUpdate={updateData}
+            onImageUploaded={handleImageUploaded}
           />
         )}
 
@@ -215,7 +275,7 @@ export default function CreateChallengeScreen() {
 
         {step === 3 && challengeData.challengeType === 'group' && (
           <Step3ShareLink
-            challengeId={challengeData.challengeUuid}
+            challengeId=""
             challengeTitle={challengeData.title}
             onPublish={handleComplete}
           />
@@ -227,6 +287,7 @@ export default function CreateChallengeScreen() {
         <View className="px-6 py-4 border-t border-white/10 flex-row gap-3">
           <TouchableOpacity
             onPress={handleBack}
+            disabled={isLoading}
             className="flex-1 py-4 rounded-xl border border-white/20 items-center"
             style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
           >
@@ -235,12 +296,22 @@ export default function CreateChallengeScreen() {
 
           <TouchableOpacity
             onPress={handleNext}
-            className="flex-1 py-4 rounded-xl items-center"
-            style={{ backgroundColor: '#00c2ff' }}
+            disabled={isLoading}
+            className="flex-1 py-4 rounded-xl items-center flex-row justify-center gap-2"
+            style={{ backgroundColor: isLoading ? 'rgba(0,194,255,0.5)' : '#00c2ff' }}
           >
-            <Text className="text-black font-bold">
-              {step === totalSteps ? 'Publish Challenge' : step === 2 && challengeData.challengeType === 'group' ? 'Next' : 'Next: Tasks & Schedule'}
-            </Text>
+            {isLoading ? (
+              <>
+                <ActivityIndicator size="small" color="black" />
+                <Text className="text-black font-bold">
+                  {isUploading ? 'Uploading...' : 'Creating...'}
+                </Text>
+              </>
+            ) : (
+              <Text className="text-black font-bold">
+                {step === totalSteps ? 'Publish Challenge' : step === 2 && challengeData.challengeType === 'group' ? 'Next' : 'Tasks & Schedule'}
+              </Text>
+            )}
           </TouchableOpacity>
         </View>
       )}

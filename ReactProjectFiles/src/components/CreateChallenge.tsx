@@ -1086,7 +1086,7 @@ export default function CreateChallenge({ onBack, onComplete }: CreateChallengeP
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#00a8e0'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00c2ff'}
             >
-              Next: Tasks & Schedule
+              Tasks & Schedule
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           ) : step === 2 ? (
@@ -1097,7 +1097,7 @@ export default function CreateChallenge({ onBack, onComplete }: CreateChallengeP
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#00a8e0'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#00c2ff'}
             >
-              Next: Invite Users
+              Invite Users
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           ) : step === 3 ? (
