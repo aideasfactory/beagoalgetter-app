@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Step1Basics } from '@/components/create-challenge/Step1Basics';
 import { Step2Tasks } from '@/components/create-challenge/Step2Tasks';
 import { Step3ShareLink } from '@/components/create-challenge/Step3ShareLink';
-import { useCreateChallenge } from '@/hooks/useCreateChallenge';
+import { useCreateChallenge, type TaskDocument } from '@/hooks/useCreateChallenge';
 
 interface ChallengeData {
   // Step 1
@@ -27,7 +27,7 @@ interface ChallengeData {
     items: string[];
     isRecurring: boolean;
     days: string[];
-    documents: string[];
+    documents: TaskDocument[];
     youtubeLinks: string[];
   }>;
   usePDF: boolean;
@@ -168,24 +168,27 @@ export default function CreateChallengeScreen() {
         tasks: challengeData.tasks,
       });
 
-      Alert.alert(
-        'Challenge Created!',
-        'Your challenge has been published successfully.',
-        [
-          {
-            text: 'View Challenge',
-            onPress: () => {
-              router.replace(`/challenge/${challengeId}`);
+      // For group challenges, skip the alert — Step3ShareLink shows its own success UI
+      if (challengeData.challengeType !== 'group') {
+        Alert.alert(
+          'Challenge Created!',
+          'Your challenge has been published successfully.',
+          [
+            {
+              text: 'View Challenge',
+              onPress: () => {
+                router.replace(`/challenge/${challengeId}`);
+              },
             },
-          },
-          {
-            text: 'Back to Challenges',
-            onPress: () => {
-              router.back();
+            {
+              text: 'Back to Challenges',
+              onPress: () => {
+                router.back();
+              },
             },
-          },
-        ]
-      );
+          ]
+        );
+      }
     } catch (error: any) {
       Alert.alert(
         'Error',

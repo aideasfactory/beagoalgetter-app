@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// TODO: Uncomment after app rebuild with: npx expo prebuild
-// import * as DocumentPicker from 'expo-document-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import { useCreateChallenge, type TaskDocument } from '@/hooks/useCreateChallenge';
 
 interface Task {
   id: string;
@@ -11,7 +11,7 @@ interface Task {
   items: string[];
   isRecurring: boolean;
   days: string[];
-  documents: string[];
+  documents: TaskDocument[];
   youtubeLinks: string[];
 }
 
@@ -34,9 +34,15 @@ const DAYS_OF_WEEK = [
   { id: '7', label: 'S', full: 'Sunday' },
 ];
 
+function isValidYouTubeUrl(url: string): boolean {
+  return /(?:youtube\.com|youtu\.be)/.test(url);
+}
+
 export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
   const [currentLinks, setCurrentLinks] = React.useState<Record<string, string>>({});
   const [currentItems, setCurrentItems] = React.useState<Record<string, string>>({});
+  const [uploadingDocForTask, setUploadingDocForTask] = React.useState<string | null>(null);
+  const { uploadTaskDocument } = useCreateChallenge();
 
   const addTask = () => {
     const newTask: Task = {
@@ -108,29 +114,41 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
   }
 
   const handleDocumentPick = async (taskId: string) => {
-    // TODO: Uncomment after app rebuild with expo-document-picker
-    // try {
-    //   const result = await DocumentPicker.getDocumentAsync({
-    //     type: ['application/pdf', 'image/*'],
-    //   });
-    //   if (!result.canceled) {
-    //     const task = data.tasks.find(t => t.id === taskId);
-    //     if (task) {
-    //       updateTask(taskId, {
-    //         documents: [...task.documents, result.assets[0].name]
-    //       });
-    //     }
-    //   }
-    // } catch (error) {
-    //   Alert.alert('Error', 'Failed to pick document');
-    // }
-    
-    // Temporary placeholder - shows message until app is rebuilt
-    Alert.alert(
-      'Coming Soon',
-      'Document upload requires expo-document-picker package. The app needs to be rebuilt.\n\nFor now, you can continue creating the challenge without documents.',
-      [{ text: 'OK' }]
-    );
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: [
+          'application/pdf',
+          'image/*',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ],
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        setUploadingDocForTask(taskId);
+
+        try {
+          const publicUrl = await uploadTaskDocument(
+            asset.uri,
+            asset.name,
+            asset.mimeType || 'application/octet-stream',
+          );
+
+          const task = data.tasks.find(t => t.id === taskId);
+          if (task) {
+            updateTask(taskId, {
+              documents: [...task.documents, { url: publicUrl, name: asset.name }],
+            });
+          }
+        } finally {
+          setUploadingDocForTask(null);
+        }
+      }
+    } catch (error: any) {
+      setUploadingDocForTask(null);
+      Alert.alert('Error', error?.message || 'Failed to upload document');
+    }
   };
 
   const removeDocument = (taskId: string, index: number) => {
@@ -144,14 +162,19 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
 
   const addYoutubeLink = (taskId: string) => {
     const link = currentLinks[taskId]?.trim();
-    if (link) {
-      const task = data.tasks.find(t => t.id === taskId);
-      if (task) {
-        updateTask(taskId, {
-          youtubeLinks: [...task.youtubeLinks, link]
-        });
-        setCurrentLinks({ ...currentLinks, [taskId]: '' });
-      }
+    if (!link) return;
+
+    if (!isValidYouTubeUrl(link)) {
+      Alert.alert('Invalid URL', 'Please enter a valid YouTube link.');
+      return;
+    }
+
+    const task = data.tasks.find(t => t.id === taskId);
+    if (task) {
+      updateTask(taskId, {
+        youtubeLinks: [...task.youtubeLinks, link]
+      });
+      setCurrentLinks({ ...currentLinks, [taskId]: '' });
     }
   };
 
@@ -188,22 +211,6 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
 
   return (
     <ScrollView className="flex-1 bg-black px-6 py-6" showsVerticalScrollIndicator={false}>
-      {/* Upload AI-Generated Plan Card */}
-      {/* <View className="mb-6 p-4 rounded-2xl border border-white/20" style={{ backgroundColor: 'rgba(0, 194, 255, 0.1)' }}>
-        <Text className="text-white font-bold text-base mb-2">Upload AI-Generated Plan (Optional)</Text>
-        <Text className="text-white/70 text-sm mb-4">
-          Have a PDF plan? Upload it and we'll automatically parse it into tasks!
-        </Text>
-        <TouchableOpacity
-          onPress={() => onUpdate({ usePDF: true })}
-          className="flex-row items-center justify-center gap-2 py-3 rounded-xl"
-          style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}
-        >
-          <Ionicons name="document" size={20} color="white" />
-          <Text className="text-white font-bold">Upload PDF Plan</Text>
-        </TouchableOpacity>
-      </View> */}
-
       {/* Daily Tasks Header */}
       <View className="flex-row items-center justify-between mb-4">
         <Text className="text-white font-bold">Daily Tasks</Text>
@@ -336,11 +343,21 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
             <Text className="text-white/60 text-sm mb-2">Documents (Optional)</Text>
             <TouchableOpacity
               onPress={() => handleDocumentPick(task.id)}
+              disabled={uploadingDocForTask === task.id}
               className="flex-row items-center justify-center gap-2 py-2.5 rounded-lg border border-white/20"
               style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
             >
-              <Ionicons name="attach" size={18} color="rgba(255,255,255,0.6)" />
-              <Text className="text-white/60 text-sm">Upload Document</Text>
+              {uploadingDocForTask === task.id ? (
+                <>
+                  <ActivityIndicator size="small" color="rgba(255,255,255,0.6)" />
+                  <Text className="text-white/60 text-sm">Uploading...</Text>
+                </>
+              ) : (
+                <>
+                  <Ionicons name="attach" size={18} color="rgba(255,255,255,0.6)" />
+                  <Text className="text-white/60 text-sm">Upload Document</Text>
+                </>
+              )}
             </TouchableOpacity>
             {/* Display uploaded documents */}
             {task.documents.length > 0 && (
@@ -349,7 +366,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
                   <View key={docIndex} className="flex-row items-center justify-between p-2 rounded-lg border border-white/10" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}>
                     <View className="flex-row items-center gap-2 flex-1">
                       <Ionicons name="document" size={16} color="rgba(255,255,255,0.6)" />
-                      <Text className="text-white/60 text-xs flex-1" numberOfLines={1}>{doc}</Text>
+                      <Text className="text-white/60 text-xs flex-1" numberOfLines={1}>{doc.name}</Text>
                     </View>
                     <TouchableOpacity onPress={() => removeDocument(task.id, docIndex)}>
                       <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.4)" />
@@ -372,8 +389,15 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
                 className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-3 text-white text-sm"
                 keyboardType="url"
                 autoCapitalize="none"
+                onSubmitEditing={() => addYoutubeLink(task.id)}
               />
-             
+              <TouchableOpacity
+                onPress={() => addYoutubeLink(task.id)}
+                className="items-center justify-center rounded-lg px-3"
+                style={{ backgroundColor: '#ef4444' }}
+              >
+                <Ionicons name="add" size={24} color="white" />
+              </TouchableOpacity>
             </View>
             {/* Display added links */}
             {task.youtubeLinks.length > 0 && (

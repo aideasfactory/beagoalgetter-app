@@ -79,10 +79,10 @@ export function GivePointsModal({ visible, onClose, post, onConfirm }: GivePoint
             </View>
           </View>
           <Text className="text-white/60 text-sm">
-                Reward {post.user.name} for their achievement, we believe people should be rewarded for their efforts, so every week you will get 15 ability points to give to firends and team members.
+                Reward {post.user.name} for their achievement, we believe people should be rewarded for their efforts, so give a maximum of 15 ability points to firends and team members.
               </Text>
           {/* Points Selection */}
-          <View className="mb-6">
+          <View className="mb-6 mt-3">
             <Text className="text-white/60 text-sm mb-3">Select Points to Give</Text>
             <View className="flex-row gap-2">
               {pointOptions.map((points) => (

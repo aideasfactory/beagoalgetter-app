@@ -3,6 +3,11 @@ import { supabase } from '@/supabase';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 
+export interface TaskDocument {
+  url: string;
+  name: string;
+}
+
 interface TaskInput {
   id: string;
   title: string;
@@ -10,7 +15,7 @@ interface TaskInput {
   items: string[];
   isRecurring: boolean;
   days: string[];
-  documents: string[];
+  documents: TaskDocument[];
   youtubeLinks: string[];
 }
 
@@ -78,6 +83,32 @@ export function useCreateChallenge() {
     }
   };
 
+  const uploadTaskDocument = async (localUri: string, fileName: string, mimeType: string): Promise<string> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const fileExt = fileName.split('.').pop()?.toLowerCase() || 'pdf';
+    const storagePath = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const base64 = await FileSystem.readAsStringAsync(localUri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+
+    const { error: uploadError } = await supabase.storage
+      .from('task-documents')
+      .upload(storagePath, decode(base64), {
+        contentType: mimeType || 'application/octet-stream',
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from('task-documents')
+      .getPublicUrl(storagePath);
+
+    return data.publicUrl;
+  };
+
   const createChallenge = async (input: CreateChallengeInput): Promise<string> => {
     setIsCreating(true);
     try {
@@ -130,7 +161,7 @@ export function useCreateChallenge() {
           const attachments: Array<{ type: string; url: string; name?: string }> = [];
 
           task.documents.forEach(doc => {
-            attachments.push({ type: 'document', url: doc, name: doc.split('/').pop() });
+            attachments.push({ type: 'document', url: doc.url, name: doc.name });
           });
 
           task.youtubeLinks.forEach(link => {
@@ -181,6 +212,7 @@ export function useCreateChallenge() {
 
   return {
     uploadChallengeImage,
+    uploadTaskDocument,
     createChallenge,
     isUploading,
     isCreating,

@@ -8,6 +8,13 @@ import { useTodaysTasks, type TodayTask } from '@/hooks/useTodaysTasks';
 import { useCompleteDay } from '@/hooks/useCompleteDay';
 import type { MoodType } from '@/types/database.example';
 
+function extractYouTubeVideoId(url: string): string | null {
+  const match = url.match(
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/
+  );
+  return match ? match[1] : null;
+}
+
 interface TaskTrackerTabProps {
   challengeId: string;
   challengeTitle: string;
@@ -438,23 +445,47 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
                 </TouchableOpacity>
               ))}
 
-              {allAttachments.videos.map((video, index) => (
-                <TouchableOpacity
-                  key={`video-${index}`}
-                  onPress={() => handleOpenUrl(video.url)}
-                  className="flex-row items-center justify-between p-4 rounded-xl bg-[#1a1a1a] border border-white/15"
-                >
-                  <View className="flex-row items-center gap-3 flex-1">
-                    <View className="w-10 h-10 rounded-full bg-red-600/80 items-center justify-center">
-                      <Ionicons name="logo-youtube" size={22} color="white" />
+              {allAttachments.videos.map((video, index) => {
+                const videoId = extractYouTubeVideoId(video.url);
+                const thumbnailUrl = videoId
+                  ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                  : null;
+
+                return (
+                  <TouchableOpacity
+                    key={`video-${index}`}
+                    onPress={() => handleOpenUrl(video.url)}
+                    className="mb-3 rounded-xl overflow-hidden bg-[#1a1a1a] border border-white/15"
+                  >
+                    {thumbnailUrl ? (
+                      <View className="relative">
+                        <Image
+                          source={{ uri: thumbnailUrl }}
+                          style={{ width: '100%', height: 180 }}
+                          contentFit="cover"
+                        />
+                        <View
+                          className="absolute inset-0 items-center justify-center"
+                          style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}
+                        >
+                          <View className="w-14 h-14 rounded-full items-center justify-center" style={{ backgroundColor: 'rgba(255,0,0,0.9)' }}>
+                            <Ionicons name="play" size={28} color="white" style={{ marginLeft: 3 }} />
+                          </View>
+                        </View>
+                      </View>
+                    ) : (
+                      <View className="h-24 items-center justify-center" style={{ backgroundColor: 'rgba(255,0,0,0.1)' }}>
+                        <Ionicons name="logo-youtube" size={40} color="#ef4444" />
+                      </View>
+                    )}
+                    <View className="p-3 flex-row items-center gap-2">
+                      <Ionicons name="logo-youtube" size={18} color="#ef4444" />
+                      <Text className="text-white font-semibold flex-1" numberOfLines={1}>{video.name}</Text>
+                      <Ionicons name="open-outline" size={16} color="rgba(255,255,255,0.5)" />
                     </View>
-                    <View className="flex-1">
-                      <Text className="text-white font-semibold">{video.name}</Text>
-                    </View>
-                  </View>
-                  <Ionicons name="play-circle-outline" size={22} color="white" />
-                </TouchableOpacity>
-              ))}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         )}

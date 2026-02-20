@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useCreateChallenge } from '@/hooks/useCreateChallenge';
 import { useMyGroups } from '@/hooks/useMyGroups';
+import { useSubscription } from '@/context';
 
 interface Step1BasicsProps {
   data: {
@@ -26,6 +27,7 @@ export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProp
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { uploadChallengeImage, isUploading } = useCreateChallenge();
   const { groups, loading: groupsLoading } = useMyGroups();
+  const { isPaid, showPaywall } = useSubscription();
 
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -231,7 +233,13 @@ export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProp
 
           {/* Group */}
           <TouchableOpacity
-            onPress={() => onUpdate({ challengeType: 'group' })}
+            onPress={() => {
+              if (!isPaid) {
+                showPaywall('goalgetter');
+                return;
+              }
+              onUpdate({ challengeType: 'group' });
+            }}
             className="flex-1 py-4 rounded-xl border"
             style={{
               backgroundColor: data.challengeType === 'group' ? 'transparent' : 'transparent',

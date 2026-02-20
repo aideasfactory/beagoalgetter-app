@@ -447,6 +447,7 @@ Notifications with sender profile details.
 | `avatars` | Public read, owner upload | User profile pictures |
 | `challenge-images` | Public read, auth upload | Challenge cover images + Group logos (under `groups/` prefix) |
 | `post-images` | Public read, auth upload | Post/completion images |
+| `task-documents` | Public read, auth upload | Task attachments (PDFs, documents) uploaded during challenge creation |
 
 ---
 
@@ -465,6 +466,7 @@ Notifications with sender profile details.
 | 009 | `009_add_is_challenge_complete_to_posts.sql` | Added `is_challenge_complete` boolean to `posts` + updated `posts_with_details` view | 2026-02-19 |
 | 010 | `010_auto_update_participant_count.sql` | Added `update_challenge_participant_count()` function + triggers on `challenge_participants` INSERT/DELETE to keep `challenges.participant_count` in sync | 2026-02-20 |
 | 011 | `011_add_joined_to_completion_status.sql` | Added `'joined'` value to `completion_status` enum for "X joined the challenge" feed posts | 2026-02-20 |
+| 012 | `012_create_task_documents_bucket.sql` | Created `task-documents` storage bucket with RLS policies for task document attachments | 2026-02-20 |
 
 ---
 
