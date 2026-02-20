@@ -51,8 +51,18 @@ export function GroupInfoModal({ visible, onClose, group }: GroupInfoModalProps)
           </View>
 
           <View className="flex-row items-start gap-4">
-            <View className="w-20 h-20 rounded-2xl bg-white items-center justify-center shadow-lg">
-              <Text style={{ fontSize: 40 }}>{group.logo}</Text>
+            <View className="w-20 h-20 rounded-2xl bg-white items-center justify-center shadow-lg overflow-hidden">
+              {group.logo ? (
+                <Image
+                  source={{ uri: group.logo }}
+                  style={{ width: 80, height: 80, borderRadius: 16 }}
+                  contentFit="cover"
+                />
+              ) : (
+                <Text className="text-3xl font-bold" style={{ color: group.color }}>
+                  {group.name.charAt(0).toUpperCase()}
+                </Text>
+              )}
             </View>
             <View className="flex-1">
               <Text className="text-white text-2xl font-bold mb-1">{group.name}</Text>

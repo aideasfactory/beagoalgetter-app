@@ -36,7 +36,7 @@ const userProfile = {
     { id: 3, name: '30 Day Streak', icon: '💪', earned: true },
     { id: 4, name: 'Team Player', icon: '🤝', earned: true },
     { id: 5, name: '100 Day Streak', icon: '🏆', earned: false },
-    { id: 6, name: 'Perfect Month', icon: '⭐', earned: false },
+    { id: 6, name: 'Perfect Challenge', icon: '⭐', earned: false },
   ],
   socialConnections: {
     instagram: true,

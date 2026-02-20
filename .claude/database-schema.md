@@ -51,7 +51,7 @@ challenge_participants ── (0..1) teams (team assignment)
 |------|--------|
 | `challenge_type` | `'personal'`, `'group'` |
 | `duration_type` | `'days'`, `'weeks'` |
-| `completion_status` | `'success'`, `'fail'` |
+| `completion_status` | `'success'`, `'fail'`, `'joined'` |
 | `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'` |
 
 ---
@@ -238,6 +238,7 @@ Junction table tracking users joined to challenges.
 | `current_streak` | INTEGER | - | 0 | Current streak in challenge |
 | `longest_streak` | INTEGER | - | 0 | Best streak in challenge |
 | `total_ability_points` | INTEGER | - | 0 | Points earned in challenge |
+| `days_completed` | INTEGER | NOT NULL | 0 | Actual days resolved (success or fail) |
 | `notes` | TEXT | nullable | null | Personal notes |
 | `quit_reason` | TEXT | nullable | null | Why they quit |
 
@@ -300,6 +301,7 @@ Social feed posts tied to challenges.
 | `note` | TEXT | nullable | null | Additional note |
 | `image_url` | TEXT | nullable | null | Post image |
 | `type` | completion_status | NOT NULL | - | success/fail |
+| `is_challenge_complete` | BOOLEAN | NOT NULL | false | True for congratulatory challenge completion posts |
 | `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
 | `likes_count` | INTEGER | - | 0 | Total likes (auto-updated via trigger) |
 | `ability_points_given` | INTEGER | - | 0 | Total AP given to post |
@@ -408,7 +410,7 @@ Tracks which users gave ability points to which posts.
 ### posts_with_details
 Posts joined with user, challenge, and group information. The `ability_points_given` field is computed as `SUM(points)` from `post_ability_points` (not the cached column on `posts`).
 
-**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `group_id`, `group_name`, `group_logo`, `group_color`
+**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `group_id`, `group_name`, `group_logo`, `group_color`
 
 ### challenge_leaderboard
 Ranked participants per challenge.
@@ -427,10 +429,14 @@ Notifications with sender profile details.
 | Function | Purpose | Trigger |
 |----------|---------|---------|
 | `update_updated_at_column()` | Auto-updates `updated_at` timestamp | ON UPDATE for profiles, challenges, groups, tasks |
-| `handle_new_user()` | Auto-creates profile on signup | AFTER INSERT on auth.users |
+| `handle_new_user()` | Auto-creates profile on signup; generates random `display_name` (e.g. `user_04821`) when none provided | AFTER INSERT on auth.users |
 | `increment_post_likes()` | Increments `likes_count` on posts | AFTER INSERT on post_likes |
 | `decrement_post_likes()` | Decrements `likes_count` on posts | AFTER DELETE on post_likes |
 | `recalculate_post_ability_points()` | Recalculates `ability_points_given` on posts as SUM | AFTER INSERT/UPDATE/DELETE on post_ability_points |
+| `recalculate_profile_stats(user_id)` | Aggregates profile stats (streaks, challenges, points) from `challenge_participants` and `post_ability_points` into `profiles` | Called by trigger functions below |
+| `trigger_recalculate_profile_stats()` | Calls `recalculate_profile_stats()` for the affected user | AFTER INSERT/UPDATE/DELETE on challenge_participants |
+| `trigger_recalculate_profile_stats_from_points()` | Looks up post author, then calls `recalculate_profile_stats()` | AFTER INSERT/UPDATE/DELETE on post_ability_points |
+| `update_challenge_participant_count()` | Recalculates `participant_count` on challenges as COUNT from challenge_participants | AFTER INSERT/DELETE on challenge_participants |
 
 ---
 
@@ -439,7 +445,7 @@ Notifications with sender profile details.
 | Bucket | Access | Purpose |
 |--------|--------|---------|
 | `avatars` | Public read, owner upload | User profile pictures |
-| `challenge-images` | Public read, auth upload | Challenge cover images |
+| `challenge-images` | Public read, auth upload | Challenge cover images + Group logos (under `groups/` prefix) |
 | `post-images` | Public read, auth upload | Post/completion images |
 
 ---
@@ -453,6 +459,12 @@ Notifications with sender profile details.
 | 003 | `003_update_posts_view_add_participant_count.sql` | Updated `posts_with_details` view to add `challenge_participant_count` and `group_id` columns | 2026-02-16 |
 | 004 | `004_add_post_ability_points.sql` | Added `post_ability_points` table with triggers to auto-sum into `posts.ability_points_given` | 2026-02-16 |
 | 005 | `005_update_posts_view_ability_points_sum.sql` | Updated `posts_with_details` view to compute `ability_points_given` as SUM from `post_ability_points` instead of using cached column | 2026-02-16 |
+| 006 | `006_update_handle_new_user_random_username.sql` | Updated `handle_new_user()` to generate random `display_name` (e.g. `user_04821`) when none provided at signup | 2026-02-16 |
+| 007 | `007_recalculate_profile_stats.sql` | Added `recalculate_profile_stats()` function + triggers on `challenge_participants` and `post_ability_points` to keep profile stats in sync | 2026-02-18 |
+| 008 | `008_add_days_completed_to_participants.sql` | Added `days_completed` column to `challenge_participants` with backfill from `task_completions` | 2026-02-19 |
+| 009 | `009_add_is_challenge_complete_to_posts.sql` | Added `is_challenge_complete` boolean to `posts` + updated `posts_with_details` view | 2026-02-19 |
+| 010 | `010_auto_update_participant_count.sql` | Added `update_challenge_participant_count()` function + triggers on `challenge_participants` INSERT/DELETE to keep `challenges.participant_count` in sync | 2026-02-20 |
+| 011 | `011_add_joined_to_completion_status.sql` | Added `'joined'` value to `completion_status` enum for "X joined the challenge" feed posts | 2026-02-20 |
 
 ---
 

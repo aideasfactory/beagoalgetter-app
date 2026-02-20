@@ -1,13 +1,15 @@
 import { useSession, useSubscription } from '@/context';
-import { Stack, router } from 'expo-router';
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert } from 'react-native';
+import { Stack, router, useFocusEffect } from 'expo-router';
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Circle } from 'react-native-svg';
-import { LoadingScreen } from '@/components';
-import { useProfile } from '@/hooks';
-import type { ProfileBadges } from '@/types/database.example';
+import * as ImagePicker from 'expo-image-picker';
+import { LoadingScreen, GroupCard } from '@/components';
+import { useProfile, useMyGroups } from '@/hooks';
+import { groupService } from '@/services';
+import type { ProfileBadges, Group } from '@/types/database.example';
 
 // Circular Progress Component
 function CircularProgress({ 
@@ -66,9 +68,21 @@ function CircularProgress({
 
 export default function ProfileMain() {
   const { user } = useSession();
-  const { profile, loading, error } = useProfile();
+  const { profile, loading, error, refetch } = useProfile();
   const { isPaid, showPaywall, isLoading: subscriptionLoading } = useSubscription();
+  const { groups, loading: groupsLoading, refetch: refetchGroups } = useMyGroups();
+
+  // Refetch profile and groups when screen comes back into focus
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+      refetchGroups();
+    }, [refetch, refetchGroups])
+  );
+
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [editingGroup, setEditingGroup] = useState<Group | null>(null);
+  const [isSavingGroup, setIsSavingGroup] = useState(false);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
   const [groupBrandColor, setGroupBrandColor] = useState('#00c2ff');
@@ -114,7 +128,7 @@ export default function ProfileMain() {
     { id: 3, name: '30 Day\nStreak', icon: '💪', earned: profileBadges.streak_30_days, color: '#3a5f1e' },
     { id: 4, name: 'Team Player', icon: '🤝', earned: profileBadges.team_player, color: '#4a1e5f' },
     { id: 5, name: '100 Day\nStreak', icon: '🏆', earned: profileBadges.streak_100_days, color: '#2a2a2a' },
-    { id: 6, name: 'Perfect\nMonth', icon: '⭐', earned: profileBadges.perfect_month, color: '#2a2a2a' },
+    { id: 6, name: 'Perfect\Challenge', icon: '⭐', earned: profileBadges.perfect_month, color: '#2a2a2a' },
   ];
 
   const socialConnections = [
@@ -133,42 +147,144 @@ export default function ProfileMain() {
     profile?.display_name ||
     user?.user_metadata?.display_name ||
     user?.full_name ||
-    'Sarah Johnson';
-  const username = profile?.username || user?.user_metadata?.username || '@sarahj';
-  const bio = profile?.bio || user?.user_metadata?.bio || 'Fitness enthusiast | Building consistency one day at a time 💪';
+    'User';
+  const username = profile?.username || user?.user_metadata?.username || '';
+  const bio = profile?.bio || '';
 
-  const handleCreateGroup = () => {
-    if (!groupName || !groupDescription || !totalMembers) {
-      Alert.alert('Error', 'Please fill in all required fields');
-      return;
-    }
-    Alert.alert('Success', `${groupName} group created successfully!`);
+  const resetGroupForm = () => {
     setGroupName('');
     setGroupDescription('');
     setGroupBrandColor('#00c2ff');
     setGroupLogo(null);
     setTotalMembers('');
     setInceptionDate('');
+  };
+
+  const handleCloseGroupModal = () => {
     setIsCreateGroupOpen(false);
+    setEditingGroup(null);
+    resetGroupForm();
+  };
+
+  const handlePickGroupLogo = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissionResult.granted) {
+      Alert.alert('Permission required', 'Please allow access to your photo library.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      setGroupLogo(result.assets[0].uri);
+    }
+  };
+
+  const handleSaveGroup = async () => {
+    if (!groupName || !groupDescription || !totalMembers) {
+      Alert.alert('Error', 'Please fill in all required fields');
+      return;
+    }
+
+    setIsSavingGroup(true);
+    try {
+      let logoUrl: string | null = groupLogo;
+      if (groupLogo && !groupLogo.startsWith('http')) {
+        logoUrl = await groupService.uploadGroupLogo(groupLogo);
+      }
+
+      if (editingGroup) {
+        await groupService.updateGroup(editingGroup.id, {
+          name: groupName,
+          description: groupDescription,
+          color: groupBrandColor,
+          logo: logoUrl,
+          member_count: parseInt(totalMembers) || 0,
+          founded: inceptionDate || null,
+        });
+      } else {
+        await groupService.createGroup({
+          name: groupName,
+          description: groupDescription,
+          color: groupBrandColor,
+          logo: logoUrl,
+          member_count: parseInt(totalMembers) || 0,
+          founded: inceptionDate || null,
+        });
+      }
+
+      handleCloseGroupModal();
+      refetchGroups();
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Failed to save group. Please try again.');
+    } finally {
+      setIsSavingGroup(false);
+    }
+  };
+
+  const handleEditGroup = (group: Group) => {
+    setEditingGroup(group);
+    setGroupName(group.name);
+    setGroupDescription(group.description || '');
+    setGroupBrandColor(group.color || '#00c2ff');
+    setGroupLogo(group.logo);
+    setTotalMembers(String(group.member_count));
+    setInceptionDate(group.founded || '');
+    setIsCreateGroupOpen(true);
+  };
+
+  const handleDeleteGroup = (group: Group) => {
+    Alert.alert(
+      'Delete Group',
+      `Are you sure you want to delete "${group.name}"? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await groupService.deleteGroup(group.id);
+              refetchGroups();
+            } catch (error: any) {
+              Alert.alert('Error', error?.message || 'Failed to delete group.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleCreateGroupPress = async () => {
+    console.log('[CreateGroup Debug] Button pressed');
+    console.log('[CreateGroup Debug] user:', user?.id);
+    console.log('[CreateGroup Debug] profile:', !!profile, '| plan:', profile?.plan);
+    console.log('[CreateGroup Debug] isPaid:', isPaid);
+    console.log('[CreateGroup Debug] loading:', loading, '| subscriptionLoading:', subscriptionLoading);
+
     if (loading || subscriptionLoading) {
+      console.log('[CreateGroup Debug] -> Blocked: still loading');
       Alert.alert('Please wait', 'Loading your profile...');
       return;
     }
 
     if (!profile) {
+      console.log('[CreateGroup Debug] -> Blocked: no profile');
       Alert.alert('No profile', 'You need to be signed in to create a group.');
       return;
     }
 
     // Check if user has paid subscription (pro or lifetime)
     if (!isPaid) {
+      console.log('[CreateGroup Debug] -> Showing paywall (isPaid is false)');
       await showPaywall('goalgetter');
       return;
     }
 
+    console.log('[CreateGroup Debug] -> Opening create group modal');
     setIsCreateGroupOpen(true);
   };
 
@@ -201,7 +317,7 @@ export default function ProfileMain() {
 
         {/* Header */}
         <View className="items-center py-8">
-          <TouchableOpacity className="relative">
+          <TouchableOpacity className="relative" onPress={() => router.push('/(tabs)/profile/edit')}>
             <Image
               source={{ uri: avatarUrl }}
               style={{ width: 100, height: 100, borderRadius: 50 }}
@@ -219,6 +335,13 @@ export default function ProfileMain() {
           <Text className="text-white/70 text-center mt-2 px-8">
             {bio}
           </Text>
+
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/profile/edit')}
+            className="mt-4 px-6 py-2 rounded-full border border-white/20"
+          >
+            <Text className="text-white text-sm font-medium">Edit Profile</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Circular Progress Stats */}
@@ -343,55 +466,25 @@ export default function ProfileMain() {
               <Text className="text-black font-bold text-lg ml-2">Create New Group</Text>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Social Connections */}
-        <View className="px-4 mb-8">
-          <Text className="text-white text-xl font-bold mb-4">Social Connections</Text>
-          <View className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/10">
-            <Text className="text-white/60 text-sm mb-4">
-              Connect your social media accounts to automatically share your achievements
-            </Text>
-
-            {socialConnections.map((social) => (
-              <View
-                key={social.id}
-                className="flex-row items-center justify-between p-3 rounded-lg border border-white/10 bg-white/5 mb-3"
-              >
-                <View className="flex-row items-center gap-3">
-                  <View
-                    className="w-12 h-12 rounded-lg items-center justify-center"
-                    style={{
-                      backgroundColor: social.gradient[0],
-                    }}
-                  >
-                    <Ionicons name={social.icon as any} size={24} color="white" />
-                  </View>
-                  <View>
-                    <Text className="text-white font-medium">{social.name}</Text>
-                    <Text className="text-white/40 text-xs">
-                      {social.connected ? 'Connected' : 'Not connected'}
-                    </Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  className="px-4 py-2 rounded-lg"
-                  style={{
-                    backgroundColor: social.connected ? 'transparent' : '#00c2ff',
-                    borderWidth: social.connected ? 1 : 0,
-                    borderColor: social.connected ? 'rgba(255,255,255,0.2)' : 'transparent',
-                  }}
-                >
-                  <Text
-                    className="font-medium"
-                    style={{ color: social.connected ? 'white' : 'black' }}
-                  >
-                    {social.connected ? 'Disconnect' : 'Connect'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
+          {/* Group List */}
+          {groupsLoading ? (
+            <View className="py-4 items-center">
+              <ActivityIndicator color="#00c2ff" />
+            </View>
+          ) : groups.length > 0 ? (
+            <View className="mt-4 gap-3">
+              {groups.map((group) => (
+                <GroupCard
+                  key={group.id}
+                  group={group}
+                  onEdit={handleEditGroup}
+                  onDelete={handleDeleteGroup}
+                  onPress={() => {}}
+                />
+              ))}
+            </View>
+          ) : null}
         </View>
 
         {/* Settings Button */}
@@ -410,15 +503,17 @@ export default function ProfileMain() {
       {/* Create Group Modal */}
       <Modal
         visible={isCreateGroupOpen}
-        onRequestClose={() => setIsCreateGroupOpen(false)}
+        onRequestClose={handleCloseGroupModal}
         animationType="slide"
         presentationStyle="pageSheet"
       >
         <SafeAreaView className="flex-1 bg-[#1a1a1a]">
           <View className="flex-row items-center justify-between px-6 py-4 border-b border-white/10">
             <View style={{ width: 28 }} />
-            <Text className="text-white text-xl font-bold">Create New Group</Text>
-            <TouchableOpacity onPress={() => setIsCreateGroupOpen(false)}>
+            <Text className="text-white text-xl font-bold">
+              {editingGroup ? 'Edit Group' : 'Create New Group'}
+            </Text>
+            <TouchableOpacity onPress={handleCloseGroupModal}>
               <Ionicons name="close" size={28} color="white" />
             </TouchableOpacity>
           </View>
@@ -502,9 +597,7 @@ export default function ProfileMain() {
                 )}
                 <TouchableOpacity
                   className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-5 py-4 flex-row items-center justify-center"
-                  onPress={() => {
-                    Alert.alert('Image Picker', 'Image picker would be implemented with expo-image-picker');
-                  }}
+                  onPress={handlePickGroupLogo}
                 >
                   <Ionicons name="cloud-upload-outline" size={20} color="white" />
                   <Text className="text-white text-base ml-2">
@@ -545,13 +638,20 @@ export default function ProfileMain() {
               </Text>
             </View>
 
-            {/* Create Button */}
+            {/* Save Button */}
             <TouchableOpacity
-              onPress={handleCreateGroup}
+              onPress={handleSaveGroup}
+              disabled={isSavingGroup}
               className="rounded-3xl py-5 items-center mb-6"
-              style={{ backgroundColor: '#00c2ff' }}
+              style={{ backgroundColor: isSavingGroup ? '#00c2ff80' : '#00c2ff' }}
             >
-              <Text className="text-black font-bold text-lg">Create Group</Text>
+              {isSavingGroup ? (
+                <ActivityIndicator color="black" />
+              ) : (
+                <Text className="text-black font-bold text-lg">
+                  {editingGroup ? 'Save Changes' : 'Create Group'}
+                </Text>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </SafeAreaView>

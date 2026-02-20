@@ -15,7 +15,7 @@ import { supabase } from '@/supabase';
 
 export type ChallengeType = 'personal' | 'team' | 'group';
 export type DurationType = 'days' | 'weeks';
-export type CompletionStatus = 'success' | 'fail';
+export type CompletionStatus = 'success' | 'fail' | 'joined';
 export type NotificationType = 'like' | 'points' | 'challenge' | 'streak';
 
 // Database Tables
@@ -56,12 +56,18 @@ export interface Group {
   id: string;
   name: string;
   description: string | null;
-  logo_emoji: string | null;
+  logo: string | null;
   color: string | null;
   location: string | null;
   founded: string | null;
+  member_count: number;
+  cover_image_url: string | null;
+  website: string | null;
+  social_links: Record<string, string>;
+  is_verified: boolean;
   created_by: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Challenge {
@@ -126,9 +132,12 @@ export interface ChallengeParticipant {
   challenge_id: string;
   user_id: string;
   team_id: string | null;
+  status: string;
   joined_at: string;
   current_streak: number;
+  longest_streak: number;
   total_ability_points: number;
+  days_completed: number;
 }
 
 export type MoodType = 'very-sad' | 'sad' | 'neutral' | 'happy' | 'very-happy';
@@ -154,6 +163,7 @@ export interface Post {
   note: string | null;
   image_url: string | null;
   type: CompletionStatus;
+  is_challenge_complete: boolean;
   created_at: string;
   likes_count: number;
   ability_points_given: number;

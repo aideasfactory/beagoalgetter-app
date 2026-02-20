@@ -230,7 +230,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
               onChangeText={(text) => updateTask(task.id, { title: text })}
               placeholder="e.g., 20 minutes cardio"
               placeholderTextColor="rgba(255,255,255,0.4)"
-              className="bg-black border border-white/20 rounded-lg px-3 py-2 text-white"
+              className="bg-black border border-white/20 rounded-lg px-3 py-3 text-white"
             />
           </View>
 
@@ -244,7 +244,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
               placeholderTextColor="rgba(255,255,255,0.4)"
               multiline
               numberOfLines={2}
-              className="bg-black border border-white/20 rounded-lg px-3 py-2 text-white"
+              className="bg-black border border-white/20 rounded-lg px-3 py-3 text-white"
               style={{ textAlignVertical: 'top' }}
             />
           </View>
@@ -258,7 +258,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
                 onChangeText={(text) => setCurrentItems({ ...currentItems, [task.id]: text })}
                 placeholder="Add an item to check off..."
                 placeholderTextColor="rgba(255,255,255,0.4)"
-                className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white"
+                className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-3 text-white"
                 onSubmitEditing={() => addItem(task.id)}
               />
               <TouchableOpacity
@@ -369,7 +369,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
                 onChangeText={(text) => setCurrentLinks({ ...currentLinks, [task.id]: text })}
                 placeholder="https://www.youtube.com/watch?v=..."
                 placeholderTextColor="rgba(255,255,255,0.4)"
-                className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-2 text-white text-sm"
+                className="flex-1 bg-black border border-white/20 rounded-lg px-3 py-3 text-white text-sm"
                 keyboardType="url"
                 autoCapitalize="none"
               />

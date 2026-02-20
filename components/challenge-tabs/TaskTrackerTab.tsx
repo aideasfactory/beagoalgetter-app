@@ -240,22 +240,37 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
     });
 
     if (result.success) {
-      Alert.alert(
-        'Great work!',
-        `Day completed! Your streak is now ${result.newStreak || currentStreak + 1}!`,
-        [{
-          text: 'OK',
-          onPress: () => {
-            // Reset form state
-            setNote('');
-            setUploadedImage(null);
-            setSelectedMood(null);
-            // Refetch to update completed state
-            refetchTasks();
-            onDayCompleted?.();
-          },
-        }],
-      );
+      if (result.challengeCompleted) {
+        Alert.alert(
+          'Challenge Complete!',
+          `Congratulations! You've completed all days of "${challengeTitle}"! A congratulatory post has been shared to the feed.`,
+          [{
+            text: 'Amazing!',
+            onPress: () => {
+              setNote('');
+              setUploadedImage(null);
+              setSelectedMood(null);
+              refetchTasks();
+              onDayCompleted?.();
+            },
+          }],
+        );
+      } else {
+        Alert.alert(
+          'Great work!',
+          `Day completed! Your streak is now ${result.newStreak || currentStreak + 1}!`,
+          [{
+            text: 'OK',
+            onPress: () => {
+              setNote('');
+              setUploadedImage(null);
+              setSelectedMood(null);
+              refetchTasks();
+              onDayCompleted?.();
+            },
+          }],
+        );
+      }
     } else {
       Alert.alert('Error', result.error || 'Something went wrong. Please try again.');
     }

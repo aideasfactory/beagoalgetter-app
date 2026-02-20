@@ -22,7 +22,8 @@ export interface Post {
     logo: string;
     color: string;
   };
-  type: 'success' | 'fail';
+  type: 'success' | 'fail' | 'joined';
+  isChallengeComplete?: boolean;
   message: string;
   note?: string;
   image?: string;
@@ -60,16 +61,16 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
   };
   return (
     <View className="rounded-2xl overflow-hidden bg-[#1a1a1a] border border-white/10 mb-4">
-      {/* Success/Fail Ribbon - Top Right Corner */}
+      {/* Success/Fail/Completed Ribbon - Top Right Corner */}
       <View style={styles.ribbonContainer} pointerEvents="none">
         <View
           style={[
             styles.ribbon,
-            { backgroundColor: post.type === 'success' ? '#00c2ff' : '#ef4444' },
+            { backgroundColor: post.isChallengeComplete ? '#10b981' : post.type === 'joined' ? '#a855f7' : post.type === 'success' ? '#00c2ff' : '#ef4444' },
           ]}
         >
           <Text className="text-black text-xs font-bold uppercase tracking-wider">
-            {post.type === 'success' ? '✓ Done' : '✗ Failed'}
+            {post.isChallengeComplete ? '   Completed' : post.type === 'joined' ? '   Joined' : post.type === 'success' ? '✓ Done' : '✗ Failed'}
           </Text>
         </View>
       </View>
@@ -83,8 +84,18 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
           activeOpacity={0.9}
         >
           <View className="flex-row items-center gap-3">
-            <View className="w-10 h-10 rounded-full bg-white items-center justify-center">
-              <Text className="text-2xl">{post.group.logo}</Text>
+            <View className="w-10 h-10 rounded-full bg-white items-center justify-center overflow-hidden">
+              {post.group.logo ? (
+                <Image
+                  source={{ uri: post.group.logo }}
+                  style={{ width: 40, height: 40 }}
+                  contentFit="cover"
+                />
+              ) : (
+                <Text className="text-lg font-bold" style={{ color: post.group.color }}>
+                  {post.group.name.charAt(0).toUpperCase()}
+                </Text>
+              )}
             </View>
             <View>
               <Text className="text-white text-xs">Challenge by</Text>

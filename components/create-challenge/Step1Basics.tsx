@@ -5,6 +5,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useCreateChallenge } from '@/hooks/useCreateChallenge';
+import { useMyGroups } from '@/hooks/useMyGroups';
 
 interface Step1BasicsProps {
   data: {
@@ -21,15 +22,10 @@ interface Step1BasicsProps {
   onImageUploaded?: (imageUrl: string) => void;
 }
 
-const mockGroups = [
-  { id: '1', name: 'Boro Runners', members: 45 },
-  { id: '2', name: 'City Cyclists', members: 32 },
-  { id: '3', name: 'Fitness Warriors', members: 28 },
-];
-
 export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { uploadChallengeImage, isUploading } = useCreateChallenge();
+  const { groups, loading: groupsLoading } = useMyGroups();
 
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -254,32 +250,55 @@ export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProp
       {data.challengeType === 'group' && (
         <View className="mb-6">
           <Text className="text-white mb-2 font-medium">Select Group *</Text>
-          <View className="gap-2">
-            {mockGroups.map((group) => (
-              <TouchableOpacity
-                key={group.id}
-                onPress={() => onUpdate({ selectedGroup: group.id })}
-                className="flex-row items-center justify-between p-4 rounded-xl border"
-                style={{
-                  backgroundColor: data.selectedGroup === group.id ? '#00c2ff20' : 'rgba(255,255,255,0.05)',
-                  borderColor: data.selectedGroup === group.id ? '#00c2ff' : 'rgba(255,255,255,0.1)',
-                }}
-              >
-                <View className="flex-row items-center gap-3">
-                  <View className="w-10 h-10 rounded-full items-center justify-center" style={{ backgroundColor: '#00c2ff' }}>
-                    <Text className="text-black font-bold">{group.name.substring(0, 2)}</Text>
+          {groupsLoading ? (
+            <View className="py-6 items-center">
+              <ActivityIndicator color="#00c2ff" />
+            </View>
+          ) : groups.length === 0 ? (
+            <View className="p-4 rounded-xl border border-white/10 bg-white/5">
+              <Text className="text-white/60 text-center">
+                You haven't created any groups yet. Go to your Profile to create one.
+              </Text>
+            </View>
+          ) : (
+            <View className="gap-2">
+              {groups.map((group) => (
+                <TouchableOpacity
+                  key={group.id}
+                  onPress={() => onUpdate({ selectedGroup: group.id })}
+                  className="flex-row items-center justify-between p-4 rounded-xl border"
+                  style={{
+                    backgroundColor: data.selectedGroup === group.id ? '#00c2ff20' : 'rgba(255,255,255,0.05)',
+                    borderColor: data.selectedGroup === group.id ? '#00c2ff' : 'rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <View className="flex-row items-center gap-3">
+                    {group.logo ? (
+                      <Image
+                        source={{ uri: group.logo }}
+                        style={{ width: 40, height: 40, borderRadius: 20 }}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <View
+                        className="w-10 h-10 rounded-full items-center justify-center"
+                        style={{ backgroundColor: group.color || '#00c2ff' }}
+                      >
+                        <Text className="text-black font-bold">{group.name.substring(0, 2)}</Text>
+                      </View>
+                    )}
+                    <View>
+                      <Text className="text-white font-bold">{group.name}</Text>
+                      <Text className="text-white/60 text-xs">{group.member_count} members</Text>
+                    </View>
                   </View>
-                  <View>
-                    <Text className="text-white font-bold">{group.name}</Text>
-                    <Text className="text-white/60 text-xs">{group.members} members</Text>
-                  </View>
-                </View>
-                {data.selectedGroup === group.id && (
-                  <Ionicons name="checkmark-circle" size={24} color="#00c2ff" />
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
+                  {data.selectedGroup === group.id && (
+                    <Ionicons name="checkmark-circle" size={24} color="#00c2ff" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       )}
 

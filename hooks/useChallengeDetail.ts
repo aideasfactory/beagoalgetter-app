@@ -23,6 +23,7 @@ export interface ChallengeDetail {
   // From challenge_participants
   currentStreak: number;
   totalPoints: number;
+  participantStatus: string;
 }
 
 interface RawChallengeRow {
@@ -43,29 +44,21 @@ interface RawChallengeRow {
 interface RawParticipantRow {
   current_streak: number;
   total_ability_points: number;
+  days_completed: number;
+  status: string;
 }
 
 function computeProgress(
-  startDate: string | null,
+  daysCompleted: number,
   duration: number,
   durationType: 'days' | 'weeks',
 ): { progress: number; daysCompleted: number; totalDays: number; daysRemaining: number } {
   const totalDays = durationType === 'weeks' ? duration * 7 : duration;
+  const clampedDaysCompleted = Math.min(daysCompleted, totalDays);
+  const progress = totalDays > 0 ? Math.min(100, Math.round((clampedDaysCompleted / totalDays) * 100)) : 0;
+  const daysRemaining = Math.max(0, totalDays - clampedDaysCompleted);
 
-  if (!startDate) {
-    return { progress: 0, daysCompleted: 0, totalDays, daysRemaining: totalDays };
-  }
-
-  const start = new Date(startDate + 'T00:00:00');
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffMs = today.getTime() - start.getTime();
-  const elapsedDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-  const daysCompleted = Math.min(elapsedDays, totalDays);
-  const progress = totalDays > 0 ? Math.min(100, Math.round((daysCompleted / totalDays) * 100)) : 0;
-  const daysRemaining = Math.max(0, totalDays - daysCompleted);
-
-  return { progress, daysCompleted, totalDays, daysRemaining };
+  return { progress, daysCompleted: clampedDaysCompleted, totalDays, daysRemaining };
 }
 
 export function useChallengeDetail(challengeId: string) {
@@ -93,7 +86,7 @@ export function useChallengeDetail(challengeId: string) {
           .single(),
         supabase
           .from('challenge_participants')
-          .select('current_streak, total_ability_points')
+          .select('current_streak, total_ability_points, days_completed, status')
           .eq('challenge_id', challengeId)
           .eq('user_id', user.id)
           .single(),
@@ -102,10 +95,10 @@ export function useChallengeDetail(challengeId: string) {
       if (challengeResult.error) throw challengeResult.error;
 
       const c = challengeResult.data as RawChallengeRow;
-      const p = (participantResult.data as RawParticipantRow) || { current_streak: 0, total_ability_points: 0 };
+      const p = (participantResult.data as RawParticipantRow) || { current_streak: 0, total_ability_points: 0, days_completed: 0, status: 'active' };
 
       const { progress, daysCompleted, totalDays, daysRemaining } = computeProgress(
-        c.start_date,
+        p.days_completed,
         c.duration,
         c.duration_type,
       );
@@ -129,6 +122,7 @@ export function useChallengeDetail(challengeId: string) {
         daysRemaining,
         currentStreak: p.current_streak,
         totalPoints: p.total_ability_points,
+        participantStatus: p.status || 'active',
       });
     } catch (err: any) {
       setError(err?.message || 'Failed to load challenge');

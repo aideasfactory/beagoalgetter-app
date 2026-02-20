@@ -7,6 +7,7 @@ interface ParticipantWithChallenge {
   current_streak: number;
   longest_streak: number;
   status: string;
+  days_completed: number;
   challenges: {
     id: string;
     title: string;
@@ -31,25 +32,15 @@ function formatEndDate(dateStr: string | null): string {
 }
 
 function computeProgress(
-  startDate: string | null,
+  daysCompleted: number,
   duration: number,
   durationType: 'days' | 'weeks',
 ): { progress: number; daysCompleted: number; totalDays: number } {
   const totalDays = durationType === 'weeks' ? duration * 7 : duration;
+  const clampedDaysCompleted = Math.min(daysCompleted, totalDays);
+  const progress = totalDays > 0 ? Math.min(100, Math.round((clampedDaysCompleted / totalDays) * 100)) : 0;
 
-  if (!startDate) {
-    return { progress: 0, daysCompleted: 0, totalDays };
-  }
-
-  const start = new Date(startDate + 'T00:00:00');
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const diffMs = today.getTime() - start.getTime();
-  const elapsedDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-  const daysCompleted = Math.min(elapsedDays, totalDays);
-  const progress = totalDays > 0 ? Math.min(100, Math.round((daysCompleted / totalDays) * 100)) : 0;
-
-  return { progress, daysCompleted, totalDays };
+  return { progress, daysCompleted: clampedDaysCompleted, totalDays };
 }
 
 function mapType(dbType: 'personal' | 'group'): 'Personal' | 'Group' {
@@ -63,7 +54,7 @@ function mapStatus(dbStatus: string): 'active' | 'completed' {
 function mapToChallenge(row: ParticipantWithChallenge): Challenge {
   const c = row.challenges;
   const { progress, daysCompleted, totalDays } = computeProgress(
-    c.start_date,
+    row.days_completed,
     c.duration,
     c.duration_type,
   );
@@ -108,6 +99,7 @@ export function useChallenges() {
           current_streak,
           longest_streak,
           status,
+          days_completed,
           challenges:challenge_id (
             id, title, description, type, duration, duration_type,
             start_date, end_date, status, participant_count,
@@ -154,7 +146,7 @@ export function useLookupByJoinCode() {
       if (!data) return null;
 
       const { progress, daysCompleted, totalDays } = computeProgress(
-        data.start_date,
+        0, // User hasn't joined yet, so 0 days completed
         data.duration,
         data.duration_type,
       );
@@ -205,6 +197,23 @@ export function useJoinChallenge() {
           return true;
         }
         throw error;
+      }
+
+      // Create a "joined" post with the challenge image
+      const { data: challenge } = await supabase
+        .from('challenges')
+        .select('title, image_url')
+        .eq('id', challengeId)
+        .single();
+
+      if (challenge) {
+        await supabase.from('posts').insert({
+          user_id: user.id,
+          challenge_id: challengeId,
+          message: `Joined ${challenge.title}!`,
+          image_url: challenge.image_url,
+          type: 'joined',
+        });
       }
 
       return true;

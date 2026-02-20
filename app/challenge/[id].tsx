@@ -162,6 +162,24 @@ export default function ChallengeDetailsScreen() {
           <Text className="text-white/60 text-sm leading-relaxed">
             {challenge.description}
           </Text>
+
+          {/* Challenge Completed Banner */}
+          {challenge.participantStatus === 'completed' && (
+            <View
+              className="mt-4 p-4 rounded-2xl items-center"
+              style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.3)' }}
+            >
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="trophy" size={24} color="#10b981" />
+                <Text className="text-lg font-bold" style={{ color: '#10b981' }}>
+                  Challenge Completed!
+                </Text>
+              </View>
+              <Text className="text-white/60 text-sm mt-1 text-center">
+                You&apos;ve successfully finished this challenge. Great work!
+              </Text>
+            </View>
+          )}
         </View>
 
         {/* Tabs Navigation */}

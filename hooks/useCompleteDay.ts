@@ -18,6 +18,7 @@ interface CompleteDayResult {
   success: boolean;
   error?: string;
   newStreak?: number;
+  challengeCompleted?: boolean;
 }
 
 /**
@@ -230,7 +231,7 @@ export function useCompleteDay() {
         // 4. Calculate new streak and update challenge_participants
         const { data: challengeData } = await supabase
           .from('challenges')
-          .select('start_date')
+          .select('start_date, duration, duration_type, image_url, type')
           .eq('id', params.challengeId)
           .single();
 
@@ -240,26 +241,65 @@ export function useCompleteDay() {
           challengeData?.start_date || null,
         );
 
-        // Read existing longest_streak, then do a single update
+        // Read existing longest_streak and days_completed, then do a single update
         const { data: participant } = await supabase
           .from('challenge_participants')
-          .select('longest_streak')
+          .select('longest_streak, days_completed')
           .eq('challenge_id', params.challengeId)
           .eq('user_id', user.id)
           .single();
 
         const existingLongest = participant?.longest_streak || 0;
+        const newDaysCompleted = (participant?.days_completed || 0) + 1;
 
         await supabase
           .from('challenge_participants')
           .update({
             current_streak: newStreak,
             longest_streak: Math.max(newStreak, existingLongest),
+            days_completed: newDaysCompleted,
           })
           .eq('challenge_id', params.challengeId)
           .eq('user_id', user.id);
 
-        return { success: true, newStreak };
+        // 5. Check if challenge is now complete
+        const totalDays = challengeData?.duration_type === 'weeks'
+          ? (challengeData?.duration || 0) * 7
+          : (challengeData?.duration || 0);
+
+        let challengeCompleted = false;
+
+        if (newDaysCompleted >= totalDays && totalDays > 0) {
+          challengeCompleted = true;
+
+          // Mark participant as completed (triggers recalculate_profile_stats)
+          await supabase
+            .from('challenge_participants')
+            .update({ status: 'completed' })
+            .eq('challenge_id', params.challengeId)
+            .eq('user_id', user.id);
+
+          // For personal challenges, also mark the challenge itself as completed
+          if (challengeData?.type === 'personal') {
+            await supabase
+              .from('challenges')
+              .update({ status: 'completed' })
+              .eq('id', params.challengeId);
+          }
+
+          // Create congratulatory post with the challenge cover image
+          await supabase.from('posts').insert({
+            user_id: user.id,
+            challenge_id: params.challengeId,
+            message: `Challenge Complete! Finished all ${totalDays} days of ${params.challengeTitle}!`,
+            type: 'success' as const,
+            note: null,
+            image_url: challengeData?.image_url || null,
+            is_challenge_complete: true,
+          });
+        }
+
+        return { success: true, newStreak, challengeCompleted };
       } catch (err: any) {
         return { success: false, error: err?.message || 'Failed to complete day' };
       } finally {

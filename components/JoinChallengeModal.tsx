@@ -21,20 +21,8 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
   if (!challenge) return null;
 
   const handleJoin = () => {
-    Alert.alert(
-      'Join Challenge',
-      `Are you sure you want to join "${challenge.title}"?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Join',
-          onPress: () => {
-            onJoin(challenge.id);
-            onClose();
-          },
-        },
-      ]
-    );
+    onJoin(challenge.id);
+    onClose();
   };
 
   const getTypeBadgeColor = () => {
@@ -177,7 +165,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
 
           {/* Community Info (for Group challenges) */}
           {challenge.type === 'Group' && (
-            <View className="mb-6">
+            <View className="mb-12">
               <Text className="text-white text-lg font-bold mb-4">Community</Text>
               <View className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <View className="flex-row items-center gap-3 mb-3">
@@ -197,7 +185,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
           )}
 
           {/* Spacing for bottom button */}
-          <View style={{ height: 100 }} />
+          <View style={{ height: 150 }} />
         </ScrollView>
 
         {/* Fixed Bottom Join Button */}
