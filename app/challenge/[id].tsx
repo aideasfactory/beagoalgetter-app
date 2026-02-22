@@ -274,7 +274,7 @@ export default function ChallengeDetailsScreen() {
             />
           )}
           {activeTab === 'leaderboard' && showLeaderboardTab && <LeaderboardTab challengeId={id} />}
-          {activeTab === 'admin' && showAdminTab && <AdminTab challengeId={id} />}
+          {activeTab === 'admin' && showAdminTab && <AdminTab challengeId={id} groupId={challenge.group_id} />}
           {/* {activeTab === 'messages' && <MessagesTab challengeId={id} />} */}
         </View>
 

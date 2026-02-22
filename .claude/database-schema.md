@@ -413,9 +413,14 @@ Posts joined with user, challenge, and group information. The `ability_points_gi
 **Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `group_id`, `group_name`, `group_logo`, `group_color`
 
 ### challenge_leaderboard
-Ranked participants per challenge.
+Ranked participants per challenge, with profile and team info.
 
-**Fields:** All from `challenge_participants` + `display_name`, `avatar_url`, `username`, `rank` (computed via RANK() window function)
+**Fields:** All from `challenge_participants` + `display_name`, `avatar_url`, `username`, `team_name`, `team_color`, `rank` (computed via RANK() window function ordered by `total_ability_points DESC, current_streak DESC`)
+
+### challenge_team_leaderboard
+Aggregated team standings per challenge. Sums ability points and streaks from all active/completed team members.
+
+**Fields:** `team_id`, `team_name`, `team_color`, `group_id`, `challenge_id`, `member_count`, `total_points`, `total_streak`, `rank` (computed via RANK() ordered by `total_points DESC`)
 
 ### notifications_with_users
 Notifications with sender profile details.
@@ -467,6 +472,7 @@ Notifications with sender profile details.
 | 010 | `010_auto_update_participant_count.sql` | Added `update_challenge_participant_count()` function + triggers on `challenge_participants` INSERT/DELETE to keep `challenges.participant_count` in sync | 2026-02-20 |
 | 011 | `011_add_joined_to_completion_status.sql` | Added `'joined'` value to `completion_status` enum for "X joined the challenge" feed posts | 2026-02-20 |
 | 012 | `012_create_task_documents_bucket.sql` | Created `task-documents` storage bucket with RLS policies for task document attachments | 2026-02-20 |
+| 013 | `013_update_leaderboard_views.sql` | Updated `challenge_leaderboard` view to include `team_name` and `team_color`; created `challenge_team_leaderboard` view for aggregated team standings | 2026-02-22 |
 
 ---
 
@@ -512,4 +518,4 @@ auth.users (1) ──── (1) profiles
 4. **Timestamps** - All use `TIMESTAMP WITH TIME ZONE` (stored as UTC)
 5. **Badges** - Stored as JSONB boolean flags on the `profiles` table
 6. **Auto-triggers** - `updated_at` is auto-managed, profile is auto-created on signup
-7. **Views** - Use `posts_with_details`, `challenge_leaderboard`, `notifications_with_users` for complex queries
+7. **Views** - Use `posts_with_details`, `challenge_leaderboard`, `challenge_team_leaderboard`, `notifications_with_users` for complex queries

@@ -121,10 +121,22 @@ export interface Task {
 
 export interface Team {
   id: string;
-  challenge_id: string;
+  group_id: string;
   name: string;
   color: string | null;
   created_at: string;
+}
+
+export interface TeamLeaderboardEntry {
+  team_id: string;
+  team_name: string;
+  team_color: string | null;
+  group_id: string;
+  challenge_id: string;
+  member_count: number;
+  total_points: number;
+  total_streak: number;
+  rank: number;
 }
 
 export interface ChallengeParticipant {
