@@ -6,101 +6,90 @@
 
 ---
 
-## CRITICAL: Read These Files Before Every Task
+## CRITICAL: Read Before Every Session
 
-**BEFORE starting ANY work, you MUST read these files:**
+**At the START of every session, read:**
 
-1. **`.claude/instructions.md`** - Main workflow rules and coding standards
-2. **`.claude/tasks/current-task.md`** - Current task progress
+1. **`.claude/instructions.md`** — Workflow rules and coding standards
+2. **`.claude/tasks/current-task.md`** — Current task phases and progress
 
-**Context-Specific Files (read when applicable):**
+**Context-Specific (read when relevant to the current phase):**
 
-3. **`.claude/supabase-coding-standards.md`** - When working with Supabase queries, RLS, or backend logic
-4. **`.claude/database-schema.md`** - When working with database models, queries, or schema changes
-5. **`.claude/frontend-coding-standards.md`** - When working with React Native components and screens
+3. **`.claude/supabase-coding-standards.md`** — Supabase queries, RLS, backend logic
+4. **`.claude/database-schema.md`** — Database models, queries, schema changes
+5. **`.claude/frontend-coding-standards.md`** — React Native components and screens
 
----
-
-## After Reading, Always Announce:
-
-```
-I've read:
-- .claude/instructions.md ✓
-- .claude/tasks/current-task.md ✓
-
-Context-specific files (if applicable):
-- .claude/supabase-coding-standards.md ✓ (if Supabase work)
-- .claude/database-schema.md ✓ (if database work)
-- .claude/frontend-coding-standards.md ✓ (if component/screen work)
-
-Current status: [describe current phase and progress]
-```
-
-**These instructions apply to EVERY message, EVERY session, EVERY task.**
+Then announce what you've read and the current status.
 
 ---
 
-## Workflow Rules (Non-Negotiable)
+## Core Workflow: Phase Discipline
 
-- **NEVER** proceed to next phase without explicit approval
-- **ALWAYS** update `.claude/tasks/current-task.md` after completing tasks
-- **ALWAYS** stop at phase boundaries
-- **ALWAYS** use the task template from `.claude/tasks/task-template.md` when creating new tasks
+**Every task follows strict phase-based execution. One phase per session, then STOP.**
+
+### New Task
+1. Read all required files
+2. Create/update `.claude/tasks/current-task.md` — break the task into discrete phases
+3. Planning IS Phase 1 — execute it fully
+4. Write `.phase_done` sentinel to project root
+5. **STOP completely** — do not continue, do not ask to continue
+
+### Resuming (when told "continue" or "next phase")
+1. Read `.claude/tasks/current-task.md`
+2. Find the next incomplete phase
+3. Execute ONLY that phase
+4. Write `.phase_done` sentinel
+5. **STOP completely**
+
+### Sentinel File (`.phase_done`)
+
+On success:
+```json
+{
+  "phase_completed": 1,
+  "total_phases": 4,
+  "status": "success",
+  "summary": "Brief description of what was accomplished"
+}
+```
+
+On failure:
+```json
+{
+  "phase_completed": 2,
+  "total_phases": 4,
+  "status": "failed",
+  "error": "What went wrong and what was tried"
+}
+```
+
+See `.claude/instructions.md` for detailed rules.
 
 ---
 
 ## Forbidden Commands
 
-**NEVER run these commands:**
-- ❌ `npm run lint` (user handles linting)
-- ❌ `prettier`, `eslint` (user handles formatting)
-- ❌ `npx expo start` (user manages the dev server)
-
-**Always acknowledge:** "I understand I must not run linting or formatting commands."
+**NEVER run:**
+- `npm run lint` / `prettier` / `eslint` (user handles formatting)
+- `npx expo start` (user manages the dev server)
 
 ---
 
 ## Database Documentation Rule
 
-**CRITICAL: After creating or modifying ANY Supabase migration or schema change:**
-
+After creating or modifying ANY Supabase migration:
 1. **IMMEDIATELY update `.claude/database-schema.md`**
-2. Add/update the relevant table documentation
-3. Update relationships if they changed
-4. Update the ERD diagram if structure changed
-5. **Announce:** "I've updated database-schema.md to reflect the schema changes."
-
-**This applies to:**
-- New SQL migrations in `supabase/migrations/`
-- Modified tables (added/changed columns, indexes, RLS policies)
-- Dropped tables or columns
-- New or modified views, functions, or triggers
-
-**Always update database-schema.md BEFORE marking the task complete.**
+2. Update relationships and ERD if structure changed
+3. **Do this BEFORE writing the sentinel file**
 
 ---
 
 ## Quick Reference
 
-### When to Read Each File:
-
 | File | Read When |
 |------|-----------|
-| `instructions.md` | **Every time** |
-| `tasks/current-task.md` | **Every time** |
+| `instructions.md` | **Every session** |
+| `tasks/current-task.md` | **Every session** |
 | `supabase-coding-standards.md` | Supabase queries, RLS policies, auth, storage |
 | `database-schema.md` | Schema changes, queries, relationships |
 | `frontend-coding-standards.md` | React Native components, screens, navigation |
-
----
-
-## Verification
-
-Before starting work, confirm:
-- [ ] Read `instructions.md`
-- [ ] Read `tasks/current-task.md`
-- [ ] Read applicable context-specific files
-- [ ] Understood workflow rules
-- [ ] Acknowledged forbidden commands
-
-**Then announce what you've read and proceed!**

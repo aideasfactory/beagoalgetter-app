@@ -2,7 +2,7 @@
 
 **Created:** [Date]
 **Last Updated:** [Date/Time]
-**Status:** [Planning/Implementation/Review/Reflection/Complete]
+**Status:** [Planning/In Progress/Complete]
 
 ---
 
@@ -12,40 +12,39 @@
 [What are we building? Brief description of the feature/component]
 
 ### Success Criteria
-- [ ] [Criteria 1 - e.g., User can successfully create a challenge]
-- [ ] [Criteria 2 - e.g., Form validation works correctly]
-- [ ] [Criteria 3 - e.g., Data persists to Supabase]
+- [ ] [Criteria 1]
+- [ ] [Criteria 2]
+- [ ] [Criteria 3]
 
 ### Context
-[Any background information, related features, or dependencies]
+[Background information, related features, dependencies]
 
 ---
 
 ## PHASE 1: PLANNING
 
-**Status:** ⏸️ Not Started | 🔄 In Progress | ✅ Complete | ⏭️ Skipped
+**Status:** ⏸️ Not Started
 
 ### Tasks
 - [ ] Review requirements
-- [ ] Identify required components
+- [ ] Review relevant existing code
+- [ ] Identify required components/services/hooks
 - [ ] Define data structures/types
 - [ ] Plan Supabase queries or schema changes (if needed)
-- [ ] Identify dependencies/libraries needed
-- [ ] Create component hierarchy diagram
+- [ ] Identify dependencies needed
+- [ ] Define implementation phases below
+- [ ] Plan complete — ready for sentinel
 
-### Decisions Made
--
+### Analysis
+[Document your analysis of the codebase and requirements here]
+
+### Files Plan
+
+**New files to create:**
 -
 
-### Components Identified
+**Files to modify:**
 -
--
-
-### Data Structures
-```typescript
-// Add type definitions here
-
-```
 
 ### Supabase Requirements
 - [ ] New tables needed?
@@ -55,10 +54,11 @@
 
 ### Dependencies Needed
 -
+
+### Decisions Made
 -
 
-### Notes
--
+### Risks Identified
 -
 
 ### Reflection
@@ -68,154 +68,30 @@
 **What could be improved:**
 -
 
-**Risks identified:**
--
-
-**⚠️ STOP - Awaiting approval to proceed to Phase 2**
+**→ Phase complete. Write `.phase_done` sentinel and STOP.**
 
 ---
 
-## PHASE 2: IMPLEMENTATION
+## PHASE 2: [NAME — defined during planning]
 
-**Status:** ⏸️ Not Started | 🔄 In Progress | ✅ Complete | ⏭️ Skipped
+**Status:** ⏸️ Not Started
 
 ### Tasks
-- [ ] Set up base file structure
-- [ ] Install required dependencies (if any)
-- [ ] Create TypeScript types/interfaces
-- [ ] Build main component structure
-- [ ] Implement core functionality
-- [ ] Add error handling
-- [ ] Integrate with Supabase
-- [ ] Add loading states
-- [ ] Style with NativeWind/Tailwind classes
-- [ ] [Add any custom tasks specific to this feature]
+- [ ] [Defined during planning]
+- [ ] [Defined during planning]
+- [ ] [Defined during planning]
 
-### Current Progress
-**Currently working on:**
-[What specific task are you on right now?]
+### Currently Working On
+[Updated as you work through the phase]
 
-**Completed this session:**
--
+### Files Created
 -
 
-### Code Locations
-**Files created:**
--
--
-
-**Files modified:**
--
+### Files Modified
 -
 
 ### Implementation Details
-
-#### Component Structure
-```
-[Add component hierarchy or folder structure here]
-```
-
-#### Key Functions/Hooks
--
--
-
-#### State Management
--
--
-
-### Blockers
-- [ ] None currently
-
-**If blocked, describe:**
-- Issue:
-- Attempted:
-- Need help with:
-
-### Technical Decisions
-- **Decision:**
-  - **Reasoning:**
-  - **Alternatives considered:**
-
-### Notes
--
--
-
-### Reflection
-**What went well:**
--
-
-**What could be improved:**
--
-
-**Technical debt created:**
--
-
-**⚠️ STOP - Awaiting approval to proceed to Phase 3**
-
----
-
-## PHASE 3: TESTING & REVIEW
-
-**Status:** ⏸️ Not Started | 🔄 In Progress | ✅ Complete | ⏭️ Skipped
-
-### Tasks
-- [ ] Test happy path scenarios
-- [ ] Test error cases
-- [ ] Test edge cases
-- [ ] Verify on iOS simulator/device
-- [ ] Verify on Android emulator/device (if applicable)
-- [ ] Validate form inputs (if applicable)
-- [ ] Check console for errors/warnings
-- [ ] Test with different data sets
-- [ ] Performance check (load times, re-renders)
-
-### Test Scenarios
-
-#### Happy Path
-- [ ] Scenario 1: [Description]
-  - Result: [Pass/Fail]
-  - Notes:
-
-#### Error Cases
-- [ ] Error 1: [Description]
-  - Result: [Pass/Fail]
-  - Notes:
-
-#### Edge Cases
-- [ ] Edge case 1: [Description]
-  - Result: [Pass/Fail]
-  - Notes:
-
-### Test Results Summary
-
-**Passed:**
--
-
-**Issues Found:**
-- Issue:
-  - Severity: [Critical/High/Medium/Low]
-  - Fix required:
-
-**Known Limitations:**
--
-
-### Code Quality Checklist
-- [ ] Follows existing project patterns
-- [ ] No console errors or warnings
-- [ ] Proper error handling in place
-- [ ] Loading states implemented
-- [ ] Code is DRY (not repetitive)
-- [ ] TypeScript types properly defined
-- [ ] NativeWind classes used for styling
-- [ ] No hardcoded values (use constants/config)
-- [ ] Proper prop validation
-- [ ] No `console.log` left in code
-
-### Security Check
-- [ ] No sensitive data in console logs
-- [ ] API keys not exposed
-- [ ] Supabase RLS policies in place (if new tables)
-- [ ] Secure storage used for sensitive data
+[Key decisions, patterns used, issues encountered]
 
 ### Notes
 -
@@ -227,72 +103,25 @@
 **What could be improved:**
 -
 
-**Unexpected issues:**
--
-
-**⚠️ STOP - Awaiting approval to proceed to Phase 4**
+**→ Phase complete. Write `.phase_done` sentinel and STOP.**
 
 ---
 
-## PHASE 4: FINAL REFLECTION & DOCUMENTATION
+<!--
+ADDITIONAL PHASES: Copy the Phase 2 template above for each additional phase.
+During planning, create as many phases as the task requires.
+Each phase should be a self-contained unit of work.
 
-**Status:** ⏸️ Not Started | 🔄 In Progress | ✅ Complete | ⏭️ Skipped
+Common phase patterns:
+- Database Migration
+- Services & Hooks
+- UI Components
+- Integration & Wiring
+- Testing & Review
+- Reflection & Cleanup
 
-### Tasks
-- [ ] Document new environment variables (if any)
-- [ ] Add inline code comments where needed
-- [ ] Document known issues
-- [ ] Note future improvements
-- [ ] Clean up console.logs and debug code
-- [ ] Final code review
-- [ ] Update database-schema.md (if schema changed)
-
-### Documentation Updates
-
-**Files updated:**
--
--
-
-### Known Issues
-- **Issue:**
-  - **Workaround:**
-  - **Planned fix:**
-
-### Overall Reflection
-
-#### What Worked Well
-1.
-2.
-
-#### What Could Be Improved
-1.
-2.
-
-#### Lessons Learned
-1.
-2.
-
-### Technical Debt
-
-#### Created During This Task
-- **Debt:**
-  - **Why it was created:**
-  - **Impact:** [Low/Medium/High]
-  - **Effort to fix:** [Low/Medium/High]
-
-### Future Recommendations
-
-#### Immediate Next Steps
-1.
-2.
-
-#### Future Enhancements
-1.
-2.
-
-### Notes
--
--
+Number phases sequentially: Phase 3, Phase 4, Phase 5, etc.
+-->
 
 ---
 
@@ -303,46 +132,11 @@
 ### Final Summary
 [Brief 2-3 sentence summary of what was accomplished]
 
-### Handoff Notes
-[Anything the next person working on this codebase should know]
+### Known Limitations
+-
 
-### Related Tasks
-- [ ] [Future task 1 that builds on this]
-- [ ] [Future task 2 that builds on this]
+### Future Improvements
+-
 
 ### Archive Notes
 **Move this file to:** `.claude/tasks/completed/YYYY-MM-DD-[feature-name].md`
-
----
-
-## Quick Reference
-
-### Key Files Created
--
--
-
-### Key Components
--
--
-
-### Dependencies Added
--
--
-
-### Git Commits
--
--
-
----
-
-## Questions & Clarifications Log
-
-### Questions Asked
-- **Q:**
-  - **A:**
-  - **Date:**
-
-### Assumptions Made
-- **Assumption:**
-  - **Reasoning:**
-  - **Verified:** [Yes/No/Pending]

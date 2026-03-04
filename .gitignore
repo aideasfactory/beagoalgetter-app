@@ -23,6 +23,9 @@ web-build/
 .env*.local
 .env*
 
+# Claude Code phase sentinel
+.phase_done
+
 # debug
 npm-debug.*
 yarn-debug.*

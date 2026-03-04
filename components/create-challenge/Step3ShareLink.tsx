@@ -1,21 +1,32 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Share, ScrollView } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Alert, Share, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface Step3ShareLinkProps {
-  challengeId: string;
+  challengeId: string | null;
+  joinCode: string | null;
   challengeTitle: string;
+  isLoading?: boolean;
   onPublish: () => void;
+  onDone: () => void;
 }
 
-export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3ShareLinkProps) {
-  const [isPublished, setIsPublished] = useState(false);
-  const shareUrl = `https://beagoalgetter.app/join/${challengeId}`;
+export function Step3ShareLink({ challengeId, joinCode, challengeTitle, isLoading, onPublish, onDone }: Step3ShareLinkProps) {
+  const scrollRef = useRef<ScrollView>(null);
+  const isPublished = !!challengeId;
+  const shareUrl = `https://beagoalgetter.app/join/${joinCode}`;
+
+  // Scroll to top when switching to success view
+  useEffect(() => {
+    if (isPublished) {
+      scrollRef.current?.scrollTo({ y: 0, animated: false });
+    }
+  }, [isPublished]);
 
   const handlePublish = () => {
-    setIsPublished(true);
+    if (isLoading) return;
     onPublish();
   };
 
@@ -38,7 +49,7 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
   // Pre-publish view
   if (!isPublished) {
     return (
-      <ScrollView className="flex-1 bg-black px-6 py-6">
+      <ScrollView ref={scrollRef} className="flex-1 bg-black px-6 py-6">
         {/* Header */}
         <View className="mb-8">
           <View className="w-16 h-16 rounded-full bg-cyan-500/20 items-center justify-center mb-4">
@@ -110,7 +121,7 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
         <View className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-6">
           <Text className="text-white/60 text-sm mb-2">Challenge Name</Text>
           <Text className="text-white font-bold text-lg mb-4">{challengeTitle}</Text>
-          
+
           <View className="flex-row items-center gap-2">
             <Ionicons name="information-circle-outline" size={20} color="rgba(255,255,255,0.6)" />
             <Text className="text-white/60 text-sm flex-1">
@@ -122,13 +133,21 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
         {/* Publish Button */}
         <TouchableOpacity
           onPress={handlePublish}
+          disabled={isLoading}
           className="py-4 rounded-xl items-center mb-4"
-          style={{ backgroundColor: '#00c2ff' }}
+          style={{ backgroundColor: isLoading ? 'rgba(0,194,255,0.5)' : '#00c2ff' }}
         >
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="rocket" size={20} color="black" />
-            <Text className="text-black font-bold text-lg">Publish Challenge</Text>
-          </View>
+          {isLoading ? (
+            <View className="flex-row items-center gap-2">
+              <ActivityIndicator size="small" color="black" />
+              <Text className="text-black font-bold text-lg">Publishing...</Text>
+            </View>
+          ) : (
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="rocket" size={20} color="black" />
+              <Text className="text-black font-bold text-lg">Publish Challenge</Text>
+            </View>
+          )}
         </TouchableOpacity>
 
         {/* Note */}
@@ -143,7 +162,7 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
 
   // Post-publish view (share link)
   return (
-    <ScrollView className="flex-1 bg-black px-6 py-6">
+    <ScrollView ref={scrollRef} className="flex-1 bg-black px-6 py-6">
       {/* Success Header */}
       <View className="mb-8 items-center">
         <View className="w-20 h-20 rounded-full bg-green-500/20 items-center justify-center mb-4">
@@ -165,7 +184,7 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
         >
           <Text className="text-white/60 text-sm mb-3">Challenge Link</Text>
           <View className="bg-black/50 rounded-xl p-4 mb-4">
-            <Text 
+            <Text
               className="text-cyan-500 text-base"
               numberOfLines={1}
               ellipsizeMode="middle"
@@ -184,63 +203,30 @@ export function Step3ShareLink({ challengeId, challengeTitle, onPublish }: Step3
               <Ionicons name="copy-outline" size={20} color="black" />
               <Text className="text-black font-bold">Copy Link</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleShare}
+              className="flex-1 py-4 rounded-xl flex-row items-center justify-center gap-2 border border-white/20"
+              style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+            >
+              <Ionicons name="share-outline" size={20} color="white" />
+              <Text className="text-white font-bold">Share</Text>
+            </TouchableOpacity>
           </View>
         </LinearGradient>
       </View>
 
-      {/* How It Works */}
-      <View className="bg-white/5 rounded-2xl p-6 border border-white/10 mb-6">
-        <Text className="text-white font-bold text-lg mb-4">How It Works</Text>
-        <View className="gap-4">
-          <View className="flex-row items-start gap-3">
-            <View className="w-8 h-8 rounded-full bg-cyan-500/20 items-center justify-center mt-0.5">
-              <Text className="text-cyan-500 font-bold">1</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-white font-medium mb-1">Copy the Link</Text>
-              <Text className="text-white/60 text-sm">
-                Tap the &quot;Copy Link&quot; button above
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row items-start gap-3">
-            <View className="w-8 h-8 rounded-full bg-cyan-500/20 items-center justify-center mt-0.5">
-              <Text className="text-cyan-500 font-bold">2</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-white font-medium mb-1">Share Everywhere</Text>
-              <Text className="text-white/60 text-sm">
-                Send it via WhatsApp, Instagram, text, or email
-              </Text>
-            </View>
-          </View>
-
-          <View className="flex-row items-start gap-3">
-            <View className="w-8 h-8 rounded-full bg-cyan-500/20 items-center justify-center mt-0.5">
-              <Text className="text-cyan-500 font-bold">3</Text>
-            </View>
-            <View className="flex-1">
-              <Text className="text-white font-medium mb-1">They Join</Text>
-              <Text className="text-white/60 text-sm">
-                Anyone with the link can join your challenge
-              </Text>
-            </View>
-          </View>
+      {/* View Challenge Button */}
+      <TouchableOpacity
+        onPress={onDone}
+        className="py-4 rounded-xl items-center mb-4 border border-white/20"
+        style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+      >
+        <View className="flex-row items-center gap-2">
+          <Ionicons name="eye-outline" size={20} color="white" />
+          <Text className="text-white font-bold text-lg">View Challenge</Text>
         </View>
-      </View>
-
-      {/* Info Note */}
-      <View className="mt-6 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 mb-6">
-        <View className="flex-row items-start gap-3">
-          <Ionicons name="information-circle" size={24} color="#00c2ff" />
-          <View className="flex-1">
-            <Text className="text-cyan-500 text-sm">
-              Anyone with this link can join your challenge. You can always manage participants later in the challenge settings.
-            </Text>
-          </View>
-        </View>
-      </View>
+      </TouchableOpacity>
     </ScrollView>
   );
 }

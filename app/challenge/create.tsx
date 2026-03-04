@@ -35,6 +35,8 @@ interface ChallengeData {
 
 export default function CreateChallengeScreen() {
   const [step, setStep] = useState(1);
+  const [createdChallengeId, setCreatedChallengeId] = useState<string | null>(null);
+  const [createdJoinCode, setCreatedJoinCode] = useState<string | null>(null);
   const { uploadChallengeImage, createChallenge, isUploading, isCreating } = useCreateChallenge();
   const [challengeData, setChallengeData] = useState<ChallengeData>({
     // Step 1
@@ -131,7 +133,15 @@ export default function CreateChallengeScreen() {
 
   const handleBack = () => {
     if (isLoading) return;
-    if (step > 1) {
+    if (step === 3 && challengeData.challengeType === 'group') {
+      // On the publish/share step, dismiss the entire create flow
+      if (createdChallengeId) {
+        // Already published — go to the challenge
+        router.replace(`/challenge/${createdChallengeId}`);
+      } else {
+        router.back();
+      }
+    } else if (step > 1) {
       setStep(step - 1);
     } else {
       Alert.alert(
@@ -156,7 +166,7 @@ export default function CreateChallengeScreen() {
       }
 
       // Create challenge + tasks + auto-join
-      const challengeId = await createChallenge({
+      const { id: challengeId, joinCode } = await createChallenge({
         title: challengeData.title,
         description: challengeData.description,
         duration: challengeData.duration,
@@ -168,8 +178,11 @@ export default function CreateChallengeScreen() {
         tasks: challengeData.tasks,
       });
 
-      // For group challenges, skip the alert — Step3ShareLink shows its own success UI
-      if (challengeData.challengeType !== 'group') {
+      if (challengeData.challengeType === 'group') {
+        // Store the ID + join code so Step3ShareLink can show success view with real share link
+        setCreatedChallengeId(challengeId);
+        setCreatedJoinCode(joinCode);
+      } else {
         Alert.alert(
           'Challenge Created!',
           'Your challenge has been published successfully.',
@@ -278,9 +291,12 @@ export default function CreateChallengeScreen() {
 
         {step === 3 && challengeData.challengeType === 'group' && (
           <Step3ShareLink
-            challengeId=""
+            challengeId={createdChallengeId}
+            joinCode={createdJoinCode}
             challengeTitle={challengeData.title}
+            isLoading={isLoading}
             onPublish={handleComplete}
+            onDone={() => router.replace(`/challenge/${createdChallengeId}`)}
           />
         )}
       </View>

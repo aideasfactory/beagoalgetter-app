@@ -109,7 +109,7 @@ export function useCreateChallenge() {
     return data.publicUrl;
   };
 
-  const createChallenge = async (input: CreateChallengeInput): Promise<string> => {
+  const createChallenge = async (input: CreateChallengeInput): Promise<{ id: string; joinCode: string }> => {
     setIsCreating(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -204,7 +204,7 @@ export function useCreateChallenge() {
 
       if (participantError) throw participantError;
 
-      return challenge.id;
+      return { id: challenge.id, joinCode: joinCode };
     } finally {
       setIsCreating(false);
     }
