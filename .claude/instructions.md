@@ -20,7 +20,11 @@ I understand I must not run linting or formatting commands.
 
 ---
 
-## Phase Discipline Protocol
+## Autonomous Phase Execution Protocol
+
+### CRITICAL: Do NOT Stop Between Phases
+
+**You MUST execute all phases autonomously without stopping, pausing, or asking for permission between phases.** Phases exist to organize work, NOT to create pause points. Complete the entire task in one continuous execution.
 
 ### Starting a New Task
 
@@ -37,43 +41,42 @@ When you receive a new task:
    - Define specific, actionable tasks for each subsequent phase
    - Document decisions and risks
 5. **Mark Phase 1 as complete** in current-task.md
-6. **Write `.phase_done` sentinel file** to the project root
-7. **STOP** — your work is done for this session. Do not continue. Do not ask to continue. Do not prompt the user. Just stop.
+6. **Immediately proceed to Phase 2** — do NOT write a sentinel, do NOT stop, do NOT ask to continue
+7. **Continue executing all remaining phases** sequentially until the task is fully complete
+8. **Write `.phase_done` sentinel file** only after the FINAL phase is complete
 
 ### Executing a Phase
 
-When told to "continue" or "next phase":
+For each phase (executed as part of the continuous flow):
 
-1. **Read `.claude/tasks/current-task.md`**
-2. **Identify the next phase** with status "⏸️ Not Started"
-3. **Execute ONLY that phase** — do not skip ahead, do not work on multiple phases
-4. **Update `current-task.md` as you work:**
+1. **Update the phase status** to "🔄 In Progress"
+2. **Execute all tasks in the phase**
+3. **Update `current-task.md` as you work:**
    - Check off steps as you complete them
    - Update "Currently working on" section
    - Document any decisions or issues
-5. **When the phase is fully complete:**
+4. **When the phase is complete:**
    - Mark all tasks in the phase as done
    - Update the phase status to "✅ Complete"
    - Fill in the Reflection section
    - Update the "Last Updated" timestamp
-6. **Write `.phase_done` sentinel file** to the project root
-7. **STOP** — do not ask if you should continue, do not begin the next phase, do not prompt the user. Just stop.
+5. **Move to the next phase immediately** — no stopping, no asking
 
 ### Sentinel File
 
-Write `.phase_done` to the **project root** after completing every phase.
+Write `.phase_done` to the **project root** only ONCE — after the **final phase** is complete.
 
 **On success:**
 ```json
 {
-  "phase_completed": 1,
+  "phase_completed": 4,
   "total_phases": 4,
   "status": "success",
-  "summary": "Brief description of what was accomplished"
+  "summary": "Brief description of what was accomplished across all phases"
 }
 ```
 
-**On failure:**
+**On failure (if blocked mid-task):**
 ```json
 {
   "phase_completed": 2,
@@ -83,7 +86,7 @@ Write `.phase_done` to the **project root** after completing every phase.
 }
 ```
 
-Then STOP. Even on failure, stop completely.
+Only stop on failure if genuinely blocked (e.g., missing information from the user, external dependency unavailable).
 
 ### Resumption Rules
 
@@ -91,6 +94,7 @@ Then STOP. Even on failure, stop completely.
 - **Do not re-plan** — the plan was established in Phase 1
 - **Do not modify completed phases** — only work on the current phase
 - **If the plan needs adjustment** — note it in the current phase's notes and adapt
+- **Execute all remaining phases** — do not stop after just one
 
 ---
 
@@ -128,19 +132,14 @@ Then STOP. Even on failure, stop completely.
 - Update current-task.md as you work
 - Document decisions as you make them
 - If blocked, document the blocker and write a failed sentinel
+- **Do NOT create a "Testing & Review" phase** — there is no test runner or migration runner in this workflow. Self-review happens inline via the Self-Review Checklist before marking each implementation phase complete.
 
-### Testing & Review Phase
-- Code review all new and modified files
-- Verify TypeScript types are correct
-- Check for missing error handling or loading states
-- Document all issues found
-- Verify no regressions to existing functionality
-
-### Reflection Phase
+### Final Phase (Reflection & Cleanup)
 - Be honest about what worked and what didn't
 - Identify technical debt created
 - Note future improvements
 - Document lessons learned
+- Fill in the TASK COMPLETE section of current-task.md
 
 ---
 
@@ -206,8 +205,8 @@ completed/2026-02-16-settings-screen.md
 **Start new task:**
 "Create new task for [feature name]"
 
-**Continue work:**
-"Continue" or "Next phase"
+**Resume interrupted task:**
+"Continue" or "Next phase" (only needed if a previous run was interrupted or failed)
 
 **Check status:**
 "What's the current status?"

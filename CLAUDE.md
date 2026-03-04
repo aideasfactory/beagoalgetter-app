@@ -23,33 +23,35 @@ Then announce what you've read and the current status.
 
 ---
 
-## Core Workflow: Phase Discipline
+## Core Workflow: Autonomous Phase Execution
 
-**Every task follows strict phase-based execution. One phase per session, then STOP.**
+**Every task follows strict phase-based execution. Execute ALL phases autonomously — do NOT stop between phases or ask for permission to continue.**
 
 ### New Task
 1. Read all required files
 2. Create/update `.claude/tasks/current-task.md` — break the task into discrete phases
 3. Planning IS Phase 1 — execute it fully
-4. Write `.phase_done` sentinel to project root
-5. **STOP completely** — do not continue, do not ask to continue
+4. **Immediately proceed to Phase 2** — do not stop, do not ask to continue
+5. Continue executing all phases sequentially until the entire task is complete
+6. Write `.phase_done` sentinel to project root only after the FINAL phase
 
 ### Resuming (when told "continue" or "next phase")
 1. Read `.claude/tasks/current-task.md`
 2. Find the next incomplete phase
-3. Execute ONLY that phase
-4. Write `.phase_done` sentinel
-5. **STOP completely**
+3. Execute that phase and all remaining phases sequentially
+4. Write `.phase_done` sentinel after the FINAL phase
 
 ### Sentinel File (`.phase_done`)
+
+Written only once at the end of the entire task (not after each phase):
 
 On success:
 ```json
 {
-  "phase_completed": 1,
+  "phase_completed": 4,
   "total_phases": 4,
   "status": "success",
-  "summary": "Brief description of what was accomplished"
+  "summary": "Brief description of what was accomplished across all phases"
 }
 ```
 

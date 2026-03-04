@@ -68,7 +68,7 @@
 **What could be improved:**
 -
 
-**→ Phase complete. Write `.phase_done` sentinel and STOP.**
+**→ Phase complete. Proceed immediately to the next phase.**
 
 ---
 
@@ -103,7 +103,7 @@
 **What could be improved:**
 -
 
-**→ Phase complete. Write `.phase_done` sentinel and STOP.**
+**→ Phase complete. Proceed immediately to the next phase.**
 
 ---
 
@@ -117,8 +117,10 @@ Common phase patterns:
 - Services & Hooks
 - UI Components
 - Integration & Wiring
-- Testing & Review
 - Reflection & Cleanup
+
+DO NOT create a "Testing & Review" phase — self-review is done inline.
+DO NOT stop between phases — execute all phases continuously.
 
 Number phases sequentially: Phase 3, Phase 4, Phase 5, etc.
 -->
