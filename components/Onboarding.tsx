@@ -35,27 +35,27 @@ export const Onboarding = ({ onGetStarted, onLogin }: OnboardingProps) => {
   const slides: OnboardingSlide[] = [
     {
       id: '1',
-      icon: 'disc-outline',
+      icon: 'rocket-outline',
       title: 'Be a Goal Getter',
-      description: 'Set goals. Stay accountable.',
+      description: 'Set meaningful goals, build daily habits, and stay accountable.\n\nTrack your streaks, earn ability points, and watch your consistency grow day by day.',
       color: '#00c2ff',
-      image: 'https://images.unsplash.com/photo-1596913152332-e56f2cc8165c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxmaXRuZXNzJTIwcnVubmluZyUyMHRyYWNrfGVufDF8fHx8MTc2MjQyMTU4NHww&ixlib=rb-4.1.0&q=80&w=1080',
+      image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1080',
     },
     {
       id: '2',
-      icon: 'trending-up',
-      title: 'Track Progress',
-      description: 'Set personal or group goals and track your progress every single day\n\nBuild streaks, earn ability points, and visualize your journey to success.\n\nJoin friends, compete on leaderboards, and celebrate wins together.',
+      icon: 'megaphone-outline',
+      title: 'Share Your Journey',
+      description: 'Post your daily check-ins to the social feed for everyone to see.\n\nYour wins get celebrated. Your misses keep you honest. Real accountability from real people.',
       color: '#00c2ff',
-      image: 'https://images.unsplash.com/photo-1620188500179-32ac33c60848?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxneW0lMjB3b3Jrb3V0JTIwdHJhaW5pbmd8ZW58MXx8fHwxNzYyMzE4MzEzfDA&ixlib=rb-4.1.0&q=80&w=1080',
+      image: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1080',
     },
     {
       id: '3',
       icon: 'people',
-      title: 'Challenge Yourself',
-      description: 'Join in a 5k a day challenge or a 100 push-ups a day challenge.\n\nChallenge yourself to read 10 pages a day or to meditate for 10 minutes a day.\n\nDrink 8 glasses of water a day, challenge yourself to be more active every day.',
+      title: 'Stronger Together',
+      description: 'Join a team and take on challenges as a group.\n\nCombine your streaks, climb the leaderboard together, and push each other to show up every single day.',
       color: '#00c2ff',
-      image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=1080',
+      image: 'https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1080',
     },
   ];
 
@@ -97,8 +97,8 @@ export const Onboarding = ({ onGetStarted, onLogin }: OnboardingProps) => {
       />
       
       <LinearGradient
-        colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.6)', '#000000']}
-        locations={[0, 0.6, 1]}
+        colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.75)', '#000000']}
+        locations={[0, 0.5, 0.85]}
         style={{
           position: 'absolute',
           top: 0,

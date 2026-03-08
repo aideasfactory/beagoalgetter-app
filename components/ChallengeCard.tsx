@@ -71,11 +71,11 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
           </View>
         )}
         
-        {/* Gradient Overlay */}
+        {/* Bottom gradient for text readability */}
         <LinearGradient
-          colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)', 'rgba(0,0,0,0.95)']}
-          locations={[0, 0.5, 1]}
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          locations={[0, 1]}
+          style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: '60%' }}
         />
 
         {/* Badges on Image */}
@@ -99,10 +99,10 @@ export function ChallengeCard({ challenge, onPress }: ChallengeCardProps) {
 
         {/* Title & Description Overlay */}
         <View style={{ position: 'absolute', bottom: 12, left: 12, right: 12 }}>
-          <Text className="text-white font-bold text-sm mb-1" numberOfLines={2}>
+          <Text className="text-white font-bold text-sm mb-1" numberOfLines={2} style={{ textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
             {challenge.title}
           </Text>
-          <Text className="text-white/70 text-xs" numberOfLines={1}>
+          <Text className="text-white/70 text-xs" numberOfLines={1} style={{ textShadowColor: 'rgba(0,0,0,0.75)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 }}>
             {challenge.description}
           </Text>
         </View>
