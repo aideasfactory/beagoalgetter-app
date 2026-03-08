@@ -111,8 +111,8 @@ export function AuthScreen({ mode }: AuthScreenProps) {
           resizeMode="cover"
         />
         <LinearGradient
-          colors={['rgba(0,0,0,0.9)', 'rgba(0,0,0,0.8)', '#000000']}
-          locations={[0, 0.5, 1]}
+          colors={['rgba(0,0,0,0.85)', 'rgba(0,0,0,0.92)', '#000000']}
+          locations={[0, 0.4, 0.85]}
           className="absolute inset-0"
         />
       </View>
