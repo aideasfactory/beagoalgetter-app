@@ -1,45 +1,39 @@
-# Task: Teams & Leaderboard - Wire Up Real Data
+# Task: Push Notification System
 
-**Created:** 2026-02-21
-**Last Updated:** 2026-02-22
-**Status:** Complete
+**Created:** 2026-03-08
+**Last Updated:** 2026-03-08
+**Status:** Planning
 
 ---
 
 ## Overview
 
 ### Goal
-Wire up the teams and leaderboard system with real database data. The database structure largely exists (`teams` table, `challenge_participants.team_id`), but the `challenge_leaderboard` view needs team info, a team leaderboard view is missing, and all frontend components (LeaderboardTab, AdminTab) use mock data. We need to:
-1. Enhance database views to support team + individual leaderboards
-2. Create services and hooks to fetch leaderboard/team data
-3. Wire up LeaderboardTab to show real individual leaderboard (top 6) and team standings
-4. Wire up AdminTab to manage teams and participant assignments with real data
-
-### Requirements
-1. **Individual Leaderboard** — Top 6 participants ranked by ability points + streak
-   - Top 3 displayed on podium (existing design)
-   - 4th, 5th, 6th displayed in list below (existing design)
-2. **Team Standings** — Each team shows cumulative ability points + streak from all members
-3. **Team Assignment** — Participants can be assigned to teams within a challenge
-4. **Admin Team Management** — Challenge owners can create teams, assign participants via AdminTab
+Implement a complete push notification system for Goal Getter that includes:
+1. Native device push notifications via Expo Push Notifications
+2. In-app notification list/history area
+3. Admin UI for composing and sending broadcast push notifications
+4. Deep linking from notifications to relevant app sections
+5. Push token persistence to Supabase
 
 ### Success Criteria
-- [ ] `challenge_leaderboard` view includes team_name and team_color
-- [ ] New `challenge_team_leaderboard` view aggregates team totals per challenge
-- [ ] Leaderboard service fetches individual + team leaderboard data
-- [ ] Team service supports CRUD operations (create, assign, remove)
-- [ ] LeaderboardTab displays real data for both team standings and individual leaderboard
-- [ ] AdminTab creates/manages teams and assigns participants with real DB operations
+- [ ] Push tokens saved to `profiles.push_token` in Supabase on app launch
+- [ ] New `notification_type` enum value 'admin' for broadcast notifications
+- [ ] `notifications` table supports title + deep link data for admin notifications
+- [ ] `push_notification_campaigns` table tracks sent broadcasts
+- [ ] Push notification service sends via Expo Push API and creates in-app notification records
+- [ ] Admin screen to compose and send push notifications (title, body, optional deep link)
+- [ ] Campaign history visible on admin screen
+- [ ] Tapping a push notification deep links to the correct app screen
+- [ ] NotificationsModal enhanced: admin notifications show title+body, tap to deep link, mark as read on tap, "Mark all read" button
 - [ ] Database schema documentation updated
 - [ ] No regressions to existing functionality
 
 ### Context
-- **Existing DB:** `teams` table (group_id, name, color), `challenge_participants.team_id` FK, `challenge_leaderboard` view (missing team info)
-- **Existing UI:** LeaderboardTab and AdminTab fully designed with mock data
-- **LeaderboardTab:** `components/challenge-tabs/LeaderboardTab.tsx` — individual podium + team standings
-- **AdminTab:** `components/challenge-tabs/AdminTab.tsx` — team CRUD + participant assignment
-- **Challenge detail:** `app/challenge/[id].tsx` — renders tabs, passes `challengeId`
-- **Schema:** `supabase/schema.sql` lines 639-648 — current `challenge_leaderboard` view
+- **Existing infrastructure:** `expo-notifications` installed, `registerForPushNotificationsAsync()` retrieves Expo push token, `sendPushNotification()` test function exists, `notifications` table/view/service/hook all exist, `NotificationsModal` renders notification list from real DB data
+- **Key gap:** Push token is retrieved but never saved to `profiles.push_token`. No server-side push delivery. No admin UI. No deep linking. Notification listeners are empty stubs.
+- **Existing notification_type enum:** `'like' | 'points' | 'challenge' | 'streak'` — needs `'admin'`
+- **Profiles table** already has `push_token` (TEXT) and `device` (TEXT, CHECK ios/android) columns — ready for use
 
 ---
 
@@ -48,280 +42,443 @@ Wire up the teams and leaderboard system with real database data. The database s
 **Status:** 🔄 In Progress
 
 ### Tasks
-- [x] Review current database schema for teams support
-- [x] Review `challenge_leaderboard` view definition
-- [x] Review LeaderboardTab component (React Native version)
-- [x] Review AdminTab component (React Native version)
-- [x] Review example leaderboard queries
+- [x] Review requirements
+- [x] Review existing notification infrastructure (Notifications.ts, useNotifications, useUserNotifications, notificationService, NotificationsModal, home screen integration)
+- [x] Review database schema (notifications table, notification_type enum, profiles.push_token)
 - [x] Identify database gaps
 - [x] Plan migration changes
 - [x] Identify all files to create/modify
 - [x] Plan implementation approach
-- [ ] Get approval before coding
+- [x] Define implementation phases
 
 ### Database Analysis
 
 #### What Already Exists
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `teams` table | ✅ Ready | id, group_id, name, color, created_at |
-| `challenge_participants.team_id` | ✅ Ready | FK to teams(id), nullable |
-| `challenge_participants.current_streak` | ✅ Ready | Per-participant streak tracking |
-| `challenge_participants.total_ability_points` | ✅ Ready | Per-participant points tracking |
-| `challenge_leaderboard` view | ⚠️ Partial | Ranks individuals but missing team_name, team_color |
-| Team leaderboard view | ❌ Missing | No view to aggregate team totals per challenge |
-| `idx_participants_team_id` index | ✅ Ready | Already indexed for team queries |
+| `notifications` table | ✅ Ready | id, user_id, type, message, from_user_id, post_id, read, created_at |
+| `notifications_with_users` view | ✅ Ready | Joins sender profile info |
+| `notification_type` enum | ⚠️ Needs extension | Only has: like, points, challenge, streak — needs 'admin' |
+| `profiles.push_token` | ✅ Column exists | TEXT, nullable — but never written to |
+| `profiles.device` | ✅ Column exists | CHECK IN ('ios', 'android') — never written to |
+| `notificationService` | ✅ Ready | getNotifications, getUnreadCount, markAsRead, markAllAsRead |
+| `useNotifications` hook | ⚠️ Incomplete | Retrieves push token but doesn't save to DB. Notification listeners are empty. |
+| `useUserNotifications` hook | ✅ Ready | Fetches notifications, mark read, mark all read |
+| `NotificationsModal` | ⚠️ Needs enhancement | No support for admin notification type, no deep linking, no title display, no mark-read-on-tap |
+| `expo-notifications` | ✅ Installed | v0.31.3, handler configured in tabs layout |
+| `Notifications.ts` | ✅ Ready | registerForPushNotificationsAsync(), sendPushNotification() |
 
-#### Current `challenge_leaderboard` View (schema.sql:640-648)
-```sql
-CREATE OR REPLACE VIEW challenge_leaderboard AS
-SELECT
-    cp.*,
-    pr.display_name,
-    pr.avatar_url,
-    pr.username,
-    RANK() OVER (PARTITION BY cp.challenge_id ORDER BY cp.total_ability_points DESC, cp.current_streak DESC) as rank
-FROM challenge_participants cp
-LEFT JOIN profiles pr ON cp.user_id = pr.id;
-```
-**Problem:** No LEFT JOIN to `teams` — individual entries have no team context.
+#### What's Missing
+| Component | Needed For |
+|-----------|-----------|
+| `'admin'` value in notification_type enum | Broadcast notifications |
+| `title` column on notifications | Push notification title display |
+| `data` JSONB column on notifications | Deep link data (screen, entity ID) |
+| `push_notification_campaigns` table | Track admin broadcast history |
+| Push token persistence | Saving tokens to profiles.push_token |
+| Push notification send service | Batch-send via Expo Push API |
+| Admin UI screen | Compose and send notifications |
+| Deep link handler | Navigate on notification tap |
+| Enhanced NotificationsModal | Title, deep link, mark-read-on-tap |
 
 ### Migration Plan
 
-#### Migration 013: Update challenge_leaderboard + Create team leaderboard view
+#### Migration 014: Push notification support
 
-**File:** `supabase/migrations/013_update_leaderboard_views.sql`
+**File:** `supabase/migrations/014_push_notification_support.sql`
 
-**Change 1: Update `challenge_leaderboard` view**
-Add LEFT JOIN to `teams` table to include `team_name` and `team_color`:
+**Change 1: Add 'admin' to notification_type enum**
 ```sql
-CREATE OR REPLACE VIEW challenge_leaderboard AS
-SELECT
-    cp.*,
-    pr.display_name,
-    pr.avatar_url,
-    pr.username,
-    t.name as team_name,
-    t.color as team_color,
-    RANK() OVER (PARTITION BY cp.challenge_id ORDER BY cp.total_ability_points DESC, cp.current_streak DESC) as rank
-FROM challenge_participants cp
-LEFT JOIN profiles pr ON cp.user_id = pr.id
-LEFT JOIN teams t ON cp.team_id = t.id;
+ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'admin';
 ```
 
-**Change 2: Create `challenge_team_leaderboard` view**
-Aggregate team totals per challenge:
+**Change 2: Add title and data columns to notifications**
 ```sql
-CREATE OR REPLACE VIEW challenge_team_leaderboard AS
-SELECT
-    t.id as team_id,
-    t.name as team_name,
-    t.color as team_color,
-    t.group_id,
-    cp.challenge_id,
-    COUNT(cp.user_id) FILTER (WHERE cp.status IN ('active', 'completed')) as member_count,
-    COALESCE(SUM(cp.total_ability_points) FILTER (WHERE cp.status IN ('active', 'completed')), 0) as total_points,
-    COALESCE(SUM(cp.current_streak) FILTER (WHERE cp.status IN ('active', 'completed')), 0) as total_streak,
-    RANK() OVER (PARTITION BY cp.challenge_id ORDER BY COALESCE(SUM(cp.total_ability_points) FILTER (WHERE cp.status IN ('active', 'completed')), 0) DESC) as rank
-FROM teams t
-LEFT JOIN challenge_participants cp ON t.id = cp.team_id
-GROUP BY t.id, t.name, t.color, t.group_id, cp.challenge_id;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS title TEXT;
+ALTER TABLE notifications ADD COLUMN IF NOT EXISTS data JSONB DEFAULT '{}';
 ```
+
+**Change 3: Create push_notification_campaigns table**
+```sql
+CREATE TABLE push_notification_campaigns (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title TEXT NOT NULL,
+    body TEXT NOT NULL,
+    data JSONB DEFAULT '{}',
+    sent_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    recipient_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE push_notification_campaigns ENABLE ROW LEVEL SECURITY;
+```
+
+**Change 4: Update notifications_with_users view**
+Add `title` and `data` fields to the view.
+
+**Change 5: RLS policies for push_notification_campaigns**
+- Authenticated users can view campaigns they sent (SELECT where sent_by = auth.uid)
+- Authenticated users can create campaigns (INSERT)
 
 ### Files Plan
 
 **New files to create:**
-1. `supabase/migrations/013_update_leaderboard_views.sql` — DB migration
-2. `services/leaderboard.ts` — Leaderboard service (fetch individual + team leaderboard)
-3. `services/team.ts` — Team service (CRUD: create team, assign participant, remove from team, delete team, get teams)
-4. `hooks/useLeaderboard.ts` — Hook for fetching leaderboard data
-5. `hooks/useTeams.ts` — Hook for team management operations
+1. `supabase/migrations/014_push_notification_support.sql` — DB migration
+2. `services/pushNotification.ts` — Send push notifications via Expo API + create notification records
+3. `app/admin/send-notification.tsx` — Admin screen to compose/send push notifications
+4. `app/admin/_layout.tsx` — Admin routes layout with Stack navigator
 
 **Files to modify:**
-1. `components/challenge-tabs/LeaderboardTab.tsx` — Replace mock data with real data via `useLeaderboard` hook
-2. `components/challenge-tabs/AdminTab.tsx` — Replace mock data with real data via `useTeams` hook
-3. `.claude/database-schema.md` — Update views documentation + add migration to log
+1. `hooks/useNotifications.ts` — Save push token to profiles.push_token + deep link handler on notification tap
+2. `services/notification.ts` — Add createNotification method for admin notifications
+3. `services/index.ts` — Export new pushNotification service
+4. `types/database.example.ts` — Add PushNotificationCampaign type, update NotificationType, update NotificationWithUser
+5. `components/NotificationsModal.tsx` — Support admin notifications, title display, tap-to-deep-link, mark-read-on-tap, mark-all-read button
+6. `app/(tabs)/index.tsx` — Pass markAsRead/markAllAsRead to NotificationsModal
+7. `app/(tabs)/profile/settings.tsx` — Add "Send Notification" admin button
+8. `.claude/database-schema.md` — Update documentation
 
-### Implementation Phases
+### Push Notification Architecture
 
-#### Phase 2A: Database Migration
-1. Create `013_update_leaderboard_views.sql`
-2. Update `.claude/database-schema.md`
+**Sending flow (admin broadcast):**
+1. Admin opens Send Notification screen from settings
+2. Fills in title, body, selects optional deep link target (challenge, general)
+3. Taps "Send to All Users"
+4. `pushNotificationService.sendBroadcast()`:
+   a. Creates campaign record in `push_notification_campaigns`
+   b. Fetches all profiles with non-null `push_token`
+   c. Sends push notifications via Expo Push API in chunks of 100
+   d. Creates `notifications` rows for each user (type='admin', title, body as message, data for deep link)
+   e. Updates campaign `recipient_count`
 
-#### Phase 2B: Services Layer
-1. Create `services/leaderboard.ts` — `getIndividualLeaderboard(challengeId)`, `getTeamLeaderboard(challengeId)`
-2. Create `services/team.ts` — `getTeams(groupId)`, `createTeam(groupId, name, color)`, `deleteTeam(teamId)`, `assignParticipantToTeam(participantId, teamId)`, `removeParticipantFromTeam(participantId)`
+**Receiving flow:**
+1. Device receives push → shows native notification banner (handled by Expo notification handler)
+2. User taps push notification → `addNotificationResponseReceivedListener` fires → extracts `data` → navigates via `router.push()`
+3. User opens NotificationsModal → sees admin notification with title + body + deep link indicator
+4. Taps notification in list → marks as read + navigates to deep link target
 
-#### Phase 2C: Hooks
-1. Create `hooks/useLeaderboard.ts` — Fetches both individual + team leaderboard for a challenge
-2. Create `hooks/useTeams.ts` — Team CRUD operations for AdminTab
-
-#### Phase 2D: LeaderboardTab Wiring
-1. Replace mock data with `useLeaderboard` hook
-2. Map DB response to existing UI data shapes
-3. Handle loading + empty states
-4. Keep top 6 individual display (3 podium + 3 list)
-
-#### Phase 2E: AdminTab Wiring
-1. Replace mock data with `useTeams` hook
-2. Wire create team to `teamService.createTeam()`
-3. Wire assign participant to `teamService.assignParticipantToTeam()`
-4. Wire remove participant to `teamService.removeParticipantFromTeam()`
-5. Fetch real participants from `challenge_participants`
+**Deep link data structure:**
+```json
+{
+  "screen": "challenge",
+  "id": "uuid-here"
+}
+```
+Supported screens: `challenge` → `/challenge/{id}`, `home` → `/`, `profile` → `/profile`, none → no navigation
 
 ### Supabase Requirements
-- [x] New tables needed? **No** — `teams` and `challenge_participants.team_id` already exist
-- [x] New RLS policies needed? **No** — teams already have RLS, views inherit from base tables
-- [x] New migrations needed? **Yes** — Update `challenge_leaderboard` view + create `challenge_team_leaderboard` view
-- [x] Schema documentation update needed? **Yes** — Add new view docs + migration log entry
+- [x] New tables needed? **Yes** — `push_notification_campaigns`
+- [x] New RLS policies needed? **Yes** — for campaigns table
+- [x] New migrations needed? **Yes** — migration 014
+- [x] Schema documentation update needed? **Yes** — new table + modified notifications table
 
 ### Dependencies Needed
-- None — all dependencies already in place
+- None — `expo-notifications` and `expo-device` already installed
 
 ### Decisions Made
-- **Team leaderboard uses SUM not AVG for streak:** Cumulative total of all member streaks (per user requirement: "gets added as a cumulative total")
-- **FILTER clause:** Use `FILTER (WHERE status IN ('active', 'completed'))` to only count active/completed participants in team totals
-- **Individual leaderboard limited to top 6:** Top 3 on podium, 4-6 in list (per user requirement)
-- **Teams remain group-scoped:** Teams belong to groups, not challenges — this is the existing design and makes sense for group challenges
-- **Single migration file:** Both view changes in one migration since they're related
+- **Client-side push delivery:** Admin UI sends directly via Expo Push API from the mobile client. Simpler than Edge Functions for MVP. Can be migrated to server-side later.
+- **Admin access:** Initially available to all authenticated users from settings screen. Admin role restriction can be added later via a flag on profiles.
+- **Chunk size:** 100 tokens per Expo API request (Expo's recommended limit)
+- **Campaign tracking:** Separate `push_notification_campaigns` table logs each broadcast for history
+- **Deep link structure:** Simple `{ screen, id }` in notification `data` JSONB column
+- **No real-time subscription for notifications yet:** Can be added as a future improvement. Current flow: refetch on mount + after mutations.
 
-### Notes
-- The existing `challenge_leaderboard` view is used via `cp.*` which already includes `team_id` — adding `team_name` and `team_color` is additive, no breaking changes
-- The team leaderboard query from `example-queries.sql` was a good reference but the view approach is cleaner
-- AdminTab already has beautiful UI for creating teams with 10 preset colors — just needs DB wiring
-- LeaderboardTab already has the exact layout requested (top 3 podium + others list + team standings)
+### Risks Identified
+- **Client-side push token reading:** Profiles SELECT is public, so push_token is readable by any authenticated user. Acceptable for MVP; for production, consider column-level security or Edge Function.
+- **Expo Push API rate limits:** For very large user bases, batch sending from client could be slow. Edge Function migration addresses this.
+- **Notification permission denied:** Some users may deny push permissions — these users still get in-app notifications but not native push.
+- **Deep link target may not exist:** A challenge could be deleted after notification was sent. Need graceful handling.
 
 ### Reflection
 **What went well:**
-- The database is very well set up for this feature — teams table, team_id FK, and per-participant stats all exist
-- The frontend UI is already fully designed — we just need to replace mock data with real queries
-- The existing `example-queries.sql` had reference queries for both individual and team leaderboards
+- Existing infrastructure is solid — push token retrieval, notification table, service/hook layer, and UI all exist
+- Just need to connect the dots: save tokens, add admin type, build send service, add deep linking
 
 **What could be improved:**
-- The `challenge_leaderboard` view should have included team info from the start
+- Push token was retrieved but never persisted — this should have been done in the initial notification setup
+- Notification listeners were left as empty stubs — should have been scaffolded with TODO comments
 
-**Risks identified:**
-- Team leaderboard view needs careful handling of NULL `challenge_id` when teams exist but no participants are assigned
-- The FILTER clause in the team leaderboard view may need testing with edge cases (no members, all quit, etc.)
-- If a challenge has no teams, the team standings section should be hidden
-
-**⚠️ STOP - Awaiting approval to proceed to Phase 2**
+**→ Phase complete. Proceed immediately to the next phase.**
 
 ---
 
-## PHASE 2: IMPLEMENTATION
+## PHASE 2: DATABASE MIGRATION
 
-**Status:** ✅ Complete
+**Status:** ⏸️ Not Started
 
 ### Tasks
-- [x] Create migration `013_update_leaderboard_views.sql`
-- [x] Update `.claude/database-schema.md`
-- [x] Create `services/leaderboard.ts`
-- [x] Create `services/team.ts`
-- [x] Create `hooks/useLeaderboard.ts`
-- [x] Create `hooks/useTeams.ts`
-- [x] Wire up LeaderboardTab with real data
-- [x] Wire up AdminTab with real data
-- [x] Handle loading and empty states
-- [x] Fix Team type in `database.example.ts` (challenge_id → group_id) + add TeamLeaderboardEntry
-- [x] Add `group_id` to `useChallengeDetail` and pass to AdminTab
+- [ ] Create migration `014_push_notification_support.sql`
+  - [ ] Add 'admin' value to notification_type enum
+  - [ ] Add `title` TEXT column to notifications
+  - [ ] Add `data` JSONB column to notifications
+  - [ ] Create `push_notification_campaigns` table with RLS
+  - [ ] Update `notifications_with_users` view to include title + data
+- [ ] Update `.claude/database-schema.md`
+  - [ ] Document notifications table changes (title, data columns)
+  - [ ] Document push_notification_campaigns table
+  - [ ] Update notification_type enum values
+  - [ ] Add migration 014 to log
+  - [ ] Update ERD if needed
+
+### Currently Working On
+[Updated as you work through the phase]
 
 ### Files Created
-- `supabase/migrations/013_update_leaderboard_views.sql` — Updated `challenge_leaderboard` view + created `challenge_team_leaderboard` view
-- `services/leaderboard.ts` — `getIndividualLeaderboard()`, `getTeamLeaderboard()`
-- `services/team.ts` — `getTeamsByGroupId()`, `createTeam()`, `deleteTeam()`, `assignParticipantToTeam()`, `removeParticipantFromTeam()`, `removeParticipantFromChallenge()`, `getChallengeParticipants()`
-- `hooks/useLeaderboard.ts` — Fetches individual + team leaderboard in parallel
-- `hooks/useTeams.ts` — Team CRUD operations + participant management
+-
 
 ### Files Modified
-- `components/challenge-tabs/LeaderboardTab.tsx` — Replaced all mock data with `useLeaderboard` hook, added loading/error/empty states, avatar fallbacks
-- `components/challenge-tabs/AdminTab.tsx` — Replaced all mock data with `useTeams` hook, wired all CRUD operations, activated delete team button, real participant avatars in team cards
-- `hooks/useChallengeDetail.ts` — Added `group_id` to ChallengeDetail + RawChallengeRow + select query
-- `app/challenge/[id].tsx` — Pass `groupId={challenge.group_id}` to AdminTab
-- `services/index.ts` — Added exports for leaderboard + team services
-- `types/database.example.ts` — Fixed Team type (`challenge_id` → `group_id`), added `TeamLeaderboardEntry` interface
-- `.claude/database-schema.md` — Updated `challenge_leaderboard` docs, added `challenge_team_leaderboard` docs, added migration 013 to log
+-
 
-### Key Implementation Details
-- **LeaderboardTab:** Uses `useLeaderboard` hook which fetches individual + team data in parallel; team standings section auto-hides if no teams exist; top 3 podium with fallback to list if fewer than 3 participants; shows top 6 (3 podium + 3 list)
-- **AdminTab:** Uses `useTeams` hook; all operations (create team, delete team, assign/remove participants) hit Supabase directly and refetch data; delete team now active with confirmation dialog; team member avatars shown in team cards; relative join dates
-- **Services:** Follow existing project patterns (`throw error`, typed returns, `supabase` client import)
-- **Hooks:** Follow `useProfile`/`useChallengeDetail` patterns (useState + useEffect + useCallback)
-- **Team leaderboard view:** Uses FILTER clause to only count active/completed participants; RANK() partitioned by challenge_id
-- **Avatar fallbacks:** Both components show initial letter in a dark circle when no avatar_url exists
+### Implementation Details
+[Key decisions, patterns used, issues encountered]
+
+### Notes
+-
 
 ### Reflection
 **What went well:**
-- Clean separation: services handle DB queries, hooks manage state, components handle UI
-- Existing UI design preserved exactly — only data source changed
-- All mock data removed — no hardcoded fallbacks
+-
 
 **What could be improved:**
-- Could add optimistic updates for team assignments to feel snappier
-- Could add pull-to-refresh on the leaderboard
+-
 
-**⚠️ STOP - Awaiting approval to proceed to Phase 3**
-
----
-
-## PHASE 3: TESTING & REVIEW
-
-**Status:** ✅ Complete
-
-### Tasks
-- [x] Code review all new and modified files
-- [x] Verify migration SQL correctness
-- [x] Verify team standings show cumulative totals (view uses SUM + FILTER correctly)
-- [x] Verify admin can create teams and assign participants (all CRUD wired)
-- [x] Check TypeScript types (Team fixed, TeamLeaderboardEntry added, LeaderboardEntry extended)
-- [x] Verify no visual regressions (existing UI preserved, only data source changed)
-
-### Review Findings
-- **Migration SQL:** Both views correct. `challenge_leaderboard` adds team_name/team_color via LEFT JOIN. `challenge_team_leaderboard` aggregates correctly using FILTER clause + RANK() window function on grouped rows. Valid PostgreSQL.
-- **FK constraint verified:** `team_id REFERENCES teams(id) ON DELETE SET NULL` — deleting a team safely unassigns participants.
-- **Services:** Clean patterns, proper error handling, correct status filtering.
-- **Hooks:** Follow established patterns (useState + useCallback + useEffect). Parallel fetching with Promise.all in useLeaderboard.
-- **LeaderboardTab:** Proper loading/error/empty states. Podium fallback for < 3 participants. Team standings hidden when no teams.
-- **AdminTab:** All operations wired with confirmation dialogs. isSaving prevents double-tap. unassignedParticipants correctly computed.
-- **Types:** Team.group_id corrected. TeamLeaderboardEntry matches view. LeaderboardEntry extended with team fields.
-- **No issues found.** `removeFromTeam` intentionally not wired in UI (separate future feature).
+**→ Phase complete. Proceed immediately to the next phase.**
 
 ---
 
-## PHASE 4: REFLECTION & CLEANUP
+## PHASE 3: PUSH TOKEN PERSISTENCE & SERVICE LAYER
 
-**Status:** ✅ Complete
+**Status:** ⏸️ Not Started
 
 ### Tasks
-- [x] Document known limitations
-- [x] Note future improvements
-- [x] Final code review (completed in Phase 3)
-- [x] Update database-schema.md (completed in Phase 2)
+- [ ] Update `hooks/useNotifications.ts`
+  - [ ] After retrieving push token, save to `profiles.push_token` via Supabase update
+  - [ ] Also save device platform to `profiles.device`
+  - [ ] Only update if token changed (avoid unnecessary writes)
+- [ ] Create `services/pushNotification.ts`
+  - [ ] `sendBroadcast(title, body, data?)` — main broadcast function
+  - [ ] Fetch all profiles with non-null push_token
+  - [ ] Chunk tokens into batches of 100
+  - [ ] Send via Expo Push API (`https://exp.host/--/api/v2/push/send`)
+  - [ ] Create notification records in `notifications` table for each user
+  - [ ] Create campaign record in `push_notification_campaigns`
+  - [ ] Return campaign summary (recipient count, success/fail)
+- [ ] Update `services/notification.ts`
+  - [ ] Add `createNotification()` method for programmatic notification creation
+- [ ] Update `types/database.example.ts`
+  - [ ] Add `PushNotificationCampaign` interface
+  - [ ] Update `NotificationType` to include 'admin'
+  - [ ] Update `Notification` interface with `title` and `data` fields
+  - [ ] Update `NotificationWithUser` with `title` and `data` fields
+- [ ] Update `services/index.ts` — export pushNotificationService
+
+### Currently Working On
+[Updated as you work through the phase]
+
+### Files Created
+-
+
+### Files Modified
+-
+
+### Implementation Details
+[Key decisions, patterns used, issues encountered]
+
+### Notes
+-
+
+### Reflection
+**What went well:**
+-
+
+**What could be improved:**
+-
+
+**→ Phase complete. Proceed immediately to the next phase.**
+
+---
+
+## PHASE 4: DEEP LINKING & NOTIFICATION RESPONSE HANDLING
+
+**Status:** ⏸️ Not Started
+
+### Tasks
+- [ ] Update `hooks/useNotifications.ts`
+  - [ ] Implement `addNotificationResponseReceivedListener` — extract `data` from notification response
+  - [ ] Parse deep link data: `{ screen, id }`
+  - [ ] Navigate via `router.push()` based on screen type:
+    - `challenge` → `/challenge/{id}`
+    - `home` → `/`
+    - `profile` → `/profile`
+    - default → no navigation (just open app)
+  - [ ] Implement `addNotificationReceivedListener` — trigger refetch of notifications when a push is received while app is open
+- [ ] Update Expo notification handler in `app/(tabs)/_layout.tsx`
+  - [ ] Enable `shouldPlaySound: true` for push notifications
+
+### Currently Working On
+[Updated as you work through the phase]
+
+### Files Created
+-
+
+### Files Modified
+-
+
+### Implementation Details
+[Key decisions, patterns used, issues encountered]
+
+### Notes
+-
+
+### Reflection
+**What went well:**
+-
+
+**What could be improved:**
+-
+
+**→ Phase complete. Proceed immediately to the next phase.**
+
+---
+
+## PHASE 5: ADMIN SEND NOTIFICATION SCREEN
+
+**Status:** ⏸️ Not Started
+
+### Tasks
+- [ ] Create `app/admin/_layout.tsx` — Stack navigator for admin routes
+- [ ] Create `app/admin/send-notification.tsx` — Admin compose + send screen
+  - [ ] Header with back button and title "Send Notification"
+  - [ ] Form inputs: Title (required), Body (required)
+  - [ ] Optional deep link selector: None / Challenge (pick from list) / Home / Profile
+  - [ ] Character count indicators
+  - [ ] "Send to All Users" button with confirmation alert
+  - [ ] Loading state during send
+  - [ ] Success/error feedback
+  - [ ] Campaign history section below the form — list of past broadcasts with title, date, recipient count
+- [ ] Add navigation to admin screen from `app/(tabs)/profile/settings.tsx`
+  - [ ] Add "Send Notification" row that navigates to `/admin/send-notification`
+- [ ] Style following app's dark theme + NativeWind patterns
+
+### Admin UI Design Recommendations
+- Dark theme matching the app's `bg-black` / `bg-[#1a1a1a]` style
+- Cyan accent color (`#00c2ff`) for primary actions
+- Simple single-screen layout: compose form at top, campaign history scrollable list below
+- Confirmation dialog before sending to prevent accidents
+- Toast/alert on success showing "Sent to X users"
+- Campaign history cards showing: title, body preview (truncated), date, recipient count badge
+
+### Currently Working On
+[Updated as you work through the phase]
+
+### Files Created
+-
+
+### Files Modified
+-
+
+### Implementation Details
+[Key decisions, patterns used, issues encountered]
+
+### Notes
+-
+
+### Reflection
+**What went well:**
+-
+
+**What could be improved:**
+-
+
+**→ Phase complete. Proceed immediately to the next phase.**
+
+---
+
+## PHASE 6: ENHANCED NOTIFICATIONS MODAL
+
+**Status:** ⏸️ Not Started
+
+### Tasks
+- [ ] Update `components/NotificationsModal.tsx`
+  - [ ] Update `Notification` interface to include optional `title` and `data` fields
+  - [ ] Render admin notifications with title (bold) + body layout
+  - [ ] Use megaphone icon for admin notifications (instead of user avatar)
+  - [ ] Add "Mark All Read" button in header
+  - [ ] On notification tap: mark as read + deep link if `data.screen` exists
+  - [ ] Close modal before navigating to deep link target
+  - [ ] Empty state when no notifications
+- [ ] Update `app/(tabs)/index.tsx`
+  - [ ] Pass `markAsRead` and `markAllAsRead` from `useUserNotifications` to NotificationsModal
+  - [ ] Map `title` and `data` fields from DB notification to modal notification
+- [ ] Update `hooks/useUserNotifications.ts` if needed
+  - [ ] Ensure refetch is called when modal opens (fresh data)
+
+### Currently Working On
+[Updated as you work through the phase]
+
+### Files Created
+-
+
+### Files Modified
+-
+
+### Implementation Details
+[Key decisions, patterns used, issues encountered]
+
+### Notes
+-
+
+### Reflection
+**What went well:**
+-
+
+**What could be improved:**
+-
+
+**→ Phase complete. Proceed immediately to the next phase.**
+
+---
+
+## PHASE 7: REFLECTION & CLEANUP
+
+**Status:** ⏸️ Not Started
+
+### Tasks
+- [ ] Final review of all created/modified files
+- [ ] Verify no console.log statements left
+- [ ] Verify all TypeScript types are correct
+- [ ] Verify database-schema.md is fully updated
+- [ ] Document known limitations
+- [ ] Note future improvements
+- [ ] Write sentinel file
+
+### Currently Working On
+[Updated as you work through the phase]
+
+### Notes
+-
+
+### Reflection
+**What went well:**
+-
+
+**What could be improved:**
+-
+
+---
+
+## TASK COMPLETE
+
+**Completed:** [Date]
+
+### Final Summary
+[Brief 2-3 sentence summary of what was accomplished]
 
 ### Known Limitations
-1. **No team reassignment in UI** — `removeFromTeam` hook method exists but AdminTab doesn't expose a way to move a participant from one team to another. Planned as a separate feature.
-2. **Add-member modal only shows unassigned participants** — Participants already in a team must be removed first before reassigning. This will be addressed by the team reassignment feature.
-3. **No pull-to-refresh** — LeaderboardTab and AdminTab don't support pull-to-refresh; data loads on mount and after mutations.
-4. **Team leaderboard shows all teams** — Teams with 0 active members still appear in team standings (with 0 points/streak). Could be filtered client-side if desired.
+-
 
 ### Future Improvements
-1. **Team reassignment** — Allow moving participants between teams directly (planned as separate dev job)
-2. **Pull-to-refresh** — Add RefreshControl to LeaderboardTab and AdminTab ScrollViews
-3. **Optimistic updates** — Team assignment/removal could update UI immediately before server confirms
-4. **Real-time subscriptions** — Subscribe to `challenge_participants` changes so leaderboard updates live
-5. **Pagination** — Individual leaderboard currently limited to top 6 client-side; could paginate for large challenges
+-
 
-### Final Reflection
-**What went well:**
-- Database was well-prepared — teams table, team_id FK, per-participant stats all existed
-- Frontend UI was fully designed with mock data — clean swap to real data
-- Service → hook → component layering kept each file focused and testable
-- Both views (individual + team leaderboard) work with a single migration file
-
-**What we built:**
-- 1 migration (2 view updates)
-- 2 services (leaderboard + team)
-- 2 hooks (useLeaderboard + useTeams)
-- 2 components rewritten (LeaderboardTab + AdminTab)
-- 4 supporting files modified (useChallengeDetail, [id].tsx, database.example.ts, services/index.ts)
-- Database schema docs updated
+### Archive Notes
+**Move this file to:** `.claude/tasks/completed/2026-03-08-push-notification-system.md`
