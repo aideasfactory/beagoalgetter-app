@@ -52,7 +52,7 @@ challenge_participants ── (0..1) teams (team assignment)
 | `challenge_type` | `'personal'`, `'group'` |
 | `duration_type` | `'days'`, `'weeks'` |
 | `completion_status` | `'success'`, `'fail'`, `'joined'` |
-| `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'` |
+| `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'`, `'achievement'`, `'team_update'` |
 
 ---
 
@@ -76,7 +76,7 @@ Extends `auth.users` from Supabase authentication. Auto-created on user signup v
 | `active_challenges` | INTEGER | - | 0 | Currently active challenges |
 | `total_challenges` | INTEGER | - | 0 | Total challenges joined |
 | `date_of_birth` | DATE | nullable | null | User date of birth |
-| `notification_preferences` | JSONB | - | `'{}'` | Notification settings |
+| `notification_preferences` | JSONB | - | `'{}'` | Notification settings (see structure below) |
 | `badges` | JSONB | NOT NULL | `{first_challenge: false, streak_7_days: false, streak_30_days: false, team_player: false, streak_100_days: false, perfect_month: false}` | Badge flags |
 | `push_token` | TEXT | nullable | null | Push notification token |
 | `device` | TEXT | CHECK IN ('ios', 'android') | null | Device platform |
@@ -92,6 +92,16 @@ Extends `auth.users` from Supabase authentication. Auto-created on user signup v
 - Profiles are viewable by everyone (SELECT)
 - Users can update own profile (UPDATE)
 - Users can insert own profile (INSERT)
+
+**`notification_preferences` JSONB Structure:**
+```json
+{
+  "push_enabled": true,         // Master toggle for all push notifications
+  "achievement_alerts": true,   // Achievement-type notifications
+  "team_updates": true          // Team update-type notifications
+}
+```
+All keys default to `true` when missing (empty `{}` = all notifications enabled).
 
 ---
 
@@ -442,6 +452,7 @@ Notifications with sender profile details.
 | `trigger_recalculate_profile_stats()` | Calls `recalculate_profile_stats()` for the affected user | AFTER INSERT/UPDATE/DELETE on challenge_participants |
 | `trigger_recalculate_profile_stats_from_points()` | Looks up post author, then calls `recalculate_profile_stats()` | AFTER INSERT/UPDATE/DELETE on post_ability_points |
 | `update_challenge_participant_count()` | Recalculates `participant_count` on challenges as COUNT from challenge_participants | AFTER INSERT/DELETE on challenge_participants |
+| `get_opted_in_users(target_type)` | Returns users (user_id, push_token, device) who have opted in for a notification type and have a push token. Defaults to opted-in when preferences are empty. | Callable function (SECURITY DEFINER) |
 
 ---
 
@@ -473,6 +484,7 @@ Notifications with sender profile details.
 | 011 | `011_add_joined_to_completion_status.sql` | Added `'joined'` value to `completion_status` enum for "X joined the challenge" feed posts | 2026-02-20 |
 | 012 | `012_create_task_documents_bucket.sql` | Created `task-documents` storage bucket with RLS policies for task document attachments | 2026-02-20 |
 | 013 | `013_update_leaderboard_views.sql` | Updated `challenge_leaderboard` view to include `team_name` and `team_color`; created `challenge_team_leaderboard` view for aggregated team standings | 2026-02-22 |
+| 014 | `014_notification_preferences.sql` | Extended `notification_type` enum with `achievement` and `team_update`; created `get_opted_in_users()` function for preference-based notification filtering | 2026-03-08 |
 
 ---
 

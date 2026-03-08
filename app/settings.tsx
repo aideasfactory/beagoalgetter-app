@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useSession } from '@/context';
+import { useNotificationPreferences } from '@/hooks/useNotificationPreferences';
 
 export default function SettingsScreen() {
   const { signOut } = useSession();
-  
-  // Notification states
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [achievementAlerts, setAchievementAlerts] = useState(true);
-  const [teamUpdates, setTeamUpdates] = useState(true);
-  
+  const { preferences, loading: prefsLoading, updatePreference } = useNotificationPreferences();
+
   // Auto-post states
   const [autoPostInstagram, setAutoPostInstagram] = useState(false);
   const [autoPostTwitter, setAutoPostTwitter] = useState(false);
@@ -69,12 +66,16 @@ export default function SettingsScreen() {
                       <Text className="text-white/50 text-sm">Receive daily reminders</Text>
                     </View>
                   </View>
-                  <Switch
-                    value={pushNotifications}
-                    onValueChange={setPushNotifications}
-                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
-                    thumbColor="white"
-                  />
+                  {prefsLoading ? (
+                    <ActivityIndicator size="small" color="#00c2ff" />
+                  ) : (
+                    <Switch
+                      value={preferences.push_enabled}
+                      onValueChange={(val) => updatePreference('push_enabled', val)}
+                      trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
+                      thumbColor="white"
+                    />
+                  )}
                 </View>
               </View>
 
@@ -88,12 +89,16 @@ export default function SettingsScreen() {
                       <Text className="text-white/50 text-sm">Celebrate your wins</Text>
                     </View>
                   </View>
-                  <Switch
-                    value={achievementAlerts}
-                    onValueChange={setAchievementAlerts}
-                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
-                    thumbColor="white"
-                  />
+                  {prefsLoading ? (
+                    <ActivityIndicator size="small" color="#00c2ff" />
+                  ) : (
+                    <Switch
+                      value={preferences.achievement_alerts}
+                      onValueChange={(val) => updatePreference('achievement_alerts', val)}
+                      trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
+                      thumbColor="white"
+                    />
+                  )}
                 </View>
               </View>
 
@@ -107,12 +112,16 @@ export default function SettingsScreen() {
                       <Text className="text-white/50 text-sm">Group announcements</Text>
                     </View>
                   </View>
-                  <Switch
-                    value={teamUpdates}
-                    onValueChange={setTeamUpdates}
-                    trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
-                    thumbColor="white"
-                  />
+                  {prefsLoading ? (
+                    <ActivityIndicator size="small" color="#00c2ff" />
+                  ) : (
+                    <Switch
+                      value={preferences.team_updates}
+                      onValueChange={(val) => updatePreference('team_updates', val)}
+                      trackColor={{ false: 'rgba(255,255,255,0.2)', true: '#00c2ff' }}
+                      thumbColor="white"
+                    />
+                  )}
                 </View>
               </View>
             </View>
