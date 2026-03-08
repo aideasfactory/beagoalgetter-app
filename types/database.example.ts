@@ -16,7 +16,13 @@ import { supabase } from '@/supabase';
 export type ChallengeType = 'personal' | 'team' | 'group';
 export type DurationType = 'days' | 'weeks';
 export type CompletionStatus = 'success' | 'fail' | 'joined';
-export type NotificationType = 'like' | 'points' | 'challenge' | 'streak';
+export type NotificationType = 'like' | 'points' | 'challenge' | 'streak' | 'achievement' | 'team_update';
+
+export interface NotificationPreferences {
+  push_enabled: boolean;
+  achievement_alerts: boolean;
+  team_updates: boolean;
+}
 
 // Database Tables
 export interface ProfileBadges {

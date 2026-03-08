@@ -96,7 +96,7 @@ Fix two issues with the onboarding/auth flow:
 
 ---
 
-## PHASE 4: REFLECTION & CLEANUP
+## PHASE 4: SETTINGS SCREEN WIRING
 
 **Status:** ✅ Complete
 
