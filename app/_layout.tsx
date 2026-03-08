@@ -11,6 +11,7 @@ import { LogBox, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import "../global.css";
 import { LoadingScreen } from '@/components';
+import { useAppUpdates } from '@/hooks';
 import i18n from '../i18n';
 import { I18nextProvider } from 'react-i18next';
 
@@ -19,6 +20,8 @@ export {
 } from 'expo-router';
 
 export default function Root() {
+  // Check for OTA updates on app launch (downloads + applies automatically)
+  useAppUpdates();
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),

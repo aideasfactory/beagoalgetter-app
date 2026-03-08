@@ -8,6 +8,15 @@
     "scheme": "goalgetter",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6f3c64d4-85f3-4b4d-9354-8a5bd78807f0",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
@@ -78,7 +87,8 @@
       "expo-secure-store",
       "expo-apple-authentication",
       "expo-notifications",
-      "expo-localization"
+      "expo-localization",
+      "expo-updates"
     ],
     "experiments": {
       "typedRoutes": true

@@ -16,6 +16,9 @@
     "buildAndroidProd": "eas build --profile production --platform android",
     "buildIosProd": "eas build --profile production --platform ios",
     "submitIosProd": "eas submit --platform ios",
+    "update:production": "eas update --channel production",
+    "update:staging": "eas update --channel staging",
+    "update:development": "eas update --channel development",
     "lint": "expo lint",
     "remove-auth": "node scripts/remove_auth.js"
   },
@@ -57,6 +60,7 @@
     "expo-superwall": "^0.0.3",
     "expo-symbols": "~0.4.5",
     "expo-system-ui": "~5.0.9",
+    "expo-updates": "~0.28.18",
     "expo-web-browser": "~14.2.0",
     "i18next": "^25.2.1",
     "nativewind": "^4.1.23",
