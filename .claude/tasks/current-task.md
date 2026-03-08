@@ -1,45 +1,40 @@
-# Task: Teams & Leaderboard - Wire Up Real Data
+# Task: EAS Updates — Remote Over-the-Air Updates
 
-**Created:** 2026-02-21
-**Last Updated:** 2026-02-22
-**Status:** Complete
+**Created:** 2026-03-08
+**Last Updated:** 2026-03-08
+**Status:** In Progress
 
 ---
 
 ## Overview
 
 ### Goal
-Wire up the teams and leaderboard system with real database data. The database structure largely exists (`teams` table, `challenge_participants.team_id`), but the `challenge_leaderboard` view needs team info, a team leaderboard view is missing, and all frontend components (LeaderboardTab, AdminTab) use mock data. We need to:
-1. Enhance database views to support team + individual leaderboards
-2. Create services and hooks to fetch leaderboard/team data
-3. Wire up LeaderboardTab to show real individual leaderboard (top 6) and team standings
-4. Wire up AdminTab to manage teams and participant assignments with real data
+Implement Expo's EAS Updates system for Goal Getter to enable over-the-air (OTA) JavaScript updates without requiring app store resubmission. This includes installing `expo-updates`, configuring update channels (production, staging, preview), implementing seamless update checking/downloading in the app, and documenting the deployment workflow.
 
 ### Requirements
-1. **Individual Leaderboard** — Top 6 participants ranked by ability points + streak
-   - Top 3 displayed on podium (existing design)
-   - 4th, 5th, 6th displayed in list below (existing design)
-2. **Team Standings** — Each team shows cumulative ability points + streak from all members
-3. **Team Assignment** — Participants can be assigned to teams within a challenge
-4. **Admin Team Management** — Challenge owners can create teams, assign participants via AdminTab
+1. Install and configure `expo-updates` for OTA update support
+2. Allow JS code, images, and text content to be deployed remotely
+3. Download and apply updates seamlessly on app launch and while running
+4. Set up update channels (production, staging, preview) for controlled rollouts
+5. Document the update workflow for future deployments
 
 ### Success Criteria
-- [ ] `challenge_leaderboard` view includes team_name and team_color
-- [ ] New `challenge_team_leaderboard` view aggregates team totals per challenge
-- [ ] Leaderboard service fetches individual + team leaderboard data
-- [ ] Team service supports CRUD operations (create, assign, remove)
-- [ ] LeaderboardTab displays real data for both team standings and individual leaderboard
-- [ ] AdminTab creates/manages teams and assigns participants with real DB operations
-- [ ] Database schema documentation updated
-- [ ] No regressions to existing functionality
+- [ ] `expo-updates` installed and configured in `app.json`
+- [ ] `runtimeVersion` policy configured for update compatibility
+- [ ] Update channels configured in `eas.json` (production, staging, preview)
+- [ ] App checks for updates on launch and applies them seamlessly
+- [ ] `useUpdates` hook or utility available for programmatic update checking
+- [ ] npm scripts added for publishing updates to each channel
+- [ ] Update workflow documented for future deployments
+- [ ] No regressions to existing app functionality
 
 ### Context
-- **Existing DB:** `teams` table (group_id, name, color), `challenge_participants.team_id` FK, `challenge_leaderboard` view (missing team info)
-- **Existing UI:** LeaderboardTab and AdminTab fully designed with mock data
-- **LeaderboardTab:** `components/challenge-tabs/LeaderboardTab.tsx` — individual podium + team standings
-- **AdminTab:** `components/challenge-tabs/AdminTab.tsx` — team CRUD + participant assignment
-- **Challenge detail:** `app/challenge/[id].tsx` — renders tabs, passes `challengeId`
-- **Schema:** `supabase/schema.sql` lines 639-648 — current `challenge_leaderboard` view
+- **Project:** React Native / Expo 53 mobile app
+- **EAS Project ID:** `6f3c64d4-85f3-4b4d-9354-8a5bd78807f0` (already in app.json)
+- **Owner:** `goalgetter` (already in app.json)
+- **Existing build profiles:** development, development-device, preview, production (in eas.json)
+- **No existing `expo-updates` dependency** — needs to be installed
+- **Root layout:** `app/_layout.tsx` — main entry point for update logic
 
 ---
 
@@ -48,280 +43,271 @@ Wire up the teams and leaderboard system with real database data. The database s
 **Status:** 🔄 In Progress
 
 ### Tasks
-- [x] Review current database schema for teams support
-- [x] Review `challenge_leaderboard` view definition
-- [x] Review LeaderboardTab component (React Native version)
-- [x] Review AdminTab component (React Native version)
-- [x] Review example leaderboard queries
-- [x] Identify database gaps
-- [x] Plan migration changes
+- [x] Review current app.json configuration
+- [x] Review current eas.json build profiles
+- [x] Review app/_layout.tsx entry point
+- [x] Review EAS Updates documentation
 - [x] Identify all files to create/modify
 - [x] Plan implementation approach
-- [ ] Get approval before coding
+- [x] Define implementation phases
 
-### Database Analysis
+### Analysis
 
-#### What Already Exists
+#### Current State
 | Component | Status | Notes |
 |-----------|--------|-------|
-| `teams` table | ✅ Ready | id, group_id, name, color, created_at |
-| `challenge_participants.team_id` | ✅ Ready | FK to teams(id), nullable |
-| `challenge_participants.current_streak` | ✅ Ready | Per-participant streak tracking |
-| `challenge_participants.total_ability_points` | ✅ Ready | Per-participant points tracking |
-| `challenge_leaderboard` view | ⚠️ Partial | Ranks individuals but missing team_name, team_color |
-| Team leaderboard view | ❌ Missing | No view to aggregate team totals per challenge |
-| `idx_participants_team_id` index | ✅ Ready | Already indexed for team queries |
+| `expo-updates` package | ❌ Not installed | Needs `npx expo install expo-updates` |
+| `app.json` updates config | ❌ Missing | No `updates` or `runtimeVersion` config |
+| `eas.json` channels | ❌ Missing | Build profiles exist but no `channel` properties |
+| Update checking in app | ❌ Missing | No update logic in `_layout.tsx` |
+| Update npm scripts | ❌ Missing | No `eas update` scripts in package.json |
 
-#### Current `challenge_leaderboard` View (schema.sql:640-648)
-```sql
-CREATE OR REPLACE VIEW challenge_leaderboard AS
-SELECT
-    cp.*,
-    pr.display_name,
-    pr.avatar_url,
-    pr.username,
-    RANK() OVER (PARTITION BY cp.challenge_id ORDER BY cp.total_ability_points DESC, cp.current_streak DESC) as rank
-FROM challenge_participants cp
-LEFT JOIN profiles pr ON cp.user_id = pr.id;
-```
-**Problem:** No LEFT JOIN to `teams` — individual entries have no team context.
+#### Configuration Plan
 
-### Migration Plan
-
-#### Migration 013: Update challenge_leaderboard + Create team leaderboard view
-
-**File:** `supabase/migrations/013_update_leaderboard_views.sql`
-
-**Change 1: Update `challenge_leaderboard` view**
-Add LEFT JOIN to `teams` table to include `team_name` and `team_color`:
-```sql
-CREATE OR REPLACE VIEW challenge_leaderboard AS
-SELECT
-    cp.*,
-    pr.display_name,
-    pr.avatar_url,
-    pr.username,
-    t.name as team_name,
-    t.color as team_color,
-    RANK() OVER (PARTITION BY cp.challenge_id ORDER BY cp.total_ability_points DESC, cp.current_streak DESC) as rank
-FROM challenge_participants cp
-LEFT JOIN profiles pr ON cp.user_id = pr.id
-LEFT JOIN teams t ON cp.team_id = t.id;
+**app.json additions:**
+```json
+{
+  "expo": {
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/6f3c64d4-85f3-4b4d-9354-8a5bd78807f0",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
+  }
+}
 ```
 
-**Change 2: Create `challenge_team_leaderboard` view**
-Aggregate team totals per challenge:
-```sql
-CREATE OR REPLACE VIEW challenge_team_leaderboard AS
-SELECT
-    t.id as team_id,
-    t.name as team_name,
-    t.color as team_color,
-    t.group_id,
-    cp.challenge_id,
-    COUNT(cp.user_id) FILTER (WHERE cp.status IN ('active', 'completed')) as member_count,
-    COALESCE(SUM(cp.total_ability_points) FILTER (WHERE cp.status IN ('active', 'completed')), 0) as total_points,
-    COALESCE(SUM(cp.current_streak) FILTER (WHERE cp.status IN ('active', 'completed')), 0) as total_streak,
-    RANK() OVER (PARTITION BY cp.challenge_id ORDER BY COALESCE(SUM(cp.total_ability_points) FILTER (WHERE cp.status IN ('active', 'completed')), 0) DESC) as rank
-FROM teams t
-LEFT JOIN challenge_participants cp ON t.id = cp.team_id
-GROUP BY t.id, t.name, t.color, t.group_id, cp.challenge_id;
+- **`runtimeVersion.policy: "fingerprint"`** — Automatically generates a hash of the native project to determine update compatibility. Safest option — prevents updates from being applied to incompatible native builds.
+- **`checkAutomatically: "ON_LOAD"`** — Checks for updates every time the app loads (default). Updates download in background and apply on next launch.
+- **`fallbackToCacheTimeout: 0`** — App loads immediately with cached bundle, doesn't block on update download.
+
+**eas.json channel additions:**
+```json
+{
+  "build": {
+    "development": { "channel": "development", ... },
+    "development-device": { "channel": "development", ... },
+    "preview": { "channel": "preview", ... },
+    "production": { "channel": "production", ... }
+  }
+}
 ```
 
 ### Files Plan
 
 **New files to create:**
-1. `supabase/migrations/013_update_leaderboard_views.sql` — DB migration
-2. `services/leaderboard.ts` — Leaderboard service (fetch individual + team leaderboard)
-3. `services/team.ts` — Team service (CRUD: create team, assign participant, remove from team, delete team, get teams)
-4. `hooks/useLeaderboard.ts` — Hook for fetching leaderboard data
-5. `hooks/useTeams.ts` — Hook for team management operations
+1. `hooks/useAppUpdates.ts` — Hook wrapping `expo-updates` for programmatic update checking with status feedback
+2. `UPDATE_WORKFLOW.md` — Documentation for the update deployment workflow
 
 **Files to modify:**
-1. `components/challenge-tabs/LeaderboardTab.tsx` — Replace mock data with real data via `useLeaderboard` hook
-2. `components/challenge-tabs/AdminTab.tsx` — Replace mock data with real data via `useTeams` hook
-3. `.claude/database-schema.md` — Update views documentation + add migration to log
+1. `package.json` — Add npm scripts for `eas update` commands
+2. `app.json` — Add `runtimeVersion`, `updates` configuration
+3. `eas.json` — Add `channel` to each build profile
+4. `app/_layout.tsx` — Add update checking on app launch
 
 ### Implementation Phases
 
-#### Phase 2A: Database Migration
-1. Create `013_update_leaderboard_views.sql`
-2. Update `.claude/database-schema.md`
+#### Phase 2: Package Installation & Configuration
+1. Install `expo-updates`
+2. Configure `app.json` with `runtimeVersion` and `updates`
+3. Add `channel` to each build profile in `eas.json`
+4. Add `expo-updates` plugin to app.json plugins array
 
-#### Phase 2B: Services Layer
-1. Create `services/leaderboard.ts` — `getIndividualLeaderboard(challengeId)`, `getTeamLeaderboard(challengeId)`
-2. Create `services/team.ts` — `getTeams(groupId)`, `createTeam(groupId, name, color)`, `deleteTeam(teamId)`, `assignParticipantToTeam(participantId, teamId)`, `removeParticipantFromTeam(participantId)`
+#### Phase 3: App Update Logic
+1. Create `hooks/useAppUpdates.ts` — wraps expo-updates with useUpdates hook
+2. Integrate update checking into `app/_layout.tsx`
+3. Handle update download + apply seamlessly (background download, apply on next launch)
 
-#### Phase 2C: Hooks
-1. Create `hooks/useLeaderboard.ts` — Fetches both individual + team leaderboard for a challenge
-2. Create `hooks/useTeams.ts` — Team CRUD operations for AdminTab
+#### Phase 4: Scripts & Documentation
+1. Add npm scripts to package.json for publishing updates
+2. Create `UPDATE_WORKFLOW.md` with deployment guide
+3. Document channel strategy, commands, and best practices
 
-#### Phase 2D: LeaderboardTab Wiring
-1. Replace mock data with `useLeaderboard` hook
-2. Map DB response to existing UI data shapes
-3. Handle loading + empty states
-4. Keep top 6 individual display (3 podium + 3 list)
-
-#### Phase 2E: AdminTab Wiring
-1. Replace mock data with `useTeams` hook
-2. Wire create team to `teamService.createTeam()`
-3. Wire assign participant to `teamService.assignParticipantToTeam()`
-4. Wire remove participant to `teamService.removeParticipantFromTeam()`
-5. Fetch real participants from `challenge_participants`
+#### Phase 5: Reflection & Cleanup
+1. Document known limitations
+2. Note future improvements
+3. Final review
 
 ### Supabase Requirements
-- [x] New tables needed? **No** — `teams` and `challenge_participants.team_id` already exist
-- [x] New RLS policies needed? **No** — teams already have RLS, views inherit from base tables
-- [x] New migrations needed? **Yes** — Update `challenge_leaderboard` view + create `challenge_team_leaderboard` view
-- [x] Schema documentation update needed? **Yes** — Add new view docs + migration log entry
+- [x] New tables needed? **No**
+- [x] New RLS policies needed? **No**
+- [x] New migrations needed? **No**
+- [x] Schema documentation update needed? **No**
 
 ### Dependencies Needed
-- None — all dependencies already in place
+- `expo-updates` — Core package for OTA updates
 
 ### Decisions Made
-- **Team leaderboard uses SUM not AVG for streak:** Cumulative total of all member streaks (per user requirement: "gets added as a cumulative total")
-- **FILTER clause:** Use `FILTER (WHERE status IN ('active', 'completed'))` to only count active/completed participants in team totals
-- **Individual leaderboard limited to top 6:** Top 3 on podium, 4-6 in list (per user requirement)
-- **Teams remain group-scoped:** Teams belong to groups, not challenges — this is the existing design and makes sense for group challenges
-- **Single migration file:** Both view changes in one migration since they're related
+- **`fingerprint` runtime version policy** — Automatically determines compatibility based on native project hash. Safest option for preventing incompatible updates.
+- **`checkAutomatically: ON_LOAD`** — Default behavior, checks on every app load. Updates download in background and apply on next restart.
+- **`fallbackToCacheTimeout: 0`** — App loads instantly with cached bundle. No blocking on update download for best UX.
+- **Development + Development-device share `development` channel** — Both are dev builds, should receive the same updates.
+- **Separate hook (`useAppUpdates`)** — Encapsulates update logic cleanly, can be used anywhere in the app for status display or manual trigger.
 
-### Notes
-- The existing `challenge_leaderboard` view is used via `cp.*` which already includes `team_id` — adding `team_name` and `team_color` is additive, no breaking changes
-- The team leaderboard query from `example-queries.sql` was a good reference but the view approach is cleaner
-- AdminTab already has beautiful UI for creating teams with 10 preset colors — just needs DB wiring
-- LeaderboardTab already has the exact layout requested (top 3 podium + others list + team standings)
+### Risks Identified
+- `expo-updates` is a native module — requires a new native build after installation (cannot test via Expo Go)
+- Updates only work on builds created with EAS Build (not development client with Metro bundler)
+- Large asset changes may increase update download size
 
 ### Reflection
 **What went well:**
-- The database is very well set up for this feature — teams table, team_id FK, and per-participant stats all exist
-- The frontend UI is already fully designed — we just need to replace mock data with real queries
-- The existing `example-queries.sql` had reference queries for both individual and team leaderboards
+- EAS project already configured with project ID and owner
+- Build profiles already exist in eas.json — just need channel additions
+- Clean entry point in _layout.tsx for update logic
 
 **What could be improved:**
-- The `challenge_leaderboard` view should have included team info from the start
+- N/A at planning stage
 
-**Risks identified:**
-- Team leaderboard view needs careful handling of NULL `challenge_id` when teams exist but no participants are assigned
-- The FILTER clause in the team leaderboard view may need testing with edge cases (no members, all quit, etc.)
-- If a challenge has no teams, the team standings section should be hidden
-
-**⚠️ STOP - Awaiting approval to proceed to Phase 2**
+**→ Phase complete. Proceed immediately to the next phase.**
 
 ---
 
-## PHASE 2: IMPLEMENTATION
+## PHASE 2: PACKAGE INSTALLATION & CONFIGURATION
 
 **Status:** ✅ Complete
 
 ### Tasks
-- [x] Create migration `013_update_leaderboard_views.sql`
-- [x] Update `.claude/database-schema.md`
-- [x] Create `services/leaderboard.ts`
-- [x] Create `services/team.ts`
-- [x] Create `hooks/useLeaderboard.ts`
-- [x] Create `hooks/useTeams.ts`
-- [x] Wire up LeaderboardTab with real data
-- [x] Wire up AdminTab with real data
-- [x] Handle loading and empty states
-- [x] Fix Team type in `database.example.ts` (challenge_id → group_id) + add TeamLeaderboardEntry
-- [x] Add `group_id` to `useChallengeDetail` and pass to AdminTab
-
-### Files Created
-- `supabase/migrations/013_update_leaderboard_views.sql` — Updated `challenge_leaderboard` view + created `challenge_team_leaderboard` view
-- `services/leaderboard.ts` — `getIndividualLeaderboard()`, `getTeamLeaderboard()`
-- `services/team.ts` — `getTeamsByGroupId()`, `createTeam()`, `deleteTeam()`, `assignParticipantToTeam()`, `removeParticipantFromTeam()`, `removeParticipantFromChallenge()`, `getChallengeParticipants()`
-- `hooks/useLeaderboard.ts` — Fetches individual + team leaderboard in parallel
-- `hooks/useTeams.ts` — Team CRUD operations + participant management
+- [x] Install `expo-updates` package
+- [x] Add `runtimeVersion` config to `app.json`
+- [x] Add `updates` config to `app.json`
+- [x] Add `expo-updates` to plugins array in `app.json`
+- [x] Add `channel` to each build profile in `eas.json`
 
 ### Files Modified
-- `components/challenge-tabs/LeaderboardTab.tsx` — Replaced all mock data with `useLeaderboard` hook, added loading/error/empty states, avatar fallbacks
-- `components/challenge-tabs/AdminTab.tsx` — Replaced all mock data with `useTeams` hook, wired all CRUD operations, activated delete team button, real participant avatars in team cards
-- `hooks/useChallengeDetail.ts` — Added `group_id` to ChallengeDetail + RawChallengeRow + select query
-- `app/challenge/[id].tsx` — Pass `groupId={challenge.group_id}` to AdminTab
-- `services/index.ts` — Added exports for leaderboard + team services
-- `types/database.example.ts` — Fixed Team type (`challenge_id` → `group_id`), added `TeamLeaderboardEntry` interface
-- `.claude/database-schema.md` — Updated `challenge_leaderboard` docs, added `challenge_team_leaderboard` docs, added migration 013 to log
+- `package.json` — `expo-updates` added as dependency
+- `app.json` — Added `runtimeVersion` (fingerprint policy), `updates` config (url, enabled, checkAutomatically, fallbackToCacheTimeout), `expo-updates` plugin
+- `eas.json` — Added `channel` to all four build profiles (development, development-device → "development"; preview → "staging"; production → "production")
 
-### Key Implementation Details
-- **LeaderboardTab:** Uses `useLeaderboard` hook which fetches individual + team data in parallel; team standings section auto-hides if no teams exist; top 3 podium with fallback to list if fewer than 3 participants; shows top 6 (3 podium + 3 list)
-- **AdminTab:** Uses `useTeams` hook; all operations (create team, delete team, assign/remove participants) hit Supabase directly and refetch data; delete team now active with confirmation dialog; team member avatars shown in team cards; relative join dates
-- **Services:** Follow existing project patterns (`throw error`, typed returns, `supabase` client import)
-- **Hooks:** Follow `useProfile`/`useChallengeDetail` patterns (useState + useEffect + useCallback)
-- **Team leaderboard view:** Uses FILTER clause to only count active/completed participants; RANK() partitioned by challenge_id
-- **Avatar fallbacks:** Both components show initial letter in a dark circle when no avatar_url exists
+### Implementation Details
+- Used `npx expo install expo-updates` for SDK-compatible version
+- `runtimeVersion.policy: "fingerprint"` — auto-generates native project hash for compatibility checking
+- `updates.url` points to `https://u.expo.dev/{projectId}`
+- `checkAutomatically: "ON_LOAD"` — checks every app launch
+- `fallbackToCacheTimeout: 0` — non-blocking, loads cached bundle immediately
+- Preview build profile uses "staging" channel (not "preview") per user requirement for staging channel
 
 ### Reflection
 **What went well:**
-- Clean separation: services handle DB queries, hooks manage state, components handle UI
-- Existing UI design preserved exactly — only data source changed
-- All mock data removed — no hardcoded fallbacks
+- Clean configuration additions — all additive, no breaking changes
+- EAS project ID was already configured
 
 **What could be improved:**
-- Could add optimistic updates for team assignments to feel snappier
-- Could add pull-to-refresh on the leaderboard
+- N/A
 
-**⚠️ STOP - Awaiting approval to proceed to Phase 3**
+**→ Phase complete. Proceed immediately to the next phase.**
 
 ---
 
-## PHASE 3: TESTING & REVIEW
+## PHASE 3: APP UPDATE LOGIC
 
 **Status:** ✅ Complete
 
 ### Tasks
-- [x] Code review all new and modified files
-- [x] Verify migration SQL correctness
-- [x] Verify team standings show cumulative totals (view uses SUM + FILTER correctly)
-- [x] Verify admin can create teams and assign participants (all CRUD wired)
-- [x] Check TypeScript types (Team fixed, TeamLeaderboardEntry added, LeaderboardEntry extended)
-- [x] Verify no visual regressions (existing UI preserved, only data source changed)
+- [x] Create `hooks/useAppUpdates.ts` with expo-updates wrapper
+- [x] Integrate update checking into `app/_layout.tsx` Root component
+- [x] Handle seamless background download and apply-on-restart flow
 
-### Review Findings
-- **Migration SQL:** Both views correct. `challenge_leaderboard` adds team_name/team_color via LEFT JOIN. `challenge_team_leaderboard` aggregates correctly using FILTER clause + RANK() window function on grouped rows. Valid PostgreSQL.
-- **FK constraint verified:** `team_id REFERENCES teams(id) ON DELETE SET NULL` — deleting a team safely unassigns participants.
-- **Services:** Clean patterns, proper error handling, correct status filtering.
-- **Hooks:** Follow established patterns (useState + useCallback + useEffect). Parallel fetching with Promise.all in useLeaderboard.
-- **LeaderboardTab:** Proper loading/error/empty states. Podium fallback for < 3 participants. Team standings hidden when no teams.
-- **AdminTab:** All operations wired with confirmation dialogs. isSaving prevents double-tap. unassignedParticipants correctly computed.
-- **Types:** Team.group_id corrected. TeamLeaderboardEntry matches view. LeaderboardEntry extended with team fields.
-- **No issues found.** `removeFromTeam` intentionally not wired in UI (separate future feature).
+### Files Created
+- `hooks/useAppUpdates.ts` — Hook wrapping `expo-updates` useUpdates hook with auto-download and auto-reload
+
+### Files Modified
+- `hooks/index.ts` — Added `useAppUpdates` export
+- `app/_layout.tsx` — Import and call `useAppUpdates()` in Root component
+
+### Implementation Details
+- **useAppUpdates hook flow:** Uses `Updates.useUpdates()` for reactive state → auto-downloads when `isUpdateAvailable` → auto-reloads when `isUpdatePending`
+- **Environment guards:** Skips update logic in Expo Go, web, and `__DEV__` mode (updates only work on EAS builds)
+- **Manual trigger:** Exposes `checkForUpdate()` callback for manual update checks from anywhere in the app
+- **Non-blocking:** `fallbackToCacheTimeout: 0` in app.json ensures the app loads instantly with cached bundle while updates download in background
+- **Seamless UX:** Updates download silently → reload happens automatically once download completes
+
+### Reflection
+**What went well:**
+- Clean hook API — single `useAppUpdates()` call handles the entire update lifecycle
+- Proper environment detection prevents crashes in dev/Expo Go
+
+**What could be improved:**
+- Could add user-facing notification before auto-reload for better UX (future improvement)
+
+**→ Phase complete. Proceed immediately to the next phase.**
 
 ---
 
-## PHASE 4: REFLECTION & CLEANUP
+## PHASE 4: SCRIPTS & DOCUMENTATION
+
+**Status:** ✅ Complete
+
+### Tasks
+- [x] Add npm scripts to package.json for eas update commands
+- [x] Create `UPDATE_WORKFLOW.md` with full deployment guide
+- [x] Document channel strategy, commands, rollback, and best practices
+
+### Files Created
+- `UPDATE_WORKFLOW.md` — Complete deployment guide covering channels, commands, rollback, monitoring, and best practices
+
+### Files Modified
+- `package.json` — Added 3 npm scripts: `update:production`, `update:staging`, `update:development`
+
+### Implementation Details
+- Scripts use `eas update --channel <channel>` format — user adds `--message` via `--` passthrough
+- Documentation covers: how OTA works, channel mapping, deployment flow, native vs OTA changes, runtime version compatibility, monitoring, rollback, and best practices
+
+### Reflection
+**What went well:**
+- Clean script naming convention matches existing build scripts pattern
+- Documentation covers all key scenarios developers need
+
+**What could be improved:**
+- Could add CI/CD integration examples in future
+
+**→ Phase complete. Proceed immediately to the next phase.**
+
+---
+
+## PHASE 5: REFLECTION & CLEANUP
 
 **Status:** ✅ Complete
 
 ### Tasks
 - [x] Document known limitations
 - [x] Note future improvements
-- [x] Final code review (completed in Phase 3)
-- [x] Update database-schema.md (completed in Phase 2)
+- [x] Final code review
+- [x] Fill in TASK COMPLETE section
+
+### Final Code Review
+- **app.json:** `runtimeVersion`, `updates`, and `expo-updates` plugin correctly configured
+- **eas.json:** All 4 build profiles have appropriate `channel` values
+- **useAppUpdates hook:** Proper environment guards (Expo Go, web, __DEV__), reactive update flow via useUpdates(), auto-download and auto-reload
+- **_layout.tsx:** Single-line integration — `useAppUpdates()` called in Root component
+- **package.json:** 3 update scripts added, expo-updates installed
+- **UPDATE_WORKFLOW.md:** Comprehensive documentation covering all deployment scenarios
+- **No regressions:** All changes are additive
+
+---
+
+## TASK COMPLETE
+
+**Completed:** 2026-03-08
+
+### Final Summary
+Implemented EAS Updates for Goal Getter, enabling over-the-air JavaScript updates without app store resubmission. Installed and configured `expo-updates` with fingerprint-based runtime versioning, set up three update channels (production, staging, development), created a `useAppUpdates` hook that seamlessly checks, downloads, and applies updates on app launch, and documented the complete deployment workflow.
 
 ### Known Limitations
-1. **No team reassignment in UI** — `removeFromTeam` hook method exists but AdminTab doesn't expose a way to move a participant from one team to another. Planned as a separate feature.
-2. **Add-member modal only shows unassigned participants** — Participants already in a team must be removed first before reassigning. This will be addressed by the team reassignment feature.
-3. **No pull-to-refresh** — LeaderboardTab and AdminTab don't support pull-to-refresh; data loads on mount and after mutations.
-4. **Team leaderboard shows all teams** — Teams with 0 active members still appear in team standings (with 0 points/streak). Could be filtered client-side if desired.
+1. **Requires new native build first** — OTA updates only work on builds created with EAS Build after `expo-updates` is installed. Existing builds won't receive updates until rebuilt.
+2. **Native changes still require app store submission** — OTA can only update JavaScript, assets, and styles. New native modules or permission changes require a new build.
+3. **Auto-reload on update** — The app reloads immediately after downloading an update. Could be improved with a user prompt before reloading.
+4. **No update size limits** — Large asset additions will increase update download size. Consider asset optimization for large updates.
 
 ### Future Improvements
-1. **Team reassignment** — Allow moving participants between teams directly (planned as separate dev job)
-2. **Pull-to-refresh** — Add RefreshControl to LeaderboardTab and AdminTab ScrollViews
-3. **Optimistic updates** — Team assignment/removal could update UI immediately before server confirms
-4. **Real-time subscriptions** — Subscribe to `challenge_participants` changes so leaderboard updates live
-5. **Pagination** — Individual leaderboard currently limited to top 6 client-side; could paginate for large challenges
+1. **User notification before reload** — Show a toast/modal informing the user an update was downloaded before auto-reloading
+2. **CI/CD integration** — Add GitHub Actions workflow to auto-publish updates on merge to main
+3. **Update analytics** — Track update adoption rates via Sentry or custom analytics
+4. **Conditional updates** — Use `checkAutomatically: "WIFI_ONLY"` option for users on metered connections
+5. **Rollback automation** — Add error boundary that auto-rolls back to previous version on crash after update
 
-### Final Reflection
-**What went well:**
-- Database was well-prepared — teams table, team_id FK, per-participant stats all existed
-- Frontend UI was fully designed with mock data — clean swap to real data
-- Service → hook → component layering kept each file focused and testable
-- Both views (individual + team leaderboard) work with a single migration file
-
-**What we built:**
-- 1 migration (2 view updates)
-- 2 services (leaderboard + team)
-- 2 hooks (useLeaderboard + useTeams)
-- 2 components rewritten (LeaderboardTab + AdminTab)
-- 4 supporting files modified (useChallengeDetail, [id].tsx, database.example.ts, services/index.ts)
-- Database schema docs updated
+### Archive Notes
+**Move this file to:** `.claude/tasks/completed/2026-03-08-eas-updates.md`
