@@ -26,6 +26,7 @@ const AuthContext = React.createContext<{
   signOut: () => void;
   signUp: (email: string, password: string) => void;
   resetPassword: (email: string) => void;
+  updatePassword: (newPassword: string) => Promise<boolean>;
   updateProfile: (profileData: any) => Promise<void>;
   session: string | null;
   setSession: (session: [string | null, any | null]) => void;
@@ -42,6 +43,7 @@ const AuthContext = React.createContext<{
   signOut: () => null,
   signUp: () => null,
   resetPassword: () => null,
+  updatePassword: async () => false,
   updateProfile: async () => { },
   session: null,
   setSession: () => { },
@@ -205,11 +207,23 @@ export function SessionProvider(props: React.PropsWithChildren) {
   };
 
   const resetPassword = async (email: string) => {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'goalgetter://confirm',
+    });
     if (error) {
       Alert.alert(error.message);
       console.error('Password reset error:', error.message);
     }
+  };
+
+  const updatePassword = async (newPassword: string): Promise<boolean> => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      Alert.alert('Error', error.message);
+      console.error('Password update error:', error.message);
+      return false;
+    }
+    return true;
   };
 
   const signInWithMagicLink = async (email: string) => {
@@ -239,6 +253,7 @@ export function SessionProvider(props: React.PropsWithChildren) {
         signInWithSkip,
         signInWithMagicLink,
         resetPassword,
+        updatePassword,
         updateProfile,
         session,
         setSession,
