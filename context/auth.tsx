@@ -1,12 +1,11 @@
 import React from 'react';
 import { useHasLaunched } from '../hooks/useHasLaunched';
-import { useStorageState, setStorageItemAsync } from '../hooks/useStorageState';
+import { useStorageState } from '../hooks/useStorageState';
 import { supabase } from '@/supabase';
 import { router } from 'expo-router';
 import { Alert, Platform } from 'react-native';
 // import * as Updates from 'expo-updates';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import Constants from 'expo-constants';
 
 let GoogleSignin: any;
@@ -198,40 +197,13 @@ export function SessionProvider(props: React.PropsWithChildren) {
 
   const signOut = async () => {
     try {
-      // 1. Sign out from Supabase
       await supabase.auth.signOut();
-
-      // 2. Clear all stored data
-      await AsyncStorage.clear();
-      await setStorageItemAsync('session', null); // Clear session from SecureStore
-      
-      // 3. Reset state
-      setSession([null, null]);
-      setHasLaunched(false); // This will clear 'hasLaunched' in SecureStore via the hook
-
-      // 4. Reload the app to ensure a completely fresh state
-      // This is often more reliable than just clearing state for a "hard reset" experience
-      if (Platform.OS !== 'web') {
-        try {
-          // await Updates.reloadAsync();
-          router.replace('/');
-        } catch (e) {
-          // If reload fails (e.g. in development), we rely on the state changes above
-          console.log('Failed to reload app:', e);
-          router.replace('/');
-        }
-      } else {
-        window.location.reload();
-      }
-
     } catch (error) {
-      console.error('Error signing out:', error);
-      // Fallback: clear local state anyway
+      console.error('Error signing out from Supabase:', error);
+    } finally {
+      // Always clear local session state — Stack.Protected guards handle navigation
       setSession([null, null]);
-      setHasLaunched(false);
-      router.replace('/');
     }
-
   };
 
   const resetPassword = async (email: string) => {
