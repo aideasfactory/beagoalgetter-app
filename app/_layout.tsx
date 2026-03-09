@@ -117,6 +117,9 @@ function RootNavigator() {
         <Stack.Screen name="signup" options={{ headerShown: false }} />
         <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
       </Stack.Protected>
+
+      <Stack.Screen name="confirm" options={{ headerShown: false }} />
+      <Stack.Screen name="reset-password" options={{ headerShown: false }} />
     </Stack>
   );
 }

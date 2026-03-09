@@ -28,7 +28,6 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     signInWithGoogle,
     signInWithApple,
     signInWithMagicLink,
-    resetPassword,
   } = useSession();
 
   const [email, setEmail] = useState('');
@@ -91,12 +90,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
   };
 
   const handleForgotPassword = () => {
-    if (!email) {
-      Alert.alert('Error', 'Please enter your email first');
-      return;
-    }
-    resetPassword(email);
-    Alert.alert('Success', 'Check your email for password reset instructions');
+    router.push('/forgot-password');
   };
 
   return (

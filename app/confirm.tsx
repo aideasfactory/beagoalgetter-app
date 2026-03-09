@@ -16,7 +16,7 @@ export default function Confirm() {
     async function handleAuthentication() {
       const { accessToken, refreshToken, type } = params;
 
-      if (typeof accessToken === 'string' && type === 'magiclink') {
+      if (typeof accessToken === 'string' && (type === 'magiclink' || type === 'recovery')) {
         try {
           const { data, error } = await supabase.auth.setSession({
             access_token: accessToken,
@@ -27,7 +27,11 @@ export default function Confirm() {
 
           if (data?.session) {
             setSession([data.session.access_token, data.user]);
-            router.replace('/(tabs)');
+            if (type === 'recovery') {
+              router.replace('/reset-password');
+            } else {
+              router.replace('/(tabs)');
+            }
           } else {
             throw new Error('No session data returned');
           }

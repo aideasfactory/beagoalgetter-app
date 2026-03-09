@@ -15,20 +15,29 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { z } from 'zod';
 
-const ForgotPassword = () => {
+const ResetPassword = () => {
   const { t } = useTranslation();
-  const { resetPassword } = useSession();
-  const [isConfirmationVisible, setIsConfirmationVisible] = useState(false);
+  const { updatePassword } = useSession();
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const resetPasswordSchema = z.object({
-    email: z.string().email().min(3),
-  });
+  const resetPasswordSchema = z
+    .object({
+      password: z.string().min(6, t('passwordMinLength')),
+      confirmPassword: z.string().min(6, t('passwordMinLength')),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t('passwordsDoNotMatch'),
+      path: ['confirmPassword'],
+    });
 
   type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
@@ -38,17 +47,20 @@ const ForgotPassword = () => {
     formState: { errors },
   } = useForm<ResetPasswordFormData>({
     defaultValues: {
-      email: '',
+      password: '',
+      confirmPassword: '',
     },
     resolver: zodResolver(resetPasswordSchema),
     mode: 'onChange',
   });
 
-  const handleResetPassword = handleSubmit(async (data: ResetPasswordFormData) => {
+  const onSubmit = handleSubmit(async (data: ResetPasswordFormData) => {
     setIsLoading(true);
     try {
-      await resetPassword(data.email);
-      setIsConfirmationVisible(true);
+      const success = await updatePassword(data.password);
+      if (success) {
+        setIsSuccess(true);
+      }
     } catch (error) {
       console.error('Reset password failed:', error);
     } finally {
@@ -56,7 +68,7 @@ const ForgotPassword = () => {
     }
   });
 
-  const handleBackToLogin = () => {
+  const handleGoToLogin = () => {
     router.replace('/login');
   };
 
@@ -88,10 +100,7 @@ const ForgotPassword = () => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <View className="px-6 pt-6 flex-row items-center">
-              <TouchableOpacity onPress={handleBackToLogin} className="mr-4">
-                <Ionicons name="arrow-back" size={24} color="#fff" />
-              </TouchableOpacity>
+            <View className="px-6 pt-6">
               <Image
                 source={require('@/assets/images/logo.png')}
                 style={{ width: 160, height: 40 }}
@@ -100,22 +109,22 @@ const ForgotPassword = () => {
             </View>
 
             <View className="flex-1 justify-center px-6 py-12">
-              {isConfirmationVisible ? (
+              {isSuccess ? (
                 <View className="items-center">
                   <View
                     className="w-16 h-16 rounded-full items-center justify-center mb-6"
                     style={{ backgroundColor: 'rgba(0,194,255,0.15)' }}
                   >
-                    <Ionicons name="mail" size={32} color="#00c2ff" />
+                    <Ionicons name="checkmark-circle" size={40} color="#00c2ff" />
                   </View>
                   <Text className="text-white text-2xl font-bold mb-3">
-                    {t('checkEmailForReset')}
+                    {t('passwordUpdated')}
                   </Text>
                   <Text className="text-white/60 text-base text-center mb-8">
-                    {t('checkEmailForReset')}
+                    {t('passwordUpdatedMessage')}
                   </Text>
                   <TouchableOpacity
-                    onPress={handleBackToLogin}
+                    onPress={handleGoToLogin}
                     style={{ backgroundColor: '#00c2ff' }}
                     className="rounded-xl py-4 items-center w-full"
                     activeOpacity={0.8}
@@ -129,22 +138,24 @@ const ForgotPassword = () => {
                 <>
                   <View className="mb-8">
                     <Text className="text-white text-3xl font-bold mb-2">
-                      {t('passwordReset')}
+                      {t('resetYourPassword')}
                     </Text>
                     <Text className="text-white/60 text-base">
-                      {t('enterYourEmail')}
+                      {t('enterNewPassword')}
                     </Text>
                   </View>
 
                   <View className="mb-4">
-                    <Text className="text-white/60 text-sm mb-2">Email</Text>
+                    <Text className="text-white/60 text-sm mb-2">
+                      {t('newPassword')}
+                    </Text>
                     <Controller
                       control={control}
-                      name="email"
+                      name="password"
                       render={({ field: { onChange, onBlur, value } }) => (
                         <View className="flex-row items-center bg-white/5 border border-white/20 rounded-xl px-4 py-4">
                           <Ionicons
-                            name="mail"
+                            name="lock-closed"
                             size={20}
                             color="rgba(255,255,255,0.4)"
                           />
@@ -152,25 +163,80 @@ const ForgotPassword = () => {
                             value={value}
                             onChangeText={onChange}
                             onBlur={onBlur}
-                            placeholder="you@example.com"
+                            placeholder="••••••••"
                             placeholderTextColor="rgba(255,255,255,0.4)"
-                            keyboardType="email-address"
+                            secureTextEntry={!showPassword}
                             autoCapitalize="none"
-                            autoComplete="email"
+                            autoComplete="password-new"
                             className="flex-1 text-white ml-3"
                           />
+                          <TouchableOpacity
+                            onPress={() => setShowPassword(!showPassword)}
+                            className="ml-2"
+                          >
+                            <Ionicons
+                              name={showPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color="rgba(255,255,255,0.4)"
+                            />
+                          </TouchableOpacity>
                         </View>
                       )}
                     />
-                    {errors.email && (
+                    {errors.password && (
                       <Text className="text-red-400 text-sm mt-1">
-                        {errors.email.message}
+                        {errors.password.message}
+                      </Text>
+                    )}
+                  </View>
+
+                  <View className="mb-4">
+                    <Text className="text-white/60 text-sm mb-2">
+                      {t('confirmNewPassword')}
+                    </Text>
+                    <Controller
+                      control={control}
+                      name="confirmPassword"
+                      render={({ field: { onChange, onBlur, value } }) => (
+                        <View className="flex-row items-center bg-white/5 border border-white/20 rounded-xl px-4 py-4">
+                          <Ionicons
+                            name="lock-closed"
+                            size={20}
+                            color="rgba(255,255,255,0.4)"
+                          />
+                          <TextInput
+                            value={value}
+                            onChangeText={onChange}
+                            onBlur={onBlur}
+                            placeholder="••••••••"
+                            placeholderTextColor="rgba(255,255,255,0.4)"
+                            secureTextEntry={!showConfirmPassword}
+                            autoCapitalize="none"
+                            autoComplete="password-new"
+                            className="flex-1 text-white ml-3"
+                          />
+                          <TouchableOpacity
+                            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="ml-2"
+                          >
+                            <Ionicons
+                              name={showConfirmPassword ? 'eye-off' : 'eye'}
+                              size={20}
+                              color="rgba(255,255,255,0.4)"
+                            />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+                    />
+                    {errors.confirmPassword && (
+                      <Text className="text-red-400 text-sm mt-1">
+                        {errors.confirmPassword.message}
                       </Text>
                     )}
                   </View>
 
                   <TouchableOpacity
-                    onPress={handleResetPassword}
+                    onPress={onSubmit}
                     style={{ backgroundColor: '#00c2ff' }}
                     className="rounded-xl py-4 items-center mt-6"
                     activeOpacity={0.8}
@@ -180,19 +246,9 @@ const ForgotPassword = () => {
                       <ActivityIndicator color="#000" />
                     ) : (
                       <Text className="text-black font-bold text-lg">
-                        {t('sendResetEmail')}
+                        {t('updatePassword')}
                       </Text>
                     )}
-                  </TouchableOpacity>
-
-                  <TouchableOpacity
-                    onPress={handleBackToLogin}
-                    className="mt-6 items-center"
-                  >
-                    <Text className="text-white/60">
-                      Remember your password?{' '}
-                      <Text style={{ color: '#00c2ff' }}>{t('backToLogin')}</Text>
-                    </Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -204,4 +260,4 @@ const ForgotPassword = () => {
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword;
