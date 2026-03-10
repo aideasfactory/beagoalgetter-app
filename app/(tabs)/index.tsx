@@ -25,6 +25,7 @@ export default function HomeScreen() {
   const {
     notifications: dbNotifications,
     unreadCount,
+    markAllAsRead,
   } = useUserNotifications();
 
   const mappedNotifications: Notification[] = useMemo(
@@ -295,6 +296,7 @@ export default function HomeScreen() {
         visible={showNotifications}
         onClose={() => setShowNotifications(false)}
         notifications={mappedNotifications}
+        onMarkAllRead={markAllAsRead}
       />
 
       <ChallengePreviewModal

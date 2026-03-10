@@ -21,8 +21,10 @@ interface NotificationsModalProps {
   visible: boolean;
   onClose: () => void;
   notifications: Notification[];
+  onMarkAllRead?: () => void;
 }
-export function NotificationsModal({ visible, onClose, notifications }: NotificationsModalProps) {
+export function NotificationsModal({ visible, onClose, notifications, onMarkAllRead }: NotificationsModalProps) {
+  const hasUnread = notifications.some((n) => !n.read);
   return (
     <Modal
       visible={visible}
@@ -44,6 +46,13 @@ export function NotificationsModal({ visible, onClose, notifications }: Notifica
               <Ionicons name="close" size={28} color="white" />
             </TouchableOpacity>
           </View>
+          {hasUnread && onMarkAllRead && (
+            <TouchableOpacity onPress={onMarkAllRead} className="mt-3 self-end">
+              <Text className="text-sm font-medium" style={{ color: '#00c2ff' }}>
+                Read all
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Notifications List */}

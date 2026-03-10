@@ -1,6 +1,6 @@
 import React from 'react';
 import { useHasLaunched } from '../hooks/useHasLaunched';
-import { useStorageState } from '../hooks/useStorageState';
+import { useStorageState, setStorageItemAsync } from '../hooks/useStorageState';
 import { supabase } from '@/supabase';
 import { router } from 'expo-router';
 import { Alert, Platform } from 'react-native';
@@ -201,8 +201,15 @@ export function SessionProvider(props: React.PropsWithChildren) {
     } catch (error) {
       console.error('Error signing out from Supabase:', error);
     } finally {
-      // Always clear local session state — Stack.Protected guards handle navigation
+      // Clear session from state and storage
       setSession([null, null]);
+      await setStorageItemAsync('session', null);
+      // Reset hasLaunched so user returns to onboarding
+      setHasLaunched(false);
+      // Navigate to onboarding after state is cleared
+      setTimeout(() => {
+        router.replace('/onboarding');
+      }, 100);
     }
   };
 
