@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -9,6 +9,13 @@ try {
 } catch {
   // Native module not available — expected in dev/Expo Go
 }
+
+// ── DEV SIMULATION ──────────────────────────────────────────────
+// Set to true to simulate the update toast in development mode.
+// Set back to false before committing / building.
+const SIMULATE_UPDATE = __DEV__ && false;
+const SIMULATE_DELAY_MS = 4000; // how long the "downloading" toast stays visible
+// ────────────────────────────────────────────────────────────────
 
 /**
  * Hook that manages OTA updates via expo-updates.
@@ -25,6 +32,28 @@ export function useAppUpdates() {
   const isWeb = Platform.OS === 'web';
   const updatesEnabled = !isExpoGo && !isWeb && !__DEV__ && Updates !== null;
 
+  // ── Simulated state (dev only) ──
+  const [simChecking, setSimChecking] = useState(false);
+  const [simDownloading, setSimDownloading] = useState(false);
+
+  useEffect(() => {
+    if (!SIMULATE_UPDATE) return;
+
+    // Simulate: checking → downloading → done
+    setSimChecking(true);
+    const t1 = setTimeout(() => {
+      setSimChecking(false);
+      setSimDownloading(true);
+    }, 1500);
+
+    const t2 = setTimeout(() => {
+      setSimDownloading(false);
+    }, 1500 + SIMULATE_DELAY_MS);
+
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  // ── Real state ──
   // useUpdates() must be called unconditionally (Rules of Hooks),
   // but we only use its values when updates are enabled.
   const updatesState = Updates?.useUpdates?.() ?? {
@@ -38,10 +67,14 @@ export function useAppUpdates() {
   const {
     isUpdateAvailable,
     isUpdatePending,
-    isChecking,
-    isDownloading,
+    isChecking: realIsChecking,
+    isDownloading: realIsDownloading,
     currentlyRunning,
   } = updatesState;
+
+  // Merge real + simulated states
+  const isChecking = realIsChecking || simChecking;
+  const isDownloading = realIsDownloading || simDownloading;
 
   // When an update has been downloaded, reload the app to apply it
   useEffect(() => {

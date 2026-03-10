@@ -11,6 +11,7 @@ import { LogBox, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import "../global.css";
 import { LoadingScreen } from '@/components';
+import { UpdateToast } from '@/components/UpdateToast';
 import { useAppUpdates } from '@/hooks';
 import i18n from '../i18n';
 import { I18nextProvider } from 'react-i18next';
@@ -21,7 +22,7 @@ export {
 
 export default function Root() {
   // Check for OTA updates on app launch (downloads + applies automatically)
-  useAppUpdates();
+  const { isChecking, isDownloading } = useAppUpdates();
 
   const [fontsLoaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
@@ -69,11 +70,19 @@ export default function Root() {
   }, [fontsLoaded]);
 
 
+  const updateMessage = isChecking
+    ? 'Checking for updates...'
+    : 'Downloading update...';
+
   return (
     <I18nextProvider i18n={i18n}>
       <SessionProvider>
         <SubscriptionProvider>
           <RootNavigator />
+          <UpdateToast
+            visible={isChecking || isDownloading}
+            message={updateMessage}
+          />
         </SubscriptionProvider>
       </SessionProvider>
     </I18nextProvider>
