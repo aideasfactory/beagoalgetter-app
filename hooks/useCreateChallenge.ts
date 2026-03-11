@@ -10,6 +10,7 @@ export interface TaskDocument {
 
 interface TaskInput {
   id: string;
+  title: string;
   items: string[];
   isRecurring: boolean;
   days: string[];
@@ -174,7 +175,7 @@ export function useCreateChallenge() {
 
           return {
             challenge_id: challenge.id,
-            title: `Task ${index + 1}`,
+            title: task.title?.trim() || `Task ${index + 1}`,
             description: null,
             is_recurring: task.isRecurring,
             recurring_days: task.days,
