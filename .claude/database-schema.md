@@ -409,8 +409,8 @@ Tracks which users gave ability points to which posts.
 
 **RLS Policies:**
 - Ability points are viewable by everyone (SELECT)
-- Users can give ability points (INSERT where user_id = auth.uid)
-- Users can update their own ability points (UPDATE where user_id = auth.uid)
+- Users can give ability points (INSERT where user_id = auth.uid AND post author != auth.uid — prevents self-awarding)
+- Users can update their own ability points (UPDATE where user_id = auth.uid AND post author != auth.uid — prevents self-awarding via update)
 - Users can remove their own ability points (DELETE where user_id = auth.uid)
 
 ---
@@ -485,6 +485,7 @@ Notifications with sender profile details.
 | 012 | `012_create_task_documents_bucket.sql` | Created `task-documents` storage bucket with RLS policies for task document attachments | 2026-02-20 |
 | 013 | `013_update_leaderboard_views.sql` | Updated `challenge_leaderboard` view to include `team_name` and `team_color`; created `challenge_team_leaderboard` view for aggregated team standings | 2026-02-22 |
 | 014 | `014_notification_preferences.sql` | Extended `notification_type` enum with `achievement` and `team_update`; created `get_opted_in_users()` function for preference-based notification filtering | 2026-03-08 |
+| 015 | `015_prevent_self_ability_points.sql` | Updated RLS INSERT and UPDATE policies on `post_ability_points` to prevent users from awarding ability points to their own posts | 2026-03-11 |
 
 ---
 
