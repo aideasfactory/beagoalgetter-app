@@ -1,63 +1,74 @@
-# Task: Remove Extra Title and Description from Challenge Tasks
+# Task: Investigate and fix the stray line appearing at the top of the app
 
 **Created:** 2026-03-11
-**Last Updated:** 2026-03-11
-**Status:** Complete
+**Last Updated:** 2026-03-11T19:16:35Z
+**Status:** Planning
 
 ---
 
-## Overview
+## 📋 Overview
 
 ### Goal
-Simplify the challenge task creation flow by removing the extra title and description input fields from task cards in Step 2. Checklist items are the replacement for this older input pattern.
+Investigate the thin stray line visible at the very top of the Goal Getter app,
+identify its source, and remove it without breaking toast notifications or the
+rest of the top-level layout.
 
 ### Success Criteria
-- [x] Title field removed from task creation UI
-- [x] Description field removed from task creation UI
-- [x] Checklist items remain as the primary task input
-- [x] Validation updated to require checklist items instead of title
-- [x] Hook updated to auto-generate task titles and use null description
-- [x] No breaking changes to challenge creation or data handling
+- [ ] Source of the stray line identified
+- [ ] Unwanted line removed
+- [ ] Toast behaviour still works correctly
+- [ ] Top-level layout remains intact
+- [ ] Relevant screens or app states checked
+
+### Context
+- Tile ID: 019cd909-9d32-71a7-a429-4cf6e57f3cb2
+- Repository: beagoalgetter-app
+- Branch: feature/019cd909-9d32-71a7-a429-4cf6e57f3cb2-investigate-and-fix-the-stray-line-appearing-at-the-top-of-the-app
+- Priority: MEDIUM
+- Customer: Goal Getter
+- Due: None provided
 
 ---
 
-## PHASE 1: PLANNING — ✅ Complete
+## 🎯 PHASE 1: PLANNING
+**Status:** ✅ Complete
 
-### Tasks
-- [x] Review Step2Tasks component for title/description fields
-- [x] Review create.tsx ChallengeData interface
-- [x] Review useCreateChallenge hook for title/description usage
-- [x] Identify all places title/description are referenced
-- [x] Confirm no migration needed (DB columns still exist, just auto-populated)
+### Root Cause
+The `UpdateToast` component (`components/UpdateToast.tsx`) animates to `translateY: -100` when hidden. However, the inner card starts at `mt-16` (64px) and is ~54px tall, totaling ~118px from the top of the parent. With only -100px offset, the bottom ~18px of the bordered card (`border border-gray-700`) remains visible on screen — appearing as a thin stray line.
+
+### Fix Plan
+- Increase the hidden `translateY` value from `-100` to `-200` in both the initial value and the animation target
+- This ensures the entire toast (including border) is fully off-screen when not visible
 
 ---
 
-## PHASE 2: IMPLEMENTATION — ✅ Complete
+## 🔨 PHASE 2: IMPLEMENTATION
+**Status:** ✅ Complete
 
-### Files Modified
-- `components/create-challenge/Step2Tasks.tsx` — Removed title/description from Task interface, removed UI inputs
-- `app/challenge/create.tsx` — Removed title/description from ChallengeData, updated validation
-- `hooks/useCreateChallenge.ts` — Removed title/description from TaskInput, auto-generate on insert
+### Changes Made
+- `components/UpdateToast.tsx`: Changed hidden `translateY` from `-100` to `-200` in both the initial `Animated.Value` and the spring animation target
+- This ensures the entire toast card (including its border) is fully off-screen when not visible
+- When visible, the toast still animates to `translateY: 0` (unchanged)
+- Toast behaviour is unaffected — only the hidden position changed
+
+---
+
+## 💭 PHASE 3: FINAL REFLECTION & DOCUMENTATION
+**Status:** ✅ Complete
 
 ### Reflection
-Clean removal across three files. No migration needed since the DB schema is unchanged — tasks now get auto-generated titles (`Task 1`, `Task 2`, etc.) and null descriptions.
+The stray line was caused by the `UpdateToast` component not being fully hidden off-screen. The initial `translateY` offset of -100px was insufficient to hide a card that extended ~118px from the top of its parent container. Increasing the offset to -200px ensures the entire card (including its 1px border) is fully off-screen in all cases.
 
----
+### Impact Assessment
+- **Toast behaviour**: Unaffected — the toast still slides in from the top when visible
+- **Layout**: No impact — the toast uses absolute positioning and doesn't affect document flow
+- **Performance**: No impact — same animation, just a different target value
+- **Other screens**: The fix applies globally since UpdateToast is rendered in the root layout
 
-## PHASE 3: REFLECTION & CLEANUP — ✅ Complete
-
-### Final Review
-- All title/description references removed from frontend types and UI
-- Validation correctly requires checklist items
-- DB insert uses sensible defaults
-- No console.log statements
-- TypeScript types consistent across all three files
-
----
+### Technical Debt
+- None introduced
 
 ## TASK COMPLETE
-
-**Completed:** 2026-03-11
-
-### Final Summary
-Removed the extra title and description input fields from the challenge task creation flow (Step 2). The checklist items flow is now the sole task input pattern. Validation updated to require at least one checklist item. The hook auto-generates task titles for the database insert. No migration or backend changes required.
+- **Files changed:** `components/UpdateToast.tsx`
+- **Tests written:** No (visual fix, no testable logic change)
+- **Summary:** Fixed stray line at top of app by increasing the UpdateToast hidden translateY offset from -100 to -200, ensuring the bordered card is fully off-screen when not visible.

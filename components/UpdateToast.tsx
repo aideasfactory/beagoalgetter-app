@@ -7,11 +7,11 @@ interface UpdateToastProps {
 }
 
 export function UpdateToast({ visible, message = 'Updating app...' }: UpdateToastProps) {
-  const translateY = useRef(new Animated.Value(-100)).current;
+  const translateY = useRef(new Animated.Value(-200)).current;
 
   useEffect(() => {
     Animated.spring(translateY, {
-      toValue: visible ? 0 : -100,
+      toValue: visible ? 0 : -200,
       useNativeDriver: true,
       tension: 80,
       friction: 12,
