@@ -47,6 +47,17 @@ export default function ChallengeDetailsScreen() {
   const showLeaderboardTab = isGroupChallenge;
   const showAdminTab = isGroupChallenge && isChallengeOwner;
   const typeLabel = challenge.type === 'personal' ? 'Personal' : 'Group';
+  const challengeNotStarted = !challenge.hasStarted;
+
+  // Format start date for display
+  const formattedStartDate = challenge.start_date
+    ? new Date(challenge.start_date + 'T00:00:00').toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
 
   return (
     <View className="flex-1 bg-black">
@@ -95,7 +106,7 @@ export default function ChallengeDetailsScreen() {
                 </Text>
               </View>
             </View>
-            <Text className="text-white text-3xl font-bold mb-2" style={{ textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 0, height: 2}, textShadowRadius: 8 }}>
+            <Text className="text-white text-3xl font-bold tracking-tight mb-2" style={{ textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 0, height: 2}, textShadowRadius: 8 }}>
               {challenge.title}
             </Text>
           </View>
@@ -144,24 +155,53 @@ export default function ChallengeDetailsScreen() {
 
         {/* Progress Section */}
         <View className="px-6 pt-6 pb-4">
-          <View className="mb-4">
-            <View className="flex-row justify-between mb-2">
-              <Text className="text-white/60 text-sm">Overall Progress</Text>
-              <Text className="text-sm" style={{ color: '#00c2ff' }}>
-                {challenge.daysCompleted}/{challenge.totalDays} days
-              </Text>
+          {!challengeNotStarted && (
+            <View className="mb-4">
+              <View className="flex-row justify-between mb-2">
+                <Text className="text-white/60 text-sm">Overall Progress</Text>
+                <Text className="text-sm" style={{ color: '#00c2ff' }}>
+                  {challenge.daysCompleted}/{challenge.totalDays} days
+                </Text>
+              </View>
+              <View className="h-3 bg-white/10 rounded-full overflow-hidden">
+                <View
+                  className="h-full rounded-full"
+                  style={{ width: `${challenge.progress}%`, backgroundColor: '#00c2ff' }}
+                />
+              </View>
             </View>
-            <View className="h-3 bg-white/10 rounded-full overflow-hidden">
-              <View
-                className="h-full rounded-full"
-                style={{ width: `${challenge.progress}%`, backgroundColor: '#00c2ff' }}
-              />
-            </View>
-          </View>
+          )}
 
           <Text className="text-white/60 text-sm leading-relaxed">
             {challenge.description}
           </Text>
+
+          {/* Pre-Start Countdown Banner */}
+          {challengeNotStarted && (
+            <View
+              className="mt-4 rounded-2xl p-8 items-center"
+              style={{ backgroundColor: 'rgba(249, 115, 22, 0.1)', borderWidth: 1, borderColor: 'rgba(249, 115, 22, 0.3)' }}
+            >
+              <View
+                className="w-20 h-20 rounded-full items-center justify-center mb-6"
+                style={{ backgroundColor: 'rgba(249, 115, 22, 0.2)' }}
+              >
+                <Ionicons name="time-outline" size={40} color="#f97316" />
+              </View>
+              <Text className="text-white text-2xl font-bold mb-2 text-center">
+                Challenge starts in {challenge.daysUntilStart} {challenge.daysUntilStart === 1 ? 'day' : 'days'}
+              </Text>
+              {formattedStartDate && (
+                <View className="flex-row items-center gap-2 mt-2">
+                  <Ionicons name="calendar-outline" size={16} color="rgba(255,255,255,0.6)" />
+                  <Text className="text-white/60 text-sm">{formattedStartDate}</Text>
+                </View>
+              )}
+              <Text className="text-white/50 text-sm mt-4 text-center leading-relaxed">
+                Get ready! You&apos;ll be able to start completing tasks once the challenge begins.
+              </Text>
+            </View>
+          )}
 
           {/* Challenge Completed Banner */}
           {challenge.participantStatus === 'completed' && (
@@ -265,7 +305,7 @@ export default function ChallengeDetailsScreen() {
 
         {/* Tab Content */}
         <View style={{ minHeight: 600 }}>
-          {activeTab === 'tasks' && (
+          {activeTab === 'tasks' && !challengeNotStarted && (
             <TaskTrackerTab
               challengeId={id}
               challengeTitle={challenge.title}

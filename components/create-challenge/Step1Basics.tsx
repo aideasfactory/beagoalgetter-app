@@ -113,7 +113,7 @@ export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProp
           onChangeText={(text) => onUpdate({ title: text })}
           placeholder="e.g., 30-Day Fitness Challenge"
           placeholderTextColor="rgba(255,255,255,0.4)"
-          className="bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white"
+          className="bg-white/5 border border-white/20 rounded-xl px-4 py-3 text-white text-base"
         />
       </View>
 

@@ -325,7 +325,7 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
 
         {/* Task Cards - one per task */}
         {localTasks.map((task) => (
-          <View key={task.id} className='my-3 bg-white/5'>
+          <View key={task.id} className='mt-6 bg-white/5'>
             <Text className="text-white text-lg font-bold">{task.title}</Text>
             {task.description && (
               <Text className="text-white/60 text-base mb-4">{task.description}</Text>
@@ -341,7 +341,7 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
                       key={item.id}
                       onPress={() => toggleItem(task.id, item.id, task.items.length)}
                       disabled={dayAlreadyCompleted}
-                      className="p-3 rounded-xl border mb-2"
+                      className="py-5 px-5 rounded-xl border mb-2"
                       style={{
                         backgroundColor: isChecked ? 'rgba(0, 194, 255, 0.08)' : '#1a1a1a',
                         borderColor: isChecked ? 'rgba(0, 194, 255, 0.3)' : 'rgba(255,255,255,0.1)',
@@ -572,7 +572,7 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
 
         {/* Day Already Completed Banner */}
         {dayAlreadyCompleted && (
-          <View className="p-6 rounded-2xl items-center" style={{ backgroundColor: 'rgba(0, 194, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(0, 194, 255, 0.3)' }}>
+          <View className="p-6 mt-6 rounded-2xl items-center" style={{ backgroundColor: 'rgba(0, 194, 255, 0.1)', borderWidth: 1, borderColor: 'rgba(0, 194, 255, 0.3)' }}>
             <Ionicons name="checkmark-circle" size={48} color="#00c2ff" />
             <Text className="text-white font-bold text-lg mt-3">Day Complete!</Text>
             <Text className="text-white/60 text-sm mt-1 text-center">

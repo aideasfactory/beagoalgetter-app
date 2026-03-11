@@ -68,7 +68,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
             >
               <Text className="text-white text-xs font-bold">{challenge.type} Challenge</Text>
             </View>
-            <Text className="text-white text-3xl font-bold mb-2">{challenge.title}</Text>
+            <Text className="text-white text-3xl font-bold tracking-tight mb-2">{challenge.title}</Text>
             <Text className="text-white/70 text-base">{challenge.description}</Text>
           </View>
         </View>
