@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Alert, Modal, TextInput, Switch, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { SearchBar } from '@/components/SearchBar';
 import { ChallengeCard } from '@/components/ChallengeCard';
 import type { Challenge } from '@/components/ChallengeCard';
@@ -26,6 +26,13 @@ export default function ChallengesScreen() {
   const [joinByCodeChallenge, setJoinByCodeChallenge] = useState<Challenge | null>(null);
   const [hideCompleted, setHideCompleted] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Refetch challenges when screen comes back into focus (e.g. after creating a challenge)
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

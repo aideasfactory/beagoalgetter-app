@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/supabase';
 import { useSession } from '@/context/auth';
 import type { Challenge } from '@/components/ChallengeCard';
@@ -122,10 +122,6 @@ export function useChallenges() {
       setLoading(false);
     }
   }, [user?.id]);
-
-  useEffect(() => {
-    fetchChallenges();
-  }, [fetchChallenges]);
 
   return { challenges, loading, error, refetch: fetchChallenges };
 }

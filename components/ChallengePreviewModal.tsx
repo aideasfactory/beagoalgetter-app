@@ -68,7 +68,7 @@ export function ChallengePreviewModal({
               <Text className="mb-1" style={{ color: '#00c2ff' }}>
                 Duration
               </Text>
-              <Text className="text-white font-bold">{challenge.duration || '30 Days'}</Text>
+              <Text className="text-white font-bold">{challenge.duration || '—'}</Text>
             </View>
             <View className="flex-1 bg-white/5 rounded-xl p-4 border border-white/10 items-center">
               <Text className="mb-1" style={{ color: '#00c2ff' }}>
@@ -81,7 +81,7 @@ export function ChallengePreviewModal({
                 Completed
               </Text>
               <Text className="text-white font-bold">
-                {challenge.completionPercentage || 45}%
+                {challenge.completionPercentage != null ? `${challenge.completionPercentage}%` : '—'}
               </Text>
             </View>
           </View>

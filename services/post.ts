@@ -102,14 +102,21 @@ export const postService = {
     if (error) throw error;
   },
 
-  async getChallengeDescription(challengeId: string): Promise<string | null> {
+  async getChallengePreviewData(
+    challengeId: string,
+  ): Promise<{
+    description: string | null;
+    duration: number;
+    duration_type: 'days' | 'weeks';
+    start_date: string | null;
+  } | null> {
     const { data, error } = await supabase
       .from('challenges')
-      .select('description')
+      .select('description, duration, duration_type, start_date')
       .eq('id', challengeId)
       .single();
 
     if (error) throw error;
-    return data?.description ?? null;
+    return data ?? null;
   },
 };

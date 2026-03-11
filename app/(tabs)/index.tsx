@@ -69,16 +69,38 @@ export default function HomeScreen() {
           members: post.challenge.members,
         });
 
-        // Fetch description in background
+        // Fetch challenge details in background
         try {
-          const description = await postService.getChallengeDescription(challengeId);
-          if (description) {
+          const previewData = await postService.getChallengePreviewData(challengeId);
+          if (previewData) {
+            const totalDays =
+              previewData.duration_type === 'weeks'
+                ? previewData.duration * 7
+                : previewData.duration;
+
+            // Compute elapsed-time-based completion percentage
+            let completionPercentage = 0;
+            if (previewData.start_date && totalDays > 0) {
+              const start = new Date(previewData.start_date);
+              const now = new Date();
+              const elapsedMs = now.getTime() - start.getTime();
+              const elapsedDays = Math.max(0, Math.floor(elapsedMs / (1000 * 60 * 60 * 24)));
+              completionPercentage = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
+            }
+
+            const duration =
+              previewData.duration_type === 'weeks'
+                ? `${previewData.duration} Week${previewData.duration !== 1 ? 's' : ''}`
+                : `${previewData.duration} Day${previewData.duration !== 1 ? 's' : ''}`;
+
             setSelectedChallenge((prev) =>
-              prev && prev.id === challengeId ? { ...prev, description } : prev,
+              prev && prev.id === challengeId
+                ? { ...prev, description: previewData.description ?? undefined, duration, completionPercentage }
+                : prev,
             );
           }
         } catch {
-          // Description fetch failed — modal shows fallback text
+          // Preview data fetch failed — modal shows without stats
         }
       }
     },
