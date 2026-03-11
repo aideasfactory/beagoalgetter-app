@@ -1,56 +1,55 @@
-# Task: Add camera capture and upload support for challenge evidence photos
+# Task: Investigate and fix the stray line appearing at the top of the app
 
 **Created:** 2026-03-11
-**Last Updated:** 2026-03-11T19:15:00Z
-**Status:** ✅ Complete
+**Last Updated:** 2026-03-11T19:16:35Z
+**Status:** Planning
 
 ---
 
 ## 📋 Overview
 
 ### Goal
-Add image capture and upload support for challenge evidence so users can either
-use their camera directly or upload an existing image from their device.
+Investigate the thin stray line visible at the very top of the Goal Getter app,
+identify its source, and remove it without breaking toast notifications or the
+rest of the top-level layout.
 
 ### Success Criteria
-- [x] Review the current evidence image flow in Goal Getter
-- [x] Users can take a photo directly with the camera
-- [x] Users can upload an existing image from their device
-- [x] This works when creating a challenge
-- [x] This works when signing off a day of a challenge in the evidence section
-- [x] The image flow feels clear and consistent in both places
-- [x] Captured or uploaded images are saved and attached correctly to challenge evidence
-- [x] Permissions, error handling, and device compatibility are handled properly
+- [ ] Source of the stray line identified
+- [ ] Unwanted line removed
+- [ ] Toast behaviour still works correctly
+- [ ] Top-level layout remains intact
+- [ ] Relevant screens or app states checked
 
 ### Context
-- Tile ID: 019cd90e-9f8f-73ea-9823-4f2c5861b879
+- Tile ID: 019cd909-9d32-71a7-a429-4cf6e57f3cb2
 - Repository: beagoalgetter-app
-- Branch: feature/019cd90e-9f8f-73ea-9823-4f2c5861b879-add-camera-capture-and-upload-support-for-challenge-evidence-photos
+- Branch: feature/019cd909-9d32-71a7-a429-4cf6e57f3cb2-investigate-and-fix-the-stray-line-appearing-at-the-top-of-the-app
 - Priority: MEDIUM
+- Customer: Goal Getter
+- Due: None provided
 
 ---
 
-## PHASE 1: PLANNING — ✅ Complete
+## 🎯 PHASE 1: PLANNING
+**Status:** ✅ Complete
 
-### Analysis
-- `expo-image-picker` v17 already installed — supports `launchCameraAsync()` and `launchImageLibraryAsync()`
-- Camera permissions pre-configured in `app.json` for iOS and Android
-- Two locations use image picking: `Step1Basics.tsx` and `TaskTrackerTab.tsx`
-- No new packages or database changes needed
+### Root Cause
+The `UpdateToast` component (`components/UpdateToast.tsx`) animates to `translateY: -100` when hidden. However, the inner card starts at `mt-16` (64px) and is ~54px tall, totaling ~118px from the top of the parent. With only -100px offset, the bottom ~18px of the bordered card (`border border-gray-700`) remains visible on screen — appearing as a thin stray line.
 
-### Approach
-- Create shared `useImagePicker` hook with ActionSheet for camera/library selection
-- Update both consumer components to use the new hook
+### Fix Plan
+- Increase the hidden `translateY` value from `-100` to `-200` in both the initial value and the animation target
+- This ensures the entire toast (including border) is fully off-screen when not visible
 
 ---
 
 ## 🔨 PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-### Tasks
-- [x] Create `hooks/useImagePicker.ts` — shared hook with ActionSheet, camera/library permissions, configurable aspect/quality
-- [x] Update `TaskTrackerTab.tsx` — replaced inline image picker with `useImagePicker`, updated UI text
-- [x] Update `Step1Basics.tsx` — replaced inline image picker with `useImagePicker`, updated UI text and icon
+### Changes Made
+- `components/UpdateToast.tsx`: Changed hidden `translateY` from `-100` to `-200` in both the initial `Animated.Value` and the spring animation target
+- This ensures the entire toast card (including its border) is fully off-screen when not visible
+- When visible, the toast still animates to `translateY: 0` (unchanged)
+- Toast behaviour is unaffected — only the hidden position changed
 
 ---
 
@@ -58,27 +57,18 @@ use their camera directly or upload an existing image from their device.
 **Status:** ✅ Complete
 
 ### Reflection
-The implementation was straightforward because `expo-image-picker` already supports both camera and library via separate launch functions. The key architectural decision was to create a shared `useImagePicker` hook that encapsulates the ActionSheet presentation and permission handling, keeping both consumer components clean. No database or storage changes were needed — the existing upload pipelines work identically regardless of whether the image came from the camera or the library.
+The stray line was caused by the `UpdateToast` component not being fully hidden off-screen. The initial `translateY` offset of -100px was insufficient to hide a card that extended ~118px from the top of its parent container. Increasing the offset to -200px ensures the entire card (including its 1px border) is fully off-screen in all cases.
 
-### What went well
-- Clean separation of concerns via the shared hook
-- No new dependencies required
-- Permissions were already configured
-- Consistent UX in both locations (same ActionSheet pattern)
+### Impact Assessment
+- **Toast behaviour**: Unaffected — the toast still slides in from the top when visible
+- **Layout**: No impact — the toast uses absolute positioning and doesn't affect document flow
+- **Performance**: No impact — same animation, just a different target value
+- **Other screens**: The fix applies globally since UpdateToast is rendered in the root layout
 
-### Self-Review Checklist
-- [x] All phase tasks checked off
-- [x] Code follows project patterns
-- [x] NativeWind/Tailwind classes used for styling
-- [x] Error handling in place (permission denials, cancellations)
-- [x] TypeScript types defined
-- [x] No console.log statements left
-- [x] Supabase queries use proper error handling (unchanged existing logic)
-- [x] current-task.md updated with progress
-- [x] Reflection section filled out
+### Technical Debt
+- None introduced
 
-### TASK COMPLETE
-- **Files created:** `hooks/useImagePicker.ts`
-- **Files modified:** `components/challenge-tabs/TaskTrackerTab.tsx`, `components/create-challenge/Step1Basics.tsx`
-- **Database changes:** None
-- **New dependencies:** None
+## TASK COMPLETE
+- **Files changed:** `components/UpdateToast.tsx`
+- **Tests written:** No (visual fix, no testable logic change)
+- **Summary:** Fixed stray line at top of app by increasing the UpdateToast hidden translateY offset from -100 to -200, ensuring the bordered card is fully off-screen when not visible.
