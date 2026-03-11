@@ -30,8 +30,7 @@ use their camera directly or upload an existing image from their device.
 
 ---
 
-## 🎯 PHASE 1: PLANNING
-**Status:** ✅ Complete
+## PHASE 1: PLANNING — ✅ Complete
 
 ### Analysis
 - `expo-image-picker` v17 already installed — supports `launchCameraAsync()` and `launchImageLibraryAsync()`
