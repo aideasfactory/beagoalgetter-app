@@ -31,6 +31,7 @@ export interface Post {
   likes: number;
   abilityPointsGiven: number;
   isLiked?: boolean;
+  isOwnPost?: boolean;
 }
 
 interface PostCardProps {
@@ -172,14 +173,16 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
             <Text className="text-white/60 text-sm">{likeCount}</Text>
           </TouchableOpacity>
 
-          {/* Give Points Button */}
-          <TouchableOpacity
-            onPress={() => onGivePoints(post)}
-            className="flex-row items-center gap-2"
-          >
-            <Ionicons name="trophy-outline" size={20} color="rgba(255,255,255,0.6)" />
-            <Text className="text-white/60 text-sm">Give Points</Text>
-          </TouchableOpacity>
+          {/* Give Points Button (hidden on own posts) */}
+          {!post.isOwnPost && (
+            <TouchableOpacity
+              onPress={() => onGivePoints(post)}
+              className="flex-row items-center gap-2"
+            >
+              <Ionicons name="trophy-outline" size={20} color="rgba(255,255,255,0.6)" />
+              <Text className="text-white/60 text-sm">Give Points</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Ability Points Indicator (if > 0) */}
           {post.abilityPointsGiven > 0 && (

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { postService } from '@/services';
+import { supabase } from '@/supabase';
 import type { Post } from '@/components/PostCard';
 import type { PostWithDetails } from '@/types/database.example';
 
@@ -39,6 +40,7 @@ function formatRelativeTime(dateString: string): string {
 function mapPostToFeedPost(
   post: PostWithDetails,
   likedPostIds: Set<string>,
+  currentUserId: string | null,
 ): FeedPost {
   const challengeType = post.challenge_type === 'personal' ? 'Personal' : 'Group';
 
@@ -76,6 +78,7 @@ function mapPostToFeedPost(
     likes: post.likes_count ?? 0,
     abilityPointsGiven: post.ability_points_given ?? 0,
     isLiked: likedPostIds.has(post.id),
+    isOwnPost: currentUserId != null && post.user_id === currentUserId,
   };
 }
 
@@ -94,14 +97,16 @@ export function useFeedPosts(activeTab: TabType): UseFeedPostsResult {
     setError(null);
 
     try {
-      const [rawPosts, likedPostIds] = await Promise.all([
+      const [rawPosts, likedPostIds, { data: { user } }] = await Promise.all([
         activeTab === 'my-challenges'
           ? postService.getMyChallengePosts()
           : postService.getFeedPosts(),
         postService.getUserLikedPostIds(),
+        supabase.auth.getUser(),
       ]);
 
-      setPosts(rawPosts.map((p) => mapPostToFeedPost(p, likedPostIds)));
+      const currentUserId = user?.id ?? null;
+      setPosts(rawPosts.map((p) => mapPostToFeedPost(p, likedPostIds, currentUserId)));
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load posts'));
     } finally {
