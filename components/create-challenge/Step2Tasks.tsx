@@ -6,8 +6,6 @@ import { useCreateChallenge, type TaskDocument } from '@/hooks/useCreateChalleng
 
 interface Task {
   id: string;
-  title: string;
-  description: string;
   items: string[];
   isRecurring: boolean;
   days: string[];
@@ -47,8 +45,6 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
   const addTask = () => {
     const newTask: Task = {
       id: Date.now().toString(),
-      title: '',
-      description: '',
       items: [],
       isRecurring: false,
       days: [],
@@ -229,34 +225,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
             )}
           </View>
 
-          {/* Task Title */}
-          <View className="mb-3">
-            <Text className="text-white/60 text-sm mb-2">Task Title *</Text>
-            <TextInput
-              value={task.title}
-              onChangeText={(text) => updateTask(task.id, { title: text })}
-              placeholder="e.g., 20 minutes cardio"
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              className="bg-black border border-white/20 rounded-lg px-3 py-3 text-white"
-            />
-          </View>
-
-          {/* Task Description */}
-          <View className="mb-3">
-            <Text className="text-white/60 text-sm mb-2">Description (Optional)</Text>
-            <TextInput
-              value={task.description}
-              onChangeText={(text) => updateTask(task.id, { description: text })}
-              placeholder="Add details..."
-              placeholderTextColor="rgba(255,255,255,0.4)"
-              multiline
-              numberOfLines={2}
-              className="bg-black border border-white/20 rounded-lg px-3 py-3 text-white"
-              style={{ textAlignVertical: 'top' }}
-            />
-          </View>
-
-          {/* Task Items */}
+          {/* Checklist Items */}
           <View className="mb-3">
             <Text className="text-white/60 text-sm mb-2">Checklist Items</Text>
             <View className="flex-row gap-2">

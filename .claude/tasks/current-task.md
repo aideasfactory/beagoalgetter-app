@@ -1,4 +1,4 @@
-# Task: Fix Incorrect Points Total on Challenge Sign-Off Screen
+# Task: Remove Extra Title and Description from Challenge Tasks
 
 **Created:** 2026-03-11
 **Last Updated:** 2026-03-11
@@ -9,88 +9,49 @@
 ## Overview
 
 ### Goal
-Fix the points stat (green trophy icon) on the challenge detail screen so it accurately reflects the user's awarded ability points for that challenge.
-
-### Root Cause
-`challenge_participants.total_ability_points` was **never updated**. The existing `recalculate_profile_stats()` function (migration 007) only updates `profiles.total_ability_points` (the global total across all challenges), but nothing updates the per-challenge `challenge_participants.total_ability_points` column. This means the stat always showed 0.
+Simplify the challenge task creation flow by removing the extra title and description input fields from task cards in Step 2. Checklist items are the replacement for this older input pattern.
 
 ### Success Criteria
-- [x] Root cause identified
-- [x] Points stat on challenge screen shows correct total
-- [x] Manually awarded points (e.g., 15 points) appear correctly
-- [x] `challenge_participants.total_ability_points` kept in sync via DB trigger
-- [x] Leaderboard views also reflect correct points
-- [x] Stat accurate across challenge states and refreshes
-- [x] Database schema docs updated
+- [x] Title field removed from task creation UI
+- [x] Description field removed from task creation UI
+- [x] Checklist items remain as the primary task input
+- [x] Validation updated to require checklist items instead of title
+- [x] Hook updated to auto-generate task titles and use null description
+- [x] No breaking changes to challenge creation or data handling
 
 ---
 
-## 🎯 PHASE 1: PLANNING
-**Status:** ✅ Complete
+## PHASE 1: PLANNING — ✅ Complete
 
 ### Tasks
-- [x] Review requirements
-- [x] Review relevant existing code (PostCard, GivePointsModal, useFeedPosts, postService, migration 015)
-- [x] Identify required components/services/hooks
-- [x] Plan Supabase/RLS changes
-- [x] Define implementation phases
-
-### Analysis
-The ability points system currently allows any authenticated user to give points to any post, including their own. Migration 015 already exists and correctly updates the RLS INSERT and UPDATE policies on `post_ability_points` to block self-awarding at the database level. However, the frontend still shows the "Give Points" button on the user's own posts, which creates a misleading UX.
-
-### Analysis
-- `app/challenge/[id].tsx` line 120 displays `challenge.totalPoints`
-- `hooks/useChallengeDetail.ts` line 127 maps `p.total_ability_points` → `totalPoints`
-- `challenge_participants.total_ability_points` is never updated by any trigger or code
-- `recalculate_profile_stats()` (migration 007) only updates `profiles.total_ability_points`
-
-### Decisions
-- Follow the same trigger pattern as migration 007
-- Frontend calculates from `posts.ability_points_given` as primary source of truth
-- DB trigger keeps `challenge_participants.total_ability_points` in sync for leaderboard views
+- [x] Review Step2Tasks component for title/description fields
+- [x] Review create.tsx ChallengeData interface
+- [x] Review useCreateChallenge hook for title/description usage
+- [x] Identify all places title/description are referenced
+- [x] Confirm no migration needed (DB columns still exist, just auto-populated)
 
 ---
 
 ## PHASE 2: IMPLEMENTATION — ✅ Complete
 
-### Tasks
-- [x] Create migration `015_sync_participant_ability_points.sql`
-- [x] Update `hooks/useChallengeDetail.ts` to calculate points correctly
-
-### Files Created
-- `supabase/migrations/015_sync_participant_ability_points.sql` — Trigger + backfill to keep `challenge_participants.total_ability_points` in sync
-
 ### Files Modified
-- `hooks/useChallengeDetail.ts` — Now queries `posts.ability_points_given` and sums client-side for accurate points display
+- `components/create-challenge/Step2Tasks.tsx` — Removed title/description from Task interface, removed UI inputs
+- `app/challenge/create.tsx` — Removed title/description from ChallengeData, updated validation
+- `hooks/useCreateChallenge.ts` — Removed title/description from TaskInput, auto-generate on insert
 
 ### Reflection
-The fix has two layers: (1) the frontend hook now calculates points directly from `posts.ability_points_given` which is already maintained by existing triggers, so the display is correct immediately; (2) the new migration adds triggers to keep `challenge_participants.total_ability_points` in sync, which fixes leaderboard views and backfills existing data.
+Clean removal across three files. No migration needed since the DB schema is unchanged — tasks now get auto-generated titles (`Task 1`, `Task 2`, etc.) and null descriptions.
 
-### Implementation Details
-Final documentation updated. Sentinel file prepared.
-
-### Notes
-- No automated tests were added because the core enforcement is via RLS policy (database-level) and the frontend change is a simple conditional render.
-
-### Reflection
-**What went well:**
-- Clean, minimal changes across two frontend files + one migration + documentation
-- Defence in depth: RLS prevents bypass even if frontend is circumvented
+---
 
 ## PHASE 3: REFLECTION & CLEANUP — ✅ Complete
 
-### Tasks
-- [x] Update `.claude/database-schema.md` with new migration and functions
-- [x] Final review
-- [x] Write sentinel file
-
 ### Final Review
-- Frontend hook calculates points from `posts.ability_points_given` (already kept in sync by `recalculate_post_ability_points()` triggers from migration 004)
-- DB migration follows same pattern as migration 007 with SECURITY DEFINER functions
-- Backfill in migration handles all existing data
+- All title/description references removed from frontend types and UI
+- Validation correctly requires checklist items
+- DB insert uses sensible defaults
 - No console.log statements
-- TypeScript types maintained
-- Error handling preserved
+- TypeScript types consistent across all three files
 
 ---
 
@@ -99,10 +60,4 @@ Final documentation updated. Sentinel file prepared.
 **Completed:** 2026-03-11
 
 ### Final Summary
-Fixed incorrect points total on the challenge sign-off screen. Root cause: `challenge_participants.total_ability_points` was never updated — the existing `recalculate_profile_stats()` only updated the global `profiles.total_ability_points`. Fix: (1) Updated `useChallengeDetail.ts` to calculate points by summing `posts.ability_points_given` for the user's posts in the challenge, giving immediate correct display. (2) Created migration 015 with triggers on `post_ability_points` to keep `challenge_participants.total_ability_points` in sync, fixing leaderboard views and backfilling existing data.
-
-### Known Limitations
-1. Migration 015 must be run on the Supabase instance to activate the DB triggers and backfill
-
-### Archive Notes
-**Move this file to:** `.claude/tasks/completed/2026-03-11-fix-points-total.md`
+Removed the extra title and description input fields from the challenge task creation flow (Step 2). The checklist items flow is now the sole task input pattern. Validation updated to require at least one checklist item. The hook auto-generates task titles for the database insert. No migration or backend changes required.

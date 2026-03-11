@@ -10,8 +10,6 @@ export interface TaskDocument {
 
 interface TaskInput {
   id: string;
-  title: string;
-  description: string;
   items: string[];
   isRecurring: boolean;
   days: string[];
@@ -154,7 +152,7 @@ export function useCreateChallenge() {
       if (challengeError) throw challengeError;
 
       // 2. Insert tasks
-      const validTasks = input.tasks.filter(t => t.title.trim().length > 0);
+      const validTasks = input.tasks.filter(t => t.items.length > 0);
 
       if (validTasks.length > 0) {
         const taskRows = validTasks.map((task, index) => {
@@ -176,8 +174,8 @@ export function useCreateChallenge() {
 
           return {
             challenge_id: challenge.id,
-            title: task.title,
-            description: task.description || null,
+            title: `Task ${index + 1}`,
+            description: null,
             is_recurring: task.isRecurring,
             recurring_days: task.days,
             order_index: index,

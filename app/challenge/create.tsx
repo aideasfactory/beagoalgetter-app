@@ -22,8 +22,6 @@ interface ChallengeData {
   // Step 2
   tasks: Array<{
     id: string;
-    title: string;
-    description: string;
     items: string[];
     isRecurring: boolean;
     days: string[];
@@ -53,8 +51,6 @@ export default function CreateChallengeScreen() {
     tasks: [
       {
         id: '1',
-        title: '',
-        description: '',
         items: [],
         isRecurring: false,
         days: [],
@@ -105,9 +101,9 @@ export default function CreateChallengeScreen() {
 
       case 2:
         if (challengeData.usePDF) return true;
-        const hasValidTasks = challengeData.tasks.some(task => task.title.trim().length > 0);
+        const hasValidTasks = challengeData.tasks.some(task => task.items.length > 0);
         if (!hasValidTasks) {
-          Alert.alert('Required', 'Please add at least one task with a title');
+          Alert.alert('Required', 'Please add at least one task with checklist items');
           return false;
         }
         return true;
