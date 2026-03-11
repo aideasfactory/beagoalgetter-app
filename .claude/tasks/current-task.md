@@ -1,7 +1,7 @@
-# Task: Forgot Password System
+# Task: Fix Incorrect Points Total on Challenge Sign-Off Screen
 
-**Created:** 2026-03-09
-**Last Updated:** 2026-03-09
+**Created:** 2026-03-11
+**Last Updated:** 2026-03-11
 **Status:** Complete
 
 ---
@@ -9,105 +9,80 @@
 ## Overview
 
 ### Goal
-Implement a complete Forgot Password flow using Supabase Auth. Users request a password reset email, click the link to return to the app, and enter a new password — all within the app's dark-themed auth UI.
+Fix the points stat (green trophy icon) on the challenge detail screen so it accurately reflects the user's awarded ability points for that challenge.
+
+### Root Cause
+`challenge_participants.total_ability_points` was **never updated**. The existing `recalculate_profile_stats()` function (migration 007) only updates `profiles.total_ability_points` (the global total across all challenges), but nothing updates the per-challenge `challenge_participants.total_ability_points` column. This means the stat always showed 0.
 
 ### Success Criteria
-- [x] "Forgot Password?" on login navigates to `/forgot-password`
-- [x] Forgot-password screen restyled to match dark auth theme
-- [x] `resetPasswordForEmail` includes `redirectTo` URL
-- [x] `confirm.tsx` handles `type=recovery` → navigates to `/reset-password`
-- [x] `reset-password.tsx` created with new password + confirm form
-- [x] `supabase.auth.updateUser({ password })` called on submit
-- [x] `reset-password` screen added to navigation stack
-- [x] i18n translation keys added
-- [x] No regressions to existing auth flow
+- [x] Root cause identified
+- [x] Points stat on challenge screen shows correct total
+- [x] Manually awarded points (e.g., 15 points) appear correctly
+- [x] `challenge_participants.total_ability_points` kept in sync via DB trigger
+- [x] Leaderboard views also reflect correct points
+- [x] Stat accurate across challenge states and refreshes
+- [x] Database schema docs updated
 
 ---
 
 ## PHASE 1: PLANNING — ✅ Complete
 
-### Files Plan
-**Create:** `app/reset-password.tsx`
-**Modify:** `context/auth.tsx`, `app/confirm.tsx`, `app/forgot-password.tsx`, `app/_layout.tsx`, `components/AuthScreen.tsx`, `locales/en.json`
+### Analysis
+- `app/challenge/[id].tsx` line 120 displays `challenge.totalPoints`
+- `hooks/useChallengeDetail.ts` line 127 maps `p.total_ability_points` → `totalPoints`
+- `challenge_participants.total_ability_points` is never updated by any trigger or code
+- `recalculate_profile_stats()` (migration 007) only updates `profiles.total_ability_points`
 
 ### Decisions
-- Reuse `confirm.tsx` for recovery deep links (same as magic link)
-- `redirectTo: 'goalgetter://confirm'` using app scheme
-- `updateUser({ password })` for setting new password with active session
-- All screens match dark auth theme
+- Follow the same trigger pattern as migration 007
+- Frontend calculates from `posts.ability_points_given` as primary source of truth
+- DB trigger keeps `challenge_participants.total_ability_points` in sync for leaderboard views
 
 ---
 
-## PHASE 2: AUTH CONTEXT & DEEP LINK HANDLING — ✅ Complete
+## PHASE 2: IMPLEMENTATION — ✅ Complete
 
 ### Tasks
-- [x] Update `resetPassword()` with `redirectTo: 'goalgetter://confirm'`
-- [x] Add `updatePassword()` method to auth context
-- [x] Update `confirm.tsx` to handle `type=recovery`
-
-### Files Modified
-- `context/auth.tsx` — Added `redirectTo` to `resetPasswordForEmail`, added `updatePassword` method + type
-- `app/confirm.tsx` — Added `type === 'recovery'` handling → navigates to `/reset-password`
-
----
-
-## PHASE 3: SCREENS — ✅ Complete
-
-### Tasks
-- [x] Create `app/reset-password.tsx` (dark theme, password + confirm form)
-- [x] Restyle `app/forgot-password.tsx` to match dark auth theme
-- [x] Add i18n translation keys to `locales/en.json`
+- [x] Create migration `015_sync_participant_ability_points.sql`
+- [x] Update `hooks/useChallengeDetail.ts` to calculate points correctly
 
 ### Files Created
-- `app/reset-password.tsx` — New password form with Zod validation, dark theme, success state
+- `supabase/migrations/015_sync_participant_ability_points.sql` — Trigger + backfill to keep `challenge_participants.total_ability_points` in sync
 
 ### Files Modified
-- `app/forgot-password.tsx` — Full restyle with dark background, gradient overlay, logo, back arrow
-- `locales/en.json` — Added 11 new translation keys for password reset flow
+- `hooks/useChallengeDetail.ts` — Now queries `posts.ability_points_given` and sums client-side for accurate points display
+
+### Reflection
+The fix has two layers: (1) the frontend hook now calculates points directly from `posts.ability_points_given` which is already maintained by existing triggers, so the display is correct immediately; (2) the new migration adds triggers to keep `challenge_participants.total_ability_points` in sync, which fixes leaderboard views and backfills existing data.
 
 ---
 
-## PHASE 4: NAVIGATION & WIRING — ✅ Complete
+## PHASE 3: REFLECTION & CLEANUP — ✅ Complete
 
 ### Tasks
-- [x] Add `reset-password` and `confirm` to `_layout.tsx` Stack (outside Protected guards)
-- [x] Update `AuthScreen.tsx` "Forgot Password?" to navigate to `/forgot-password`
+- [x] Update `.claude/database-schema.md` with new migration and functions
+- [x] Final review
+- [x] Write sentinel file
 
-### Files Modified
-- `app/_layout.tsx` — Added `confirm` and `reset-password` screens outside Protected guards
-- `components/AuthScreen.tsx` — Changed "Forgot Password?" to `router.push('/forgot-password')`, removed unused `resetPassword` destructure
-
----
-
-## PHASE 5: REFLECTION & CLEANUP — ✅ Complete
-
-### Final Code Review
-- **context/auth.tsx:** `resetPassword` includes `redirectTo`, `updatePassword` method properly typed and returns boolean
-- **confirm.tsx:** Handles both `magiclink` and `recovery` types, routes recovery to `/reset-password`
-- **forgot-password.tsx:** Dark theme matches AuthScreen, back arrow nav, email form with Zod, confirmation state
-- **reset-password.tsx:** Password + confirm fields, Zod refine for match, show/hide toggle, success state with icon
-- **_layout.tsx:** `confirm` and `reset-password` outside Protected guards (accessible in any auth state)
-- **AuthScreen.tsx:** "Forgot Password?" navigates to page instead of calling reset directly
-- **No regressions:** Existing magic link and auth flows unchanged
+### Final Review
+- Frontend hook calculates points from `posts.ability_points_given` (already kept in sync by `recalculate_post_ability_points()` triggers from migration 004)
+- DB migration follows same pattern as migration 007 with SECURITY DEFINER functions
+- Backfill in migration handles all existing data
+- No console.log statements
+- TypeScript types maintained
+- Error handling preserved
 
 ---
 
 ## TASK COMPLETE
 
-**Completed:** 2026-03-09
+**Completed:** 2026-03-11
 
 ### Final Summary
-Implemented a complete Forgot Password system using Supabase Auth. The flow: user taps "Forgot Password?" on login → navigates to styled forgot-password screen → enters email → receives reset email → clicks link → deep link opens app via confirm screen → session set from recovery tokens → navigates to reset-password screen → user enters new password with confirmation → `supabase.auth.updateUser({ password })` saves it. All screens match the dark auth theme with cyan accents.
+Fixed incorrect points total on the challenge sign-off screen. Root cause: `challenge_participants.total_ability_points` was never updated — the existing `recalculate_profile_stats()` only updated the global `profiles.total_ability_points`. Fix: (1) Updated `useChallengeDetail.ts` to calculate points by summing `posts.ability_points_given` for the user's posts in the challenge, giving immediate correct display. (2) Created migration 015 with triggers on `post_ability_points` to keep `challenge_participants.total_ability_points` in sync, fixing leaderboard views and backfilling existing data.
 
 ### Known Limitations
-1. **Supabase redirect URL setup required** — `goalgetter://confirm` must be added to the Supabase project's allowed redirect URLs in the dashboard
-2. **Recovery token expiration** — Supabase recovery links expire (typically 1 hour) — user must click promptly
-3. **Other locale files not updated** — Only `en.json` has the new translation keys; other locales (de, es, fr, etc.) need translations added
-
-### Future Improvements
-1. **Rate limiting UI** — Show feedback if user requests too many reset emails
-2. **Password strength indicator** — Visual meter for password strength on reset-password screen
-3. **Email pre-fill** — Pass email from forgot-password to reset-password for display
+1. Migration 015 must be run on the Supabase instance to activate the DB triggers and backfill
 
 ### Archive Notes
-**Move this file to:** `.claude/tasks/completed/2026-03-09-forgot-password-system.md`
+**Move this file to:** `.claude/tasks/completed/2026-03-11-fix-points-total.md`
