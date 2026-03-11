@@ -1,74 +1,84 @@
-# Task: Investigate and fix the stray line appearing at the top of the app
+# Task: Refetch challenges after returning from challenge creation
 
 **Created:** 2026-03-11
-**Last Updated:** 2026-03-11T19:16:35Z
-**Status:** Planning
+**Last Updated:** 2026-03-11T21:05:00Z
+**Status:** Complete
 
 ---
 
-## 📋 Overview
+## Overview
 
 ### Goal
-Investigate the thin stray line visible at the very top of the Goal Getter app,
-identify its source, and remove it without breaking toast notifications or the
-rest of the top-level layout.
-
-### Success Criteria
-- [ ] Source of the stray line identified
-- [ ] Unwanted line removed
-- [ ] Toast behaviour still works correctly
-- [ ] Top-level layout remains intact
-- [ ] Relevant screens or app states checked
+Improve the challenge list refresh behaviour after a new challenge is created so the newly created challenge appears automatically without pull-to-refresh.
 
 ### Context
-- Tile ID: 019cd909-9d32-71a7-a429-4cf6e57f3cb2
+- Tile ID: 019cd915-b042-739e-9592-20b9ebb42ac7
 - Repository: beagoalgetter-app
-- Branch: feature/019cd909-9d32-71a7-a429-4cf6e57f3cb2-investigate-and-fix-the-stray-line-appearing-at-the-top-of-the-app
+- Branch: feature/019cd915-b042-739e-9592-20b9ebb42ac7-refetch-challenges-after-returning-from-challenge-creation
 - Priority: MEDIUM
-- Customer: Goal Getter
-- Due: None provided
 
 ---
 
-## 🎯 PHASE 1: PLANNING
+## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Root Cause
-The `UpdateToast` component (`components/UpdateToast.tsx`) animates to `translateY: -100` when hidden. However, the inner card starts at `mt-16` (64px) and is ~54px tall, totaling ~118px from the top of the parent. With only -100px offset, the bottom ~18px of the bordered card (`border border-gray-700`) remains visible on screen — appearing as a thin stray line.
+### Analysis
 
-### Fix Plan
-- Increase the hidden `translateY` value from `-100` to `-200` in both the initial value and the animation target
-- This ensures the entire toast (including border) is fully off-screen when not visible
+**Current state:**
+- `useFocusEffect` is already in `app/(tabs)/challenges.tsx` calling `refetch()` on screen focus
+- `useChallenges` hook's `fetchChallenges` sets `loading: true` on every call
+- The challenges screen shows a full-screen loading spinner when `loading && !refreshing`
+- This causes a loading flash every time the user navigates back — the existing challenge list disappears and a spinner shows briefly
+
+**Root cause:**
+The `fetchChallenges` function in `useChallenges.ts` always sets `loading: true`, which triggers the full-screen loading state in the challenges screen. There's no distinction between initial load and background refresh.
+
+**Fix:**
+- Track whether the initial load has completed using a `useRef`
+- Only set `loading: true` for the initial fetch (when no data has been loaded yet)
+- Subsequent refetches (triggered by `useFocusEffect`) update data silently in the background
+
+### Files to modify
+1. `hooks/useChallenges.ts` — Add initial load tracking, prevent loading flash on refetch
 
 ---
 
-## 🔨 PHASE 2: IMPLEMENTATION
+## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-### Changes Made
-- `components/UpdateToast.tsx`: Changed hidden `translateY` from `-100` to `-200` in both the initial `Animated.Value` and the spring animation target
-- This ensures the entire toast card (including its border) is fully off-screen when not visible
-- When visible, the toast still animates to `translateY: 0` (unchanged)
-- Toast behaviour is unaffected — only the hidden position changed
+### Tasks
+- [x] Update `useChallenges` hook to only show loading spinner on initial fetch
+- [x] Verify `useFocusEffect` + refetch pattern is correct
+
+### Changes made
+- Added `useRef` import and `hasLoadedOnce` ref to `useChallenges` hook
+- Changed `setLoading(true)` to only fire when `hasLoadedOnce.current` is false (initial load)
+- Set `hasLoadedOnce.current = true` after first successful data fetch
+- Subsequent refetches from `useFocusEffect` now update challenges silently without flashing a loading spinner
+
+### Self-Review Checklist
+- [x] Code follows project patterns
+- [x] Error handling in place
+- [x] TypeScript types defined
+- [x] No console.log statements
+- [x] current-task.md updated
 
 ---
 
-## 💭 PHASE 3: FINAL REFLECTION & DOCUMENTATION
+## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
 ### Reflection
-The stray line was caused by the `UpdateToast` component not being fully hidden off-screen. The initial `translateY` offset of -100px was insufficient to hide a card that extended ~118px from the top of its parent container. Increasing the offset to -200px ensures the entire card (including its 1px border) is fully off-screen in all cases.
+The fix was minimal and targeted. The `useFocusEffect` pattern was already correctly implemented in the challenges screen — the only issue was that the hook treated every fetch as an initial load, causing a full-screen loading flash that hid existing data during background refreshes.
 
-### Impact Assessment
-- **Toast behaviour**: Unaffected — the toast still slides in from the top when visible
-- **Layout**: No impact — the toast uses absolute positioning and doesn't affect document flow
-- **Performance**: No impact — same animation, just a different target value
-- **Other screens**: The fix applies globally since UpdateToast is rendered in the root layout
+### What worked well
+- The existing architecture (hook + useFocusEffect) was sound — only needed a small refinement
+- Using `useRef` avoids unnecessary re-renders while tracking load state
 
-### Technical Debt
-- None introduced
+### Technical debt / future improvements
+- Could add an optimistic update pattern where newly created challenges are injected into state immediately (before the refetch completes), but the current silent refetch is fast enough
+
+---
 
 ## TASK COMPLETE
-- **Files changed:** `components/UpdateToast.tsx`
-- **Tests written:** No (visual fix, no testable logic change)
-- **Summary:** Fixed stray line at top of app by increasing the UpdateToast hidden translateY offset from -100 to -200, ensuring the bordered card is fully off-screen when not visible.
+**Summary:** Fixed challenge list refresh after creation by preventing the full-screen loading spinner from flashing on subsequent refetches. The `useChallenges` hook now tracks whether data has been loaded at least once via a `useRef`, and only shows the loading spinner for the initial fetch. Background refetches from `useFocusEffect` update the challenge list silently, so newly created challenges appear seamlessly when navigating back.
