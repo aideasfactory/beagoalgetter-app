@@ -25,7 +25,18 @@ Fix the points stat (green trophy icon) on the challenge detail screen so it acc
 
 ---
 
-## PHASE 1: PLANNING — ✅ Complete
+## 🎯 PHASE 1: PLANNING
+**Status:** ✅ Complete
+
+### Tasks
+- [x] Review requirements
+- [x] Review relevant existing code (PostCard, GivePointsModal, useFeedPosts, postService, migration 015)
+- [x] Identify required components/services/hooks
+- [x] Plan Supabase/RLS changes
+- [x] Define implementation phases
+
+### Analysis
+The ability points system currently allows any authenticated user to give points to any post, including their own. Migration 015 already exists and correctly updates the RLS INSERT and UPDATE policies on `post_ability_points` to block self-awarding at the database level. However, the frontend still shows the "Give Points" button on the user's own posts, which creates a misleading UX.
 
 ### Analysis
 - `app/challenge/[id].tsx` line 120 displays `challenge.totalPoints`
@@ -55,7 +66,16 @@ Fix the points stat (green trophy icon) on the challenge detail screen so it acc
 ### Reflection
 The fix has two layers: (1) the frontend hook now calculates points directly from `posts.ability_points_given` which is already maintained by existing triggers, so the display is correct immediately; (2) the new migration adds triggers to keep `challenge_participants.total_ability_points` in sync, which fixes leaderboard views and backfills existing data.
 
----
+### Implementation Details
+Final documentation updated. Sentinel file prepared.
+
+### Notes
+- No automated tests were added because the core enforcement is via RLS policy (database-level) and the frontend change is a simple conditional render.
+
+### Reflection
+**What went well:**
+- Clean, minimal changes across two frontend files + one migration + documentation
+- Defence in depth: RLS prevents bypass even if frontend is circumvented
 
 ## PHASE 3: REFLECTION & CLEANUP — ✅ Complete
 

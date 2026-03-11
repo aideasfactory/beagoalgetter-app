@@ -203,11 +203,29 @@ export default function ChallengesScreen() {
         />
       </View>
 
+      {/* Hide completed row */}
+      <View className="px-4 pt-4 pb-3 border-b border-white/10">
+        <View className="flex-row items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
+          <View className="flex-1 pr-4">
+            <Text className="text-white text-sm font-semibold">Hide completed challenges</Text>
+            <Text className="text-white/50 text-xs mt-1">
+              Keep your list focused on active challenges.
+            </Text>
+          </View>
+          <Switch
+            value={hideCompleted}
+            onValueChange={setHideCompleted}
+            thumbColor={hideCompleted ? '#cccccc' : '#f4f3f4'}
+            trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#00c2ff' }}
+          />
+        </View>
+      </View>
+
       {/* Filter Buttons */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        className="flex-grow-0"
+        className="flex-grow-0 border-b border-white/10"
         contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View className="flex-row items-center gap-2">
@@ -233,17 +251,6 @@ export default function ChallengesScreen() {
           ))}
         </View>
       </ScrollView>
-
-      {/* Hide completed row */}
-      <View className="px-4 pb-2 pt-1 border-b border-white/10 flex-row items-center justify-between">
-        <Text className="text-white/70 text-xs">Hide completed challenges</Text>
-        <Switch
-          value={hideCompleted}
-          onValueChange={setHideCompleted}
-          thumbColor={hideCompleted ? '#cccccc' : '#f4f3f4'}
-          trackColor={{ false: 'rgba(255,255,255,0.3)', true: '#00c2ff' }}
-        />
-      </View>
 
       {/* Challenge Grid */}
       <ScrollView

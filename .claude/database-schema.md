@@ -409,8 +409,8 @@ Tracks which users gave ability points to which posts.
 
 **RLS Policies:**
 - Ability points are viewable by everyone (SELECT)
-- Users can give ability points (INSERT where user_id = auth.uid)
-- Users can update their own ability points (UPDATE where user_id = auth.uid)
+- Users can give ability points (INSERT where user_id = auth.uid AND post author != auth.uid — prevents self-awarding)
+- Users can update their own ability points (UPDATE where user_id = auth.uid AND post author != auth.uid — prevents self-awarding via update)
 - Users can remove their own ability points (DELETE where user_id = auth.uid)
 
 ---
