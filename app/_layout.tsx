@@ -5,7 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import * as Sentry from '@sentry/react-native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
-import Superwall from "expo-superwall/compat";
+import { SuperwallProvider } from 'expo-superwall';
 import { useEffect, useState } from 'react';
 import { LogBox, Platform } from 'react-native';
 import Constants from 'expo-constants';
@@ -20,8 +20,10 @@ export {
   ErrorBoundary
 } from 'expo-router';
 
+const isExpoGo = Constants.appOwnership === 'expo';
+const shouldUseSuperwall = !isExpoGo && Platform.OS !== 'web';
+
 export default function Root() {
-  // Check for OTA updates on app launch (downloads + applies automatically)
   const { isChecking, isDownloading } = useAppUpdates();
 
   const [fontsLoaded] = useFonts({
@@ -32,20 +34,8 @@ export default function Root() {
   useEffect(() => {
     const init = async () => {
       try {
-        const isExpoGo = Constants.appOwnership === 'expo';
-
-        if (!isExpoGo && Platform.OS !== 'web') {
-          Superwall.configure({
-            apiKey:
-              Platform.select({
-                ios: Settings.Superwall.iOSApiKey,
-                android: Settings.Superwall.AndroidApiKey,
-              }) || '',
-          });
-        }
-
         if (fontsLoaded) {
-          if (!isExpoGo && Platform.OS !== 'web') {
+          if (shouldUseSuperwall) {
             GoogleSignin.configure({
               scopes: ['https://www.googleapis.com/auth/drive.readonly'],
               webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
@@ -58,8 +48,6 @@ export default function Root() {
             debug: true,
           });
         }
-
-      
       } catch {
         console.log('error')
       }
@@ -69,12 +57,11 @@ export default function Root() {
     LogBox.ignoreAllLogs();
   }, [fontsLoaded]);
 
-
   const updateMessage = isChecking
     ? 'Checking for updates...'
     : 'Downloading update...';
 
-  return (
+  const appContent = (
     <I18nextProvider i18n={i18n}>
       <SessionProvider>
         <SubscriptionProvider>
@@ -86,6 +73,24 @@ export default function Root() {
         </SubscriptionProvider>
       </SessionProvider>
     </I18nextProvider>
+  );
+
+  if (!shouldUseSuperwall) {
+    return appContent;
+  }
+
+  return (
+    <SuperwallProvider
+      apiKeys={{
+        ios: Settings.Superwall.iOSApiKey,
+        android: Settings.Superwall.AndroidApiKey,
+      }}
+      onConfigurationError={(error) => {
+        console.log('[Superwall] Configuration error:', error.message);
+      }}
+    >
+      {appContent}
+    </SuperwallProvider>
   );
 }
 

@@ -29,7 +29,7 @@
     "preview": {
       "channel": "staging",
       "env": {
-        "SENTRY_AUTH_TOKEN": "SENTRY_AUTH_TOKEN"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "distribution": "internal",
       "android": {
@@ -40,7 +40,7 @@
       "channel": "production",
       "autoIncrement": true,
       "env": {
-        "SENTRY_AUTH_TOKEN": "SENTRY_AUTH_TOKEN"
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       },
       "android": {
         "image": "latest"

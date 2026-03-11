@@ -1,8 +1,21 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useSession } from '@/context/auth';
-import Superwall from 'expo-superwall/compat';
 import { supabase } from '@/supabase';
-import type { Profile } from '@/types/database.example';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
+
+const isExpoGo = Constants.appOwnership === 'expo';
+const shouldUseSuperwall = !isExpoGo && Platform.OS !== 'web';
+
+// Conditionally import useSuperwall — it requires SuperwallProvider as ancestor
+let _useSuperwall: (() => any) | null = null;
+if (shouldUseSuperwall) {
+  try {
+    _useSuperwall = require('expo-superwall').useSuperwall;
+  } catch {
+    // expo-superwall not available
+  }
+}
 
 interface SubscriptionContextType {
   plan: 'free' | 'pro' | 'lifetime';
@@ -24,12 +37,23 @@ export function useSubscription() {
   return useContext(SubscriptionContext);
 }
 
+const defaultSuperwall = {
+  isConfigured: false,
+  subscriptionStatus: { status: 'UNKNOWN' },
+  identify: async (_userId: string) => {},
+  registerPlacement: async (_placement: string) => {},
+};
+
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useSession();
   const [plan, setPlan] = useState<'free' | 'pro' | 'lifetime'>('free');
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshSubscription = async () => {
+  // Use the Superwall hook when available (inside SuperwallProvider)
+  const superwall = _useSuperwall ? _useSuperwall() : defaultSuperwall;
+  const { isConfigured, subscriptionStatus, identify, registerPlacement } = superwall;
+
+  const refreshSubscription = useCallback(async () => {
     if (!user?.id) {
       setPlan('free');
       setIsLoading(false);
@@ -37,45 +61,39 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
 
     try {
-      console.log('[Sub Debug] User ID:', user.id);
-
-      // Fetch user profile from database first (most reliable)
+      // Fetch user profile from database
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('plan, subscription_expires_at')
         .eq('id', user.id)
         .single();
 
-      console.log('[Sub Debug] DB profile:', JSON.stringify({ plan: profile?.plan, expires: profile?.subscription_expires_at }));
-      console.log('[Sub Debug] DB error:', error);
+      if (error) {
+        // Gracefully handle missing columns (migration not yet run)
+        if (error.message?.includes('column') || error.code === '42703') {
+          console.log('[Superwall] DB subscription columns not found — defaulting to free');
+          setPlan('free');
+          setIsLoading(false);
+          return;
+        }
+        throw error;
+      }
 
-      if (error) throw error;
-
-      // Check DB plan first — lifetime is always authoritative from the DB
+      // Lifetime is always authoritative from DB
       if (profile?.plan === 'lifetime') {
-        console.log('[Sub Debug] -> Resolved as LIFETIME (from DB)');
         setPlan('lifetime');
+        setIsLoading(false);
         return;
       }
 
-      // Get subscription status from Superwall
-      let superwallStatus: string = 'UNKNOWN';
-      try {
-        const status = await Superwall.shared.getSubscriptionStatus();
-        superwallStatus = status.status;
-        console.log('[Sub Debug] Superwall status:', JSON.stringify(status));
-      } catch (swError) {
-        console.log('[Sub Debug] Superwall error (falling back to DB):', swError);
-      }
-
-      // Determine plan based on Superwall status and DB state
+      // Check Superwall subscription status (reactive from useSuperwall hook)
+      const swStatus = subscriptionStatus?.status || 'UNKNOWN';
       let currentPlan: 'free' | 'pro' | 'lifetime' = 'free';
 
-      if (superwallStatus === 'ACTIVE') {
-        console.log('[Sub Debug] -> Resolved as PRO (Superwall ACTIVE)');
+      if (swStatus === 'ACTIVE') {
         currentPlan = 'pro';
 
-        // Sync DB if it's out of date
+        // Sync DB if out of date
         if (profile?.plan !== 'pro') {
           await supabase
             .from('profiles')
@@ -87,60 +105,62 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
         if (profile?.subscription_expires_at) {
           const expiresAt = new Date(profile.subscription_expires_at);
           if (expiresAt < new Date()) {
-            console.log('[Sub Debug] -> Subscription expired, downgrading to FREE');
             await supabase
               .from('profiles')
               .update({
                 plan: 'free',
                 subscription_expires_at: null,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
               })
               .eq('id', user.id);
           } else {
-            console.log('[Sub Debug] -> Resolved as PRO (DB says pro, not yet expired)');
             currentPlan = 'pro';
           }
-        } else {
-          console.log('[Sub Debug] -> Resolved as FREE (DB says pro but Superwall inactive, no expiry)');
         }
-      } else {
-        console.log('[Sub Debug] -> Resolved as FREE (Superwall:', superwallStatus, ', DB:', profile?.plan, ')');
       }
 
-      console.log('[Sub Debug] Final plan:', currentPlan, '| isPaid:', currentPlan === 'pro');
       setPlan(currentPlan);
     } catch (error) {
-      console.error('Error refreshing subscription:', error);
+      console.error('[Superwall] Error refreshing subscription:', error);
       setPlan('free');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, subscriptionStatus?.status]);
 
-  const showPaywall = async (placement: string) => {
+  const showPaywall = useCallback(async (placement: string) => {
+    if (!shouldUseSuperwall || !isConfigured) {
+      console.log('[Superwall] SDK not configured, cannot show paywall');
+      return;
+    }
+
     try {
-      await Superwall.shared.register({ placement });
-      // After paywall dismisses, refresh subscription status
+      await registerPlacement(placement);
+      // Refresh after paywall dismisses
       await refreshSubscription();
     } catch (error) {
-      console.error('Error showing paywall:', error);
+      console.error('[Superwall] Error showing paywall:', error);
     }
-  };
+  }, [isConfigured, registerPlacement, refreshSubscription]);
 
+  // Identify user in Superwall when logged in and SDK is configured
+  useEffect(() => {
+    if (!shouldUseSuperwall || !isConfigured || !user?.id) return;
+
+    identify(user.id).catch((error: unknown) => {
+      console.error('[Superwall] Error identifying user:', error);
+    });
+  }, [user?.id, isConfigured, identify]);
+
+  // Refresh subscription on user change, config ready, or status change
   useEffect(() => {
     if (user?.id) {
-      // Identify user in Superwall
-      Superwall.shared.identify({ userId: user.id }).catch((error) => {
-        console.error('Error identifying user in Superwall:', error);
-      });
-      
-      // Refresh subscription on mount
       refreshSubscription();
     } else {
       setPlan('free');
       setIsLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, isConfigured, subscriptionStatus?.status]);
 
   const isPaid = plan === 'pro' || plan === 'lifetime';
 
