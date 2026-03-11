@@ -17,6 +17,10 @@ export interface Post {
     type: 'Personal' | 'Group';
     members: number;
   };
+  challengeDay?: {
+    current: number;
+    total: number;
+  };
   group?: {
     name: string;
     logo: string;
@@ -132,11 +136,20 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
                 </View>
               </View>
 
-              {/* Challenge Name (clickable, underlined) */}
+              {/* Challenge Name (clickable, underlined) + Day Indicator */}
               <TouchableOpacity onPress={() => onChallengeClick(post.challenge.id)}>
-                <Text className="text-sm text-white/60 underline">
-                  {post.challenge.name}
-                </Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-sm text-white/60 underline">
+                    {post.challenge.name}
+                  </Text>
+                  {post.challengeDay && (
+                    <View className="bg-white/10 px-2 py-0.5 rounded-full">
+                      <Text className="text-xs text-white/50">
+                        Day {post.challengeDay.current} of {post.challengeDay.total}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </TouchableOpacity>
             </View>
           </View>

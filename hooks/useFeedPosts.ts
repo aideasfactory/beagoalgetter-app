@@ -37,6 +37,25 @@ function formatRelativeTime(dateString: string): string {
   return date.toLocaleDateString();
 }
 
+function computeChallengeDay(
+  startDate: string | null,
+  postCreatedAt: string,
+  duration: number,
+  durationType: string,
+): { current: number; total: number } | undefined {
+  if (!startDate) return undefined;
+
+  const start = new Date(startDate + 'T00:00:00');
+  const postDate = new Date(postCreatedAt);
+  const diffMs = postDate.getTime() - start.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  const totalDays = durationType === 'weeks' ? duration * 7 : duration;
+  const currentDay = Math.max(1, Math.min(diffDays + 1, totalDays));
+
+  return { current: currentDay, total: totalDays };
+}
+
 function mapPostToFeedPost(
   post: PostWithDetails,
   likedPostIds: Set<string>,
@@ -53,6 +72,13 @@ function mapPostToFeedPost(
         }
       : undefined;
 
+  const challengeDay = computeChallengeDay(
+    post.challenge_start_date,
+    post.created_at,
+    post.challenge_duration,
+    post.challenge_duration_type,
+  );
+
   return {
     id: post.id,
     user: {
@@ -67,6 +93,7 @@ function mapPostToFeedPost(
       type: challengeType,
       members: post.challenge_participant_count ?? 0,
     },
+    challengeDay,
     group,
     groupId: post.group_id ?? null,
     type: post.type as 'success' | 'fail' | 'joined',

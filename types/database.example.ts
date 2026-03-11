@@ -215,6 +215,9 @@ export interface PostWithDetails extends Post {
   challenge_title: string;
   challenge_type: ChallengeType;
   challenge_participant_count: number;
+  challenge_start_date: string | null;
+  challenge_duration: number;
+  challenge_duration_type: DurationType;
   group_id: string | null;
   group_name: string | null;
   group_logo: string | null;
