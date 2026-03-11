@@ -453,6 +453,8 @@ Notifications with sender profile details.
 | `trigger_recalculate_profile_stats_from_points()` | Looks up post author, then calls `recalculate_profile_stats()` | AFTER INSERT/UPDATE/DELETE on post_ability_points |
 | `update_challenge_participant_count()` | Recalculates `participant_count` on challenges as COUNT from challenge_participants | AFTER INSERT/DELETE on challenge_participants |
 | `get_opted_in_users(target_type)` | Returns users (user_id, push_token, device) who have opted in for a notification type and have a push token. Defaults to opted-in when preferences are empty. | Callable function (SECURITY DEFINER) |
+| `recalculate_participant_ability_points(user_id, challenge_id)` | Recalculates `challenge_participants.total_ability_points` as SUM from `post_ability_points` for a specific user+challenge | Called by trigger function below |
+| `trigger_recalculate_participant_points()` | Looks up post author and challenge, then calls `recalculate_participant_ability_points()` | AFTER INSERT/UPDATE/DELETE on post_ability_points |
 
 ---
 
@@ -485,7 +487,7 @@ Notifications with sender profile details.
 | 012 | `012_create_task_documents_bucket.sql` | Created `task-documents` storage bucket with RLS policies for task document attachments | 2026-02-20 |
 | 013 | `013_update_leaderboard_views.sql` | Updated `challenge_leaderboard` view to include `team_name` and `team_color`; created `challenge_team_leaderboard` view for aggregated team standings | 2026-02-22 |
 | 014 | `014_notification_preferences.sql` | Extended `notification_type` enum with `achievement` and `team_update`; created `get_opted_in_users()` function for preference-based notification filtering | 2026-03-08 |
-| 015 | `015_prevent_self_ability_points.sql` | Updated RLS INSERT and UPDATE policies on `post_ability_points` to prevent users from awarding ability points to their own posts | 2026-03-11 |
+| 015 | `015_sync_participant_ability_points.sql` | Added `recalculate_participant_ability_points()` function + triggers on `post_ability_points` to keep `challenge_participants.total_ability_points` in sync; backfills existing data | 2026-03-11 |
 
 ---
 

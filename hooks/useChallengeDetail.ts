@@ -79,8 +79,8 @@ export function useChallengeDetail(challengeId: string) {
     setLoading(true);
 
     try {
-      // Fetch challenge data and participant data in parallel
-      const [challengeResult, participantResult] = await Promise.all([
+      // Fetch challenge data, participant data, and points in parallel
+      const [challengeResult, participantResult, pointsResult] = await Promise.all([
         supabase
           .from('challenges')
           .select('id, title, description, image_url, type, status, start_date, end_date, duration, duration_type, participant_count, group_id, created_by')
@@ -92,12 +92,23 @@ export function useChallengeDetail(challengeId: string) {
           .eq('challenge_id', challengeId)
           .eq('user_id', user.id)
           .single(),
+        supabase
+          .from('posts')
+          .select('ability_points_given')
+          .eq('challenge_id', challengeId)
+          .eq('user_id', user.id),
       ]);
 
       if (challengeResult.error) throw challengeResult.error;
 
       const c = challengeResult.data as RawChallengeRow;
       const p = (participantResult.data as RawParticipantRow) || { current_streak: 0, total_ability_points: 0, days_completed: 0, status: 'active' };
+
+      // Calculate points from posts (source of truth) instead of stale challenge_participants column
+      const calculatedPoints = (pointsResult.data || []).reduce(
+        (sum: number, post: { ability_points_given: number }) => sum + (post.ability_points_given || 0),
+        0,
+      );
 
       const { progress, daysCompleted, totalDays, daysRemaining } = computeProgress(
         p.days_completed,
@@ -124,7 +135,7 @@ export function useChallengeDetail(challengeId: string) {
         totalDays,
         daysRemaining,
         currentStreak: p.current_streak,
-        totalPoints: p.total_ability_points,
+        totalPoints: calculatedPoints,
         participantStatus: p.status || 'active',
       });
     } catch (err: any) {
