@@ -1,63 +1,84 @@
-# Task: Remove Extra Title and Description from Challenge Tasks
+# Task: Add camera capture and upload support for challenge evidence photos
 
 **Created:** 2026-03-11
-**Last Updated:** 2026-03-11
-**Status:** Complete
+**Last Updated:** 2026-03-11T19:15:00Z
+**Status:** ✅ Complete
 
 ---
 
-## Overview
+## 📋 Overview
 
 ### Goal
-Simplify the challenge task creation flow by removing the extra title and description input fields from task cards in Step 2. Checklist items are the replacement for this older input pattern.
+Add image capture and upload support for challenge evidence so users can either
+use their camera directly or upload an existing image from their device.
 
 ### Success Criteria
-- [x] Title field removed from task creation UI
-- [x] Description field removed from task creation UI
-- [x] Checklist items remain as the primary task input
-- [x] Validation updated to require checklist items instead of title
-- [x] Hook updated to auto-generate task titles and use null description
-- [x] No breaking changes to challenge creation or data handling
+- [x] Review the current evidence image flow in Goal Getter
+- [x] Users can take a photo directly with the camera
+- [x] Users can upload an existing image from their device
+- [x] This works when creating a challenge
+- [x] This works when signing off a day of a challenge in the evidence section
+- [x] The image flow feels clear and consistent in both places
+- [x] Captured or uploaded images are saved and attached correctly to challenge evidence
+- [x] Permissions, error handling, and device compatibility are handled properly
+
+### Context
+- Tile ID: 019cd90e-9f8f-73ea-9823-4f2c5861b879
+- Repository: beagoalgetter-app
+- Branch: feature/019cd90e-9f8f-73ea-9823-4f2c5861b879-add-camera-capture-and-upload-support-for-challenge-evidence-photos
+- Priority: MEDIUM
 
 ---
 
 ## PHASE 1: PLANNING — ✅ Complete
 
-### Tasks
-- [x] Review Step2Tasks component for title/description fields
-- [x] Review create.tsx ChallengeData interface
-- [x] Review useCreateChallenge hook for title/description usage
-- [x] Identify all places title/description are referenced
-- [x] Confirm no migration needed (DB columns still exist, just auto-populated)
+### Analysis
+- `expo-image-picker` v17 already installed — supports `launchCameraAsync()` and `launchImageLibraryAsync()`
+- Camera permissions pre-configured in `app.json` for iOS and Android
+- Two locations use image picking: `Step1Basics.tsx` and `TaskTrackerTab.tsx`
+- No new packages or database changes needed
+
+### Approach
+- Create shared `useImagePicker` hook with ActionSheet for camera/library selection
+- Update both consumer components to use the new hook
 
 ---
 
-## PHASE 2: IMPLEMENTATION — ✅ Complete
+## 🔨 PHASE 2: IMPLEMENTATION
+**Status:** ✅ Complete
 
-### Files Modified
-- `components/create-challenge/Step2Tasks.tsx` — Removed title/description from Task interface, removed UI inputs
-- `app/challenge/create.tsx` — Removed title/description from ChallengeData, updated validation
-- `hooks/useCreateChallenge.ts` — Removed title/description from TaskInput, auto-generate on insert
+### Tasks
+- [x] Create `hooks/useImagePicker.ts` — shared hook with ActionSheet, camera/library permissions, configurable aspect/quality
+- [x] Update `TaskTrackerTab.tsx` — replaced inline image picker with `useImagePicker`, updated UI text
+- [x] Update `Step1Basics.tsx` — replaced inline image picker with `useImagePicker`, updated UI text and icon
+
+---
+
+## 💭 PHASE 3: FINAL REFLECTION & DOCUMENTATION
+**Status:** ✅ Complete
 
 ### Reflection
-Clean removal across three files. No migration needed since the DB schema is unchanged — tasks now get auto-generated titles (`Task 1`, `Task 2`, etc.) and null descriptions.
+The implementation was straightforward because `expo-image-picker` already supports both camera and library via separate launch functions. The key architectural decision was to create a shared `useImagePicker` hook that encapsulates the ActionSheet presentation and permission handling, keeping both consumer components clean. No database or storage changes were needed — the existing upload pipelines work identically regardless of whether the image came from the camera or the library.
 
----
+### What went well
+- Clean separation of concerns via the shared hook
+- No new dependencies required
+- Permissions were already configured
+- Consistent UX in both locations (same ActionSheet pattern)
 
-## PHASE 3: REFLECTION & CLEANUP — ✅ Complete
+### Self-Review Checklist
+- [x] All phase tasks checked off
+- [x] Code follows project patterns
+- [x] NativeWind/Tailwind classes used for styling
+- [x] Error handling in place (permission denials, cancellations)
+- [x] TypeScript types defined
+- [x] No console.log statements left
+- [x] Supabase queries use proper error handling (unchanged existing logic)
+- [x] current-task.md updated with progress
+- [x] Reflection section filled out
 
-### Final Review
-- All title/description references removed from frontend types and UI
-- Validation correctly requires checklist items
-- DB insert uses sensible defaults
-- No console.log statements
-- TypeScript types consistent across all three files
-
----
-
-## TASK COMPLETE
-
-**Completed:** 2026-03-11
-
-### Final Summary
-Removed the extra title and description input fields from the challenge task creation flow (Step 2). The checklist items flow is now the sole task input pattern. Validation updated to require at least one checklist item. The hook auto-generates task titles for the database insert. No migration or backend changes required.
+### TASK COMPLETE
+- **Files created:** `hooks/useImagePicker.ts`
+- **Files modified:** `components/challenge-tabs/TaskTrackerTab.tsx`, `components/create-challenge/Step1Basics.tsx`
+- **Database changes:** None
+- **New dependencies:** None

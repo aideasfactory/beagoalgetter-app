@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useCreateChallenge } from '@/hooks/useCreateChallenge';
 import { useMyGroups } from '@/hooks/useMyGroups';
 import { useSubscription } from '@/context';
+import { useImagePicker } from '@/hooks/useImagePicker';
 
 interface Step1BasicsProps {
   data: {
@@ -28,26 +28,20 @@ export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProp
   const { uploadChallengeImage, isUploading } = useCreateChallenge();
   const { groups, loading: groupsLoading } = useMyGroups();
   const { isPaid, showPaywall } = useSubscription();
+  const { pickImage } = useImagePicker({ aspect: [16, 9], quality: 0.8 });
 
   const handleImagePick = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
+    const uri = await pickImage();
+    if (!uri) return;
 
-    if (!result.canceled && result.assets[0]) {
-      const localUri = result.assets[0].uri;
-      onUpdate({ image: localUri });
+    onUpdate({ image: uri });
 
-      // Upload to Supabase storage in background
-      try {
-        const publicUrl = await uploadChallengeImage(localUri);
-        onImageUploaded?.(publicUrl);
-      } catch (error: any) {
-        Alert.alert('Upload Failed', error?.message || 'Could not upload image. You can try again or continue without an image.');
-      }
+    // Upload to Supabase storage in background
+    try {
+      const publicUrl = await uploadChallengeImage(uri);
+      onImageUploaded?.(publicUrl);
+    } catch (error: any) {
+      Alert.alert('Upload Failed', error?.message || 'Could not upload image. You can try again or continue without an image.');
     }
   };
 
@@ -104,8 +98,8 @@ export function Step1Basics({ data, onUpdate, onImageUploaded }: Step1BasicsProp
             onPress={handleImagePick}
             className="border-2 border-dashed border-white/20 rounded-xl p-8 items-center"
           >
-            <Ionicons name="image-outline" size={48} color="rgba(255,255,255,0.4)" />
-            <Text className="text-white/60 mt-3">Tap to upload image</Text>
+            <Ionicons name="camera-outline" size={48} color="rgba(255,255,255,0.4)" />
+            <Text className="text-white/60 mt-3">Take or upload an image</Text>
             <Text className="text-white/40 text-xs mt-1">Recommended: 16:9 aspect ratio</Text>
           </TouchableOpacity>
         )}
