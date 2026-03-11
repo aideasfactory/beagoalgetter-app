@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useTodaysTasks, type TodayTask } from '@/hooks/useTodaysTasks';
 import { useCompleteDay } from '@/hooks/useCompleteDay';
+import { useImagePicker } from '@/hooks/useImagePicker';
 import type { MoodType } from '@/types/database.example';
 
 function extractYouTubeVideoId(url: string): string | null {
@@ -132,6 +132,7 @@ function MoodFace({ mood, color, isSelected }: { mood: MoodType; color: string; 
 export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onDayCompleted }: TaskTrackerTabProps) {
   const { tasks: dbTasks, loading: tasksLoading, hasTasks, refetch: refetchTasks } = useTodaysTasks(challengeId);
   const { completeDay, loading: submitting } = useCompleteDay();
+  const { pickImage } = useImagePicker({ aspect: [4, 3], quality: 0.8 });
 
   // Local state for task toggles (initialized from DB)
   const [localTasks, setLocalTasks] = useState<TodayTask[]>([]);
@@ -213,22 +214,9 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
   };
 
   const handleImageUpload = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (permissionResult.granted === false) {
-      Alert.alert('Permission Required', 'Permission to access camera roll is required!');
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      setUploadedImage(result.assets[0].uri);
+    const uri = await pickImage();
+    if (uri) {
+      setUploadedImage(uri);
     }
   };
 
@@ -514,7 +502,7 @@ export function TaskTrackerTab({ challengeId, challengeTitle, currentStreak, onD
               <TouchableOpacity onPress={handleImageUpload}>
                 <View className="border-2 border-dashed border-white/20 rounded-xl p-8 items-center bg-[#1a1a1a]">
                   <Ionicons name="camera-outline" size={48} color="rgba(255,255,255,0.4)" />
-                  <Text className="text-white/60 mt-3 mb-1">Upload a photo</Text>
+                  <Text className="text-white/60 mt-3 mb-1">Take or upload a photo</Text>
                   <Text className="text-white/40 text-sm">Show your progress!</Text>
                 </View>
               </TouchableOpacity>

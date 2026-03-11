@@ -1,108 +1,85 @@
-# Task: Fix Incorrect Points Total on Challenge Sign-Off Screen
+# Task: Add camera capture and upload support for challenge evidence photos
 
 **Created:** 2026-03-11
-**Last Updated:** 2026-03-11
-**Status:** Complete
+**Last Updated:** 2026-03-11T19:15:00Z
+**Status:** ✅ Complete
 
 ---
 
-## Overview
+## 📋 Overview
 
 ### Goal
-Fix the points stat (green trophy icon) on the challenge detail screen so it accurately reflects the user's awarded ability points for that challenge.
-
-### Root Cause
-`challenge_participants.total_ability_points` was **never updated**. The existing `recalculate_profile_stats()` function (migration 007) only updates `profiles.total_ability_points` (the global total across all challenges), but nothing updates the per-challenge `challenge_participants.total_ability_points` column. This means the stat always showed 0.
+Add image capture and upload support for challenge evidence so users can either
+use their camera directly or upload an existing image from their device.
 
 ### Success Criteria
-- [x] Root cause identified
-- [x] Points stat on challenge screen shows correct total
-- [x] Manually awarded points (e.g., 15 points) appear correctly
-- [x] `challenge_participants.total_ability_points` kept in sync via DB trigger
-- [x] Leaderboard views also reflect correct points
-- [x] Stat accurate across challenge states and refreshes
-- [x] Database schema docs updated
+- [x] Review the current evidence image flow in Goal Getter
+- [x] Users can take a photo directly with the camera
+- [x] Users can upload an existing image from their device
+- [x] This works when creating a challenge
+- [x] This works when signing off a day of a challenge in the evidence section
+- [x] The image flow feels clear and consistent in both places
+- [x] Captured or uploaded images are saved and attached correctly to challenge evidence
+- [x] Permissions, error handling, and device compatibility are handled properly
+
+### Context
+- Tile ID: 019cd90e-9f8f-73ea-9823-4f2c5861b879
+- Repository: beagoalgetter-app
+- Branch: feature/019cd90e-9f8f-73ea-9823-4f2c5861b879-add-camera-capture-and-upload-support-for-challenge-evidence-photos
+- Priority: MEDIUM
 
 ---
 
 ## 🎯 PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Tasks
-- [x] Review requirements
-- [x] Review relevant existing code (PostCard, GivePointsModal, useFeedPosts, postService, migration 015)
-- [x] Identify required components/services/hooks
-- [x] Plan Supabase/RLS changes
-- [x] Define implementation phases
-
 ### Analysis
-The ability points system currently allows any authenticated user to give points to any post, including their own. Migration 015 already exists and correctly updates the RLS INSERT and UPDATE policies on `post_ability_points` to block self-awarding at the database level. However, the frontend still shows the "Give Points" button on the user's own posts, which creates a misleading UX.
+- `expo-image-picker` v17 already installed — supports `launchCameraAsync()` and `launchImageLibraryAsync()`
+- Camera permissions pre-configured in `app.json` for iOS and Android
+- Two locations use image picking: `Step1Basics.tsx` and `TaskTrackerTab.tsx`
+- No new packages or database changes needed
 
-### Analysis
-- `app/challenge/[id].tsx` line 120 displays `challenge.totalPoints`
-- `hooks/useChallengeDetail.ts` line 127 maps `p.total_ability_points` → `totalPoints`
-- `challenge_participants.total_ability_points` is never updated by any trigger or code
-- `recalculate_profile_stats()` (migration 007) only updates `profiles.total_ability_points`
-
-### Decisions
-- Follow the same trigger pattern as migration 007
-- Frontend calculates from `posts.ability_points_given` as primary source of truth
-- DB trigger keeps `challenge_participants.total_ability_points` in sync for leaderboard views
+### Approach
+- Create shared `useImagePicker` hook with ActionSheet for camera/library selection
+- Update both consumer components to use the new hook
 
 ---
 
-## PHASE 2: IMPLEMENTATION — ✅ Complete
+## 🔨 PHASE 2: IMPLEMENTATION
+**Status:** ✅ Complete
 
 ### Tasks
-- [x] Create migration `015_sync_participant_ability_points.sql`
-- [x] Update `hooks/useChallengeDetail.ts` to calculate points correctly
-
-### Files Created
-- `supabase/migrations/015_sync_participant_ability_points.sql` — Trigger + backfill to keep `challenge_participants.total_ability_points` in sync
-
-### Files Modified
-- `hooks/useChallengeDetail.ts` — Now queries `posts.ability_points_given` and sums client-side for accurate points display
-
-### Reflection
-The fix has two layers: (1) the frontend hook now calculates points directly from `posts.ability_points_given` which is already maintained by existing triggers, so the display is correct immediately; (2) the new migration adds triggers to keep `challenge_participants.total_ability_points` in sync, which fixes leaderboard views and backfills existing data.
-
-### Implementation Details
-Final documentation updated. Sentinel file prepared.
-
-### Notes
-- No automated tests were added because the core enforcement is via RLS policy (database-level) and the frontend change is a simple conditional render.
-
-### Reflection
-**What went well:**
-- Clean, minimal changes across two frontend files + one migration + documentation
-- Defence in depth: RLS prevents bypass even if frontend is circumvented
-
-## PHASE 3: REFLECTION & CLEANUP — ✅ Complete
-
-### Tasks
-- [x] Update `.claude/database-schema.md` with new migration and functions
-- [x] Final review
-- [x] Write sentinel file
-
-### Final Review
-- Frontend hook calculates points from `posts.ability_points_given` (already kept in sync by `recalculate_post_ability_points()` triggers from migration 004)
-- DB migration follows same pattern as migration 007 with SECURITY DEFINER functions
-- Backfill in migration handles all existing data
-- No console.log statements
-- TypeScript types maintained
-- Error handling preserved
+- [x] Create `hooks/useImagePicker.ts` — shared hook with ActionSheet, camera/library permissions, configurable aspect/quality
+- [x] Update `TaskTrackerTab.tsx` — replaced inline image picker with `useImagePicker`, updated UI text
+- [x] Update `Step1Basics.tsx` — replaced inline image picker with `useImagePicker`, updated UI text and icon
 
 ---
 
-## TASK COMPLETE
+## 💭 PHASE 3: FINAL REFLECTION & DOCUMENTATION
+**Status:** ✅ Complete
 
-**Completed:** 2026-03-11
+### Reflection
+The implementation was straightforward because `expo-image-picker` already supports both camera and library via separate launch functions. The key architectural decision was to create a shared `useImagePicker` hook that encapsulates the ActionSheet presentation and permission handling, keeping both consumer components clean. No database or storage changes were needed — the existing upload pipelines work identically regardless of whether the image came from the camera or the library.
 
-### Final Summary
-Fixed incorrect points total on the challenge sign-off screen. Root cause: `challenge_participants.total_ability_points` was never updated — the existing `recalculate_profile_stats()` only updated the global `profiles.total_ability_points`. Fix: (1) Updated `useChallengeDetail.ts` to calculate points by summing `posts.ability_points_given` for the user's posts in the challenge, giving immediate correct display. (2) Created migration 015 with triggers on `post_ability_points` to keep `challenge_participants.total_ability_points` in sync, fixing leaderboard views and backfilling existing data.
+### What went well
+- Clean separation of concerns via the shared hook
+- No new dependencies required
+- Permissions were already configured
+- Consistent UX in both locations (same ActionSheet pattern)
 
-### Known Limitations
-1. Migration 015 must be run on the Supabase instance to activate the DB triggers and backfill
+### Self-Review Checklist
+- [x] All phase tasks checked off
+- [x] Code follows project patterns
+- [x] NativeWind/Tailwind classes used for styling
+- [x] Error handling in place (permission denials, cancellations)
+- [x] TypeScript types defined
+- [x] No console.log statements left
+- [x] Supabase queries use proper error handling (unchanged existing logic)
+- [x] current-task.md updated with progress
+- [x] Reflection section filled out
 
-### Archive Notes
-**Move this file to:** `.claude/tasks/completed/2026-03-11-fix-points-total.md`
+### TASK COMPLETE
+- **Files created:** `hooks/useImagePicker.ts`
+- **Files modified:** `components/challenge-tabs/TaskTrackerTab.tsx`, `components/create-challenge/Step1Basics.tsx`
+- **Database changes:** None
+- **New dependencies:** None
