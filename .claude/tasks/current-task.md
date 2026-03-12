@@ -1,7 +1,7 @@
-# Task: Refetch challenges after returning from challenge creation
+# Task: Add challenge day indicators to posts on the main social feed
 
 **Created:** 2026-03-11
-**Last Updated:** 2026-03-11T21:05:00Z
+**Last Updated:** 2026-03-11T21:50:00Z
 **Status:** Complete
 
 ---
@@ -9,12 +9,12 @@
 ## Overview
 
 ### Goal
-Improve the challenge list refresh behaviour after a new challenge is created so the newly created challenge appears automatically without pull-to-refresh.
+Add a clear "Day X of Y" indicator to each post on the main social feed, showing which day of the challenge the post belongs to.
 
 ### Context
-- Tile ID: 019cd915-b042-739e-9592-20b9ebb42ac7
+- Tile ID: 019cdbc5-84f7-728b-b199-93ecfb6167b4
 - Repository: beagoalgetter-app
-- Branch: feature/019cd915-b042-739e-9592-20b9ebb42ac7-refetch-challenges-after-returning-from-challenge-creation
+- Branch: feature/019cdbc5-84f7-728b-b199-93ecfb6167b4-add-challenge-day-indicators-to-posts-on-the-main-social-fee
 - Priority: MEDIUM
 
 ---
@@ -23,15 +23,12 @@ Improve the challenge list refresh behaviour after a new challenge is created so
 **Status:** ✅ Complete
 
 ### Analysis
+- Posts displayed via PostCard → useFeedPosts → posts_with_details view
+- View lacked challenge start_date, duration, duration_type
+- Solution: add 3 columns to view, compute day client-side, render in PostCard header
 
-**Current state:**
-- `useFocusEffect` is already in `app/(tabs)/challenges.tsx` calling `refetch()` on screen focus
-- `useChallenges` hook's `fetchChallenges` sets `loading: true` on every call
-- The challenges screen shows a full-screen loading spinner when `loading && !refreshing`
-- This causes a loading flash every time the user navigates back — the existing challenge list disappears and a spinner shows briefly
-
-**Root cause:**
-The `fetchChallenges` function in `useChallenges.ts` always sets `loading: true`, which triggers the full-screen loading state in the challenges screen. There's no distinction between initial load and background refresh.
+### Reflection
+Clean approach — no new tables/columns, just exposing existing challenge data through the view.
 
 **Fix:**
 - Track whether the initial load has completed using a `useRef`
@@ -41,49 +38,58 @@ The `fetchChallenges` function in `useChallenges.ts` always sets `loading: true`
 ### Files to modify
 1. `hooks/useChallenges.ts` — Add initial load tracking, prevent loading flash on refetch
 
----
-
 ## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
 ### Tasks
-- [x] Update `useChallenges` hook to only show loading spinner on initial fetch
-- [x] Verify `useFocusEffect` + refetch pattern is correct
-
-### Changes made
-- Added `useRef` import and `hasLoadedOnce` ref to `useChallenges` hook
-- Changed `setLoading(true)` to only fire when `hasLoadedOnce.current` is false (initial load)
-- Set `hasLoadedOnce.current = true` after first successful data fetch
-- Subsequent refetches from `useFocusEffect` now update challenges silently without flashing a loading spinner
+- [x] Create migration 016 to update posts_with_details view
+- [x] Update PostWithDetails type in database.example.ts
+- [x] Add challengeDay to Post interface in PostCard.tsx
+- [x] Update mapPostToFeedPost to compute and map challenge day
+- [x] Render "Day X of Y" indicator in PostCard
+- [x] Update database-schema.md
 
 ### Self-Review Checklist
-- [x] Code follows project patterns
-- [x] Error handling in place
-- [x] TypeScript types defined
-- [x] No console.log statements
-- [x] current-task.md updated
+- [x] All phase tasks checked off
+- [x] Code follows project patterns (NativeWind classes, existing component structure)
+- [x] NativeWind/Tailwind classes used for styling
+- [x] Error handling in place (null start_date gracefully handled)
+- [x] TypeScript types defined (challengeDay interface, PostWithDetails updates)
+- [x] No console.log statements left
+- [x] Supabase queries use proper error handling (view change only)
+- [x] current-task.md updated with progress
 
 ---
 
 ## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
-### Edge Cases Verified
-- Title TextInput now has explicit `text-base` ensuring consistent sizing across iOS and Android
-- Large bold titles (`text-3xl`) use `tracking-tight` to counteract the wider letter spacing of bold system fonts
-- Smaller title displays (`text-sm`, `text-lg`) left unchanged — they don't exhibit the spacing issue
+### What was built
+Added "Day X of Y" challenge progress indicators to every post on the main social feed. The indicator appears as a subtle pill badge next to the challenge name in the post header.
 
-### Reflection
-The fix was minimal and targeted. The `useFocusEffect` pattern was already correctly implemented in the challenges screen — the only issue was that the hook treated every fetch as an initial load, causing a full-screen loading flash that hid existing data during background refreshes.
+### Approach
+1. **Database layer**: Updated `posts_with_details` view (migration 016) to expose `challenge_start_date`, `challenge_duration`, `challenge_duration_type` from the existing challenges table join.
+2. **Type layer**: Extended `PostWithDetails` with three new fields; added `challengeDay` optional object to `Post` interface.
+3. **Logic layer**: Added `computeChallengeDay()` in useFeedPosts.ts that calculates the day number from the challenge start date and post creation date. Clamps to valid range (1 to totalDays).
+4. **UI layer**: Rendered a `bg-white/10` rounded pill showing "Day X of Y" next to the challenge name, only when start_date is available.
 
-### What worked well
-- The existing architecture (hook + useFocusEffect) was sound — only needed a small refinement
-- Using `useRef` avoids unnecessary re-renders while tracking load state
+### Edge cases handled
+- Null start_date → indicator not shown
+- Post before start date → clamped to Day 1
+- Post after challenge end → clamped to max day
+- Weeks-based challenges → correctly converted to total days
 
-### Technical debt / future improvements
-- Could add an optimistic update pattern where newly created challenges are injected into state immediately (before the refetch completes), but the current silent refetch is fast enough
+### Technical debt
+- None introduced. Clean additive change.
+
+### Files changed
+- `supabase/migrations/016_add_challenge_dates_to_posts_view.sql` (new)
+- `types/database.example.ts`
+- `components/PostCard.tsx`
+- `hooks/useFeedPosts.ts`
+- `.claude/database-schema.md`
 
 ---
 
 ## TASK COMPLETE
-**Summary:** Fixed challenge list refresh after creation by preventing the full-screen loading spinner from flashing on subsequent refetches. The `useChallenges` hook now tracks whether data has been loaded at least once via a `useRef`, and only shows the loading spinner for the initial fetch. Background refetches from `useFocusEffect` update the challenge list silently, so newly created challenges appear seamlessly when navigating back.
+All 3 phases executed successfully.

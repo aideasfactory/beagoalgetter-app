@@ -420,7 +420,7 @@ Tracks which users gave ability points to which posts.
 ### posts_with_details
 Posts joined with user, challenge, and group information. The `ability_points_given` field is computed as `SUM(points)` from `post_ability_points` (not the cached column on `posts`).
 
-**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `group_id`, `group_name`, `group_logo`, `group_color`
+**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `challenge_start_date`, `challenge_duration`, `challenge_duration_type`, `group_id`, `group_name`, `group_logo`, `group_color`
 
 ### challenge_leaderboard
 Ranked participants per challenge, with profile and team info.
@@ -488,6 +488,7 @@ Notifications with sender profile details.
 | 013 | `013_update_leaderboard_views.sql` | Updated `challenge_leaderboard` view to include `team_name` and `team_color`; created `challenge_team_leaderboard` view for aggregated team standings | 2026-02-22 |
 | 014 | `014_notification_preferences.sql` | Extended `notification_type` enum with `achievement` and `team_update`; created `get_opted_in_users()` function for preference-based notification filtering | 2026-03-08 |
 | 015 | `015_sync_participant_ability_points.sql` | Added `recalculate_participant_ability_points()` function + triggers on `post_ability_points` to keep `challenge_participants.total_ability_points` in sync; backfills existing data | 2026-03-11 |
+| 016 | `016_add_challenge_dates_to_posts_view.sql` | Updated `posts_with_details` view to include `challenge_start_date`, `challenge_duration`, `challenge_duration_type` for feed day indicators | 2026-03-11 |
 
 ---
 
