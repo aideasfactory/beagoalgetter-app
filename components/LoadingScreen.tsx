@@ -1,6 +1,5 @@
 import { useEffect, useRef } from "react"
 import { View, Animated, Image, Easing } from "react-native"
-import { LinearGradient } from "expo-linear-gradient"
 
 export const LoadingScreen = () => {
   const pulseAnim = useRef(new Animated.Value(0.85)).current
@@ -34,11 +33,7 @@ export const LoadingScreen = () => {
   }, [pulseAnim, fadeAnim])
 
   return (
-    <LinearGradient
-      colors={["#0f2341", "#0a1628", "#060e1a"]}
-      locations={[0, 0.5, 1]}
-      style={{ flex: 1 }}
-    >
+    <View style={{ flex: 1, backgroundColor: "#000000" }}>
       <Animated.View
         className="flex-1 items-center justify-center"
         style={{ opacity: fadeAnim }}
@@ -67,7 +62,7 @@ export const LoadingScreen = () => {
           <LoadingBar />
         </View>
       </Animated.View>
-    </LinearGradient>
+    </View>
   )
 }
 
