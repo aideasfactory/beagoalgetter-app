@@ -6,6 +6,7 @@ import { useCreateChallenge, type TaskDocument } from '@/hooks/useCreateChalleng
 
 interface Task {
   id: string;
+  title: string;
   items: string[];
   isRecurring: boolean;
   days: string[];
@@ -45,6 +46,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
   const addTask = () => {
     const newTask: Task = {
       id: Date.now().toString(),
+      title: '',
       items: [],
       isRecurring: false,
       days: [],
@@ -216,7 +218,7 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
       {data.tasks.map((task, index) => (
         <View key={task.id} className="mb-6 p-4 bg-white/5 border border-white/10 rounded-xl">
           {/* Task Header */}
-          <View className="flex-row items-center justify-between mb-4">
+          <View className="flex-row items-center justify-between mb-3">
             <Text className="text-white font-bold">Task {index + 1}</Text>
             {data.tasks.length > 1 && (
               <TouchableOpacity onPress={() => removeTask(task.id)}>
@@ -224,6 +226,15 @@ export function Step2Tasks({ data, onUpdate }: Step2TasksProps) {
               </TouchableOpacity>
             )}
           </View>
+
+          {/* Task Title */}
+          <TextInput
+            value={task.title}
+            onChangeText={(text) => updateTask(task.id, { title: text })}
+            placeholder="Task name..."
+            placeholderTextColor="rgba(255,255,255,0.4)"
+            className="bg-black border border-white/20 rounded-lg px-3 py-3 text-white text-base mb-4"
+          />
 
           {/* Checklist Items */}
           <View className="mb-3">

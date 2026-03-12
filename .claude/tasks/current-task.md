@@ -68,6 +68,11 @@ The `fetchChallenges` function in `useChallenges.ts` always sets `loading: true`
 ## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
+### Edge Cases Verified
+- Title TextInput now has explicit `text-base` ensuring consistent sizing across iOS and Android
+- Large bold titles (`text-3xl`) use `tracking-tight` to counteract the wider letter spacing of bold system fonts
+- Smaller title displays (`text-sm`, `text-lg`) left unchanged — they don't exhibit the spacing issue
+
 ### Reflection
 The fix was minimal and targeted. The `useFocusEffect` pattern was already correctly implemented in the challenges screen — the only issue was that the hook treated every fetch as an initial load, causing a full-screen loading flash that hid existing data during background refreshes.
 

@@ -21,6 +21,9 @@ export interface ChallengeDetail {
   daysCompleted: number;
   totalDays: number;
   daysRemaining: number;
+  // Start date enforcement
+  hasStarted: boolean;
+  daysUntilStart: number;
   // From challenge_participants
   currentStreak: number;
   totalPoints: number;
@@ -116,6 +119,18 @@ export function useChallengeDetail(challengeId: string) {
         c.duration_type,
       );
 
+      // Compute start date enforcement
+      let hasStarted = true;
+      let daysUntilStart = 0;
+      if (c.start_date) {
+        const startDate = new Date(c.start_date + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const diffMs = startDate.getTime() - today.getTime();
+        daysUntilStart = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        hasStarted = daysUntilStart <= 0;
+      }
+
       setChallenge({
         id: c.id,
         title: c.title,
@@ -134,6 +149,8 @@ export function useChallengeDetail(challengeId: string) {
         daysCompleted,
         totalDays,
         daysRemaining,
+        hasStarted,
+        daysUntilStart,
         currentStreak: p.current_streak,
         totalPoints: calculatedPoints,
         participantStatus: p.status || 'active',

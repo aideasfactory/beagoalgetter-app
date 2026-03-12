@@ -51,6 +51,7 @@ export default function CreateChallengeScreen() {
     tasks: [
       {
         id: '1',
+        title: '',
         items: [],
         isRecurring: false,
         days: [],
