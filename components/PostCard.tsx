@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { ImageViewer } from './ImageViewer';
 
 export interface Post {
   id: string;
@@ -51,6 +52,7 @@ const APP_ICON = require('@/assets/images/icon.png');
 export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, onLike }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likes);
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
 
   // Sync with parent state (reverts optimistic update on network failure)
   useEffect(() => { setIsLiked(post.isLiked ?? false); }, [post.isLiked]);
@@ -165,13 +167,22 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
 
         {/* Post Image (optional) */}
         {post.image && (
-          <View className="rounded-xl overflow-hidden mb-3 border-2 border-white/10">
-            <Image
-              source={{ uri: post.image }}
-              style={{ width: '100%', height: 256 }}
-              contentFit="cover"
+          <>
+            <Pressable onPress={() => setImageViewerVisible(true)}>
+              <View className="rounded-xl overflow-hidden mb-3 border-2 border-white/10">
+                <Image
+                  source={{ uri: post.image }}
+                  style={{ width: '100%', height: 256 }}
+                  contentFit="cover"
+                />
+              </View>
+            </Pressable>
+            <ImageViewer
+              visible={imageViewerVisible}
+              imageUrl={post.image}
+              onClose={() => setImageViewerVisible(false)}
             />
-          </View>
+          </>
         )}
 
         {/* Post Actions */}
