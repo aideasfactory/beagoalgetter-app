@@ -280,7 +280,7 @@ export default function Profile({ onSettingsClick }: ProfileProps) {
               <div className="flex-1">
                 <h4 className="text-white mb-1">Create Your Own Group</h4>
                 <p className="text-sm text-white/60">
-                  Start your own fitness community and challenge friends together
+                  Create a group to chase goals together — from reading challenges to accountability circles and beyond
                 </p>
               </div>
             </div>
@@ -301,7 +301,7 @@ export default function Profile({ onSettingsClick }: ProfileProps) {
                 <DialogHeader>
                   <DialogTitle className="text-white">Create New Group</DialogTitle>
                   <DialogDescription className="text-white/60">
-                    Fill in the details to create your own fitness group
+                    Fill in the details to create your goal group
                   </DialogDescription>
                 </DialogHeader>
                 

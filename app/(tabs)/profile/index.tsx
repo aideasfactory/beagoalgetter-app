@@ -453,7 +453,7 @@ export default function ProfileMain() {
               <View className="flex-1">
                 <Text className="text-white text-lg font-bold mb-1">Create Your Own Group</Text>
                 <Text className="text-white/60 text-sm">
-                  Start your own fitness community and challenge friends together
+                  Create a group to chase goals together — from reading challenges to accountability circles and beyond
                 </Text>
               </View>
             </View>
@@ -524,7 +524,7 @@ export default function ProfileMain() {
             showsVerticalScrollIndicator={true}
           >
             <Text className="text-white/60 text-sm text-center mb-8">
-              Fill in the details to create your own fitness group
+              Fill in the details to create your goal group
             </Text>
 
             {/* Group Name */}
