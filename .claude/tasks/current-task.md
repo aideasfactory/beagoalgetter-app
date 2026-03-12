@@ -1,56 +1,90 @@
-# Task: Update create-group settings copy to reflect broader goal-based use cases
+# Task: Add group location capture to match the group details view
 
 **Created:** 2026-03-12
-**Last Updated:** 2026-03-12
-**Status:** ✅ Complete
+**Last Updated:** 2026-03-12T20:35:00Z
+**Status:** Complete
 
 ---
 
 ## Overview
 
 ### Goal
-Update the create-group messaging on the profile/settings page to reflect Goal Getter's broader purpose — achieving goals of all kinds, not just fitness.
+Add location capture to the create/edit group flow so it matches the group details view which already displays location.
 
 ### Context
-- Tile ID: 019ce2f3-05dc-7270-8ab7-1a1a818b7fd2
-- Branch: feature/019ce2f3-05dc-7270-8ab7-1a1a818b7fd2-update-create-group-settings-copy-to-reflect-broader-goal-ba
+- Tile ID: 019ce359-d8b8-7074-95a1-d3dccac43ec2
+- Repository: beagoalgetter-app
+- Branch: feature/019ce359-d8b8-7074-95a1-d3dccac43ec2-add-group-location-capture-to-match-the-group-details-view
+- Priority: MEDIUM
 
 ---
 
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Files modified
-1. `app/(tabs)/profile/index.tsx` — React Native profile screen
-2. `ReactProjectFiles/src/components/Profile.tsx` — Web reference component
+### Key Findings
+- DB `groups` table already has `location` TEXT column (nullable)
+- TypeScript `Group` type already has `location: string | null`
+- `GroupInfoModal` displays `group.location` but doesn't handle empty values
+- `CreateGroupInput` / `UpdateGroupInput` missing `location`
+- Create group form doesn't collect location
 
-### Copy changes
-| Location | Old Copy | New Copy |
-|----------|----------|----------|
-| Card subtitle | Start your own fitness community and challenge friends together | Create a group to chase goals together — from reading challenges to accountability circles and beyond |
-| Modal instruction | Fill in the details to create your own fitness group | Fill in the details to create your goal group |
+### Decisions
+- Location is **optional** — not all groups have a physical location
+- No DB migration needed
+- Field placed after Inception Date in the form
 
 ---
 
 ## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-- [x] Update card subtitle in `app/(tabs)/profile/index.tsx` (line 456)
-- [x] Update modal instruction in `app/(tabs)/profile/index.tsx` (line 527)
-- [x] Update card subtitle in `ReactProjectFiles/src/components/Profile.tsx` (line 283)
-- [x] Update modal instruction in `ReactProjectFiles/src/components/Profile.tsx` (line 304)
-- [x] Commit changes
+- [x] Add `location` to `CreateGroupInput` and `UpdateGroupInput` in `services/group.ts`
+- [x] Pass `location` in the `createGroup()` insert object
+- [x] Add `groupLocation` state to profile screen
+- [x] Add location TextInput to create/edit group modal
+- [x] Pass `location` in `handleSaveGroup` for both create and update
+- [x] Populate `groupLocation` in `handleEditGroup`
+- [x] Reset `groupLocation` in `resetGroupForm`
+- [x] Handle empty location in `GroupInfoModal` (shows "Not set")
+- [x] Also handle empty founded in `GroupInfoModal` for consistency
+
+### Self-Review Checklist
+- [x] All phase tasks checked off
+- [x] Code follows project patterns (NativeWind, existing form field style)
+- [x] NativeWind/Tailwind classes used for styling
+- [x] Error handling in place (existing handleSaveGroup error handling covers this)
+- [x] Loading states implemented (existing isSavingGroup state covers this)
+- [x] TypeScript types defined (location added to service interfaces)
+- [x] No console.log statements added
+- [x] Supabase queries use proper error handling
+- [x] current-task.md updated with progress
 
 ---
 
 ## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
-### Reflection
-- Straightforward copy update across 2 files (4 string changes total)
-- Existing headings ("Create Your Own Group", "Create New Group") were already goal-agnostic and needed no changes
-- The bio field in the web reference file still says "Fitness enthusiast" but that's mock user data, not app copy — left untouched
-- No database or schema changes required
+### What was done
+- Added `location` field to the service layer interfaces (`CreateGroupInput`, `UpdateGroupInput`)
+- Added location TextInput to the create/edit group modal form
+- Wired location through the full create → save → display flow
+- Added graceful fallback ("Not set") for empty location and founded fields in the group details modal
 
-### TASK COMPLETE
-All fitness-focused create-group copy has been replaced with broader goal-based messaging.
+### What went well
+- The database and TypeScript type already supported `location`, so no migration was needed
+- The change was minimal and surgical — only 3 files modified
+- Followed existing patterns exactly (same TextInput style, same state management pattern)
+
+### Technical debt
+- None introduced
+
+### Files changed
+- `services/group.ts` — Added `location` to input interfaces and insert call
+- `app/(tabs)/profile/index.tsx` — Added `groupLocation` state, form field, and wiring
+- `components/GroupInfoModal.tsx` — Added "Not set" fallback for empty location/founded
+
+---
+
+## TASK COMPLETE
+All phases executed successfully. The create/edit group flow now captures location, which is saved to the database and displayed in the group details modal.

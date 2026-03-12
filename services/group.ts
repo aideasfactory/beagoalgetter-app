@@ -10,6 +10,7 @@ export interface CreateGroupInput {
   logo: string | null;
   member_count: number;
   founded: string | null;
+  location: string | null;
 }
 
 export interface UpdateGroupInput {
@@ -19,6 +20,7 @@ export interface UpdateGroupInput {
   logo?: string | null;
   member_count?: number;
   founded?: string | null;
+  location?: string | null;
 }
 
 export const groupService = {
@@ -76,6 +78,7 @@ export const groupService = {
         logo: input.logo,
         member_count: input.member_count,
         founded: input.founded,
+        location: input.location,
         created_by: user.id,
       })
       .select()
