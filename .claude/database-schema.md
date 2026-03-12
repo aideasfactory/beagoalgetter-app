@@ -455,6 +455,7 @@ Notifications with sender profile details.
 | `get_opted_in_users(target_type)` | Returns users (user_id, push_token, device) who have opted in for a notification type and have a push token. Defaults to opted-in when preferences are empty. | Callable function (SECURITY DEFINER) |
 | `recalculate_participant_ability_points(user_id, challenge_id)` | Recalculates `challenge_participants.total_ability_points` as SUM from `post_ability_points` for a specific user+challenge | Called by trigger function below |
 | `trigger_recalculate_participant_points()` | Looks up post author and challenge, then calls `recalculate_participant_ability_points()` | AFTER INSERT/UPDATE/DELETE on post_ability_points |
+| `process_nightly_failed_posts()` | Nightly cron job: creates `type='fail'` posts for active participants who missed their day (had required tasks but no post). Increments `days_completed`, resets `current_streak` to 0, and handles challenge completion. Checks yesterday's date. | Scheduled via pg_cron: `0 5 * * *` (5:00 AM UTC daily) |
 
 ---
 
@@ -489,6 +490,7 @@ Notifications with sender profile details.
 | 014 | `014_notification_preferences.sql` | Extended `notification_type` enum with `achievement` and `team_update`; created `get_opted_in_users()` function for preference-based notification filtering | 2026-03-08 |
 | 015 | `015_sync_participant_ability_points.sql` | Added `recalculate_participant_ability_points()` function + triggers on `post_ability_points` to keep `challenge_participants.total_ability_points` in sync; backfills existing data | 2026-03-11 |
 | 016 | `016_add_challenge_dates_to_posts_view.sql` | Updated `posts_with_details` view to include `challenge_start_date`, `challenge_duration`, `challenge_duration_type` for feed day indicators | 2026-03-11 |
+| 017 | `017_nightly_failed_posts_cron.sql` | Created `process_nightly_failed_posts()` function + pg_cron schedule (5 AM UTC daily) to auto-create fail posts for users who miss their day | 2026-03-12 |
 
 ---
 
@@ -535,3 +537,4 @@ auth.users (1) ──── (1) profiles
 5. **Badges** - Stored as JSONB boolean flags on the `profiles` table
 6. **Auto-triggers** - `updated_at` is auto-managed, profile is auto-created on signup
 7. **Views** - Use `posts_with_details`, `challenge_leaderboard`, `challenge_team_leaderboard`, `notifications_with_users` for complex queries
+8. **Cron Jobs** - `nightly-failed-posts` runs at 5:00 AM UTC via pg_cron. Verify with `SELECT * FROM cron.job;` and check run history with `SELECT * FROM cron.job_run_details ORDER BY start_time DESC LIMIT 10;`
