@@ -63,6 +63,55 @@ function toDateString(date: Date): string {
 }
 
 /**
+ * Generate an engaging, varied post message based on the challenge day.
+ * Uses the day number to deterministically select a message template.
+ */
+function generateDayMessage(currentDay: number, totalDays: number): string {
+  const templates = [
+    `Day ${currentDay} of ${totalDays} done!`,
+    `Crushed day ${currentDay} of ${totalDays}!`,
+    `Day ${currentDay} of ${totalDays} in the books!`,
+    `Knocked out day ${currentDay} of ${totalDays}!`,
+    `Day ${currentDay} of ${totalDays} complete!`,
+    `Another one down — day ${currentDay} of ${totalDays}!`,
+    `Day ${currentDay} of ${totalDays} locked in!`,
+    `Checked off day ${currentDay} of ${totalDays}!`,
+  ];
+
+  // Early days (first 20%)
+  const progress = currentDay / totalDays;
+  if (currentDay === 1) {
+    return `Day 1 of ${totalDays} — let's go!`;
+  }
+  if (progress <= 0.2) {
+    const earlyTemplates = [
+      `Off to a great start — day ${currentDay} of ${totalDays} done!`,
+      `Building momentum! Day ${currentDay} of ${totalDays} complete!`,
+      `Day ${currentDay} of ${totalDays} done — keep it up!`,
+    ];
+    return earlyTemplates[currentDay % earlyTemplates.length];
+  }
+
+  // Halfway milestone
+  if (currentDay === Math.ceil(totalDays / 2)) {
+    return `Halfway there! Day ${currentDay} of ${totalDays} done!`;
+  }
+
+  // Final stretch (last 20%)
+  if (progress >= 0.8) {
+    const lateTemplates = [
+      `Almost there! Day ${currentDay} of ${totalDays} done!`,
+      `The finish line is close — day ${currentDay} of ${totalDays}!`,
+      `Home stretch! Day ${currentDay} of ${totalDays} complete!`,
+    ];
+    return lateTemplates[currentDay % lateTemplates.length];
+  }
+
+  // General middle range — rotate through templates
+  return templates[currentDay % templates.length];
+}
+
+/**
  * Calculate the user's current streak for a challenge.
  *
  * Algorithm:
@@ -215,8 +264,34 @@ export function useCompleteDay() {
 
         if (completionError) throw completionError;
 
-        // 3. Create a post record for the social feed
-        const dayMessage = `Completed tasks for ${params.challengeTitle}`;
+        // 3. Fetch challenge data and participant info (needed for day message + streak)
+        const [{ data: challengeData }, { data: participant }] = await Promise.all([
+          supabase
+            .from('challenges')
+            .select('start_date, duration, duration_type, image_url, type')
+            .eq('id', params.challengeId)
+            .single(),
+          supabase
+            .from('challenge_participants')
+            .select('longest_streak, days_completed')
+            .eq('challenge_id', params.challengeId)
+            .eq('user_id', user.id)
+            .single(),
+        ]);
+
+        // 4. Generate dynamic post message with challenge day context
+        const totalDays = challengeData?.duration_type === 'weeks'
+          ? (challengeData?.duration || 0) * 7
+          : (challengeData?.duration || 0);
+        const currentDay = (participant?.days_completed || 0) + 1;
+
+        let dayMessage: string;
+        if (totalDays > 0 && challengeData?.start_date) {
+          dayMessage = generateDayMessage(currentDay, totalDays);
+        } else {
+          dayMessage = `Day ${currentDay} done!`;
+        }
+
         const { error: postError } = await supabase.from('posts').insert({
           user_id: user.id,
           challenge_id: params.challengeId,
@@ -228,26 +303,12 @@ export function useCompleteDay() {
 
         if (postError) throw postError;
 
-        // 4. Calculate new streak and update challenge_participants
-        const { data: challengeData } = await supabase
-          .from('challenges')
-          .select('start_date, duration, duration_type, image_url, type')
-          .eq('id', params.challengeId)
-          .single();
-
+        // 5. Calculate new streak and update challenge_participants
         const newStreak = await calculateStreak(
           params.challengeId,
           user.id,
           challengeData?.start_date || null,
         );
-
-        // Read existing longest_streak and days_completed, then do a single update
-        const { data: participant } = await supabase
-          .from('challenge_participants')
-          .select('longest_streak, days_completed')
-          .eq('challenge_id', params.challengeId)
-          .eq('user_id', user.id)
-          .single();
 
         const existingLongest = participant?.longest_streak || 0;
         const newDaysCompleted = (participant?.days_completed || 0) + 1;
@@ -262,11 +323,7 @@ export function useCompleteDay() {
           .eq('challenge_id', params.challengeId)
           .eq('user_id', user.id);
 
-        // 5. Check if challenge is now complete
-        const totalDays = challengeData?.duration_type === 'weeks'
-          ? (challengeData?.duration || 0) * 7
-          : (challengeData?.duration || 0);
-
+        // 6. Check if challenge is now complete
         let challengeCompleted = false;
 
         if (newDaysCompleted >= totalDays && totalDays > 0) {
