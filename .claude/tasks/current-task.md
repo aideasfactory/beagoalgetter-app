@@ -30,7 +30,13 @@ Add a clear "Day X of Y" indicator to each post on the main social feed, showing
 ### Reflection
 Clean approach — no new tables/columns, just exposing existing challenge data through the view.
 
----
+**Fix:**
+- Track whether the initial load has completed using a `useRef`
+- Only set `loading: true` for the initial fetch (when no data has been loaded yet)
+- Subsequent refetches (triggered by `useFocusEffect`) update data silently in the background
+
+### Files to modify
+1. `hooks/useChallenges.ts` — Add initial load tracking, prevent loading flash on refetch
 
 ## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete

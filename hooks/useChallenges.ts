@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/supabase';
 import { useSession } from '@/context/auth';
 import type { Challenge } from '@/components/ChallengeCard';
@@ -81,6 +81,7 @@ export function useChallenges() {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedOnce = useRef(false);
 
   const fetchChallenges = useCallback(async () => {
     if (!user?.id) {
@@ -90,7 +91,13 @@ export function useChallenges() {
     }
 
     setError(null);
-    setLoading(true);
+
+    // Only show full-screen loading spinner on the initial fetch.
+    // Subsequent refetches (e.g. from useFocusEffect) update silently
+    // so the existing challenge list stays visible.
+    if (!hasLoadedOnce.current) {
+      setLoading(true);
+    }
 
     try {
       const { data, error: queryError } = await supabase
@@ -116,6 +123,7 @@ export function useChallenges() {
         .map(mapToChallenge);
 
       setChallenges(mapped);
+      hasLoadedOnce.current = true;
     } catch (err: any) {
       setError(err?.message || 'Failed to load challenges');
     } finally {
