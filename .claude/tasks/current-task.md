@@ -1,20 +1,20 @@
-# Task: Add challenge day indicators to posts on the main social feed
+# Task: Review and confirm nightly failed-post cron job configuration
 
-**Created:** 2026-03-11
-**Last Updated:** 2026-03-11T21:50:00Z
-**Status:** Complete
+**Created:** 2026-03-12
+**Last Updated:** 2026-03-12
+**Status:** ✅ Complete
 
 ---
 
 ## Overview
 
 ### Goal
-Add a clear "Day X of Y" indicator to each post on the main social feed, showing which day of the challenge the post belongs to.
+Build and configure the nightly failed-post automation that creates a "fail" post when a user misses their day in an active challenge.
 
 ### Context
-- Tile ID: 019cdbc5-84f7-728b-b199-93ecfb6167b4
+- Tile ID: 019cd910-1fa9-71db-9776-408674af5df8
 - Repository: beagoalgetter-app
-- Branch: feature/019cdbc5-84f7-728b-b199-93ecfb6167b4-add-challenge-day-indicators-to-posts-on-the-main-social-fee
+- Branch: feature/019cd910-1fa9-71db-9776-408674af5df8-review-and-confirm-nightly-failed-post-cron-job-configuratio
 - Priority: MEDIUM
 
 ---
@@ -22,74 +22,56 @@ Add a clear "Day X of Y" indicator to each post on the main social feed, showing
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Analysis
-- Posts displayed via PostCard → useFeedPosts → posts_with_details view
-- View lacked challenge start_date, duration, duration_type
-- Solution: add 3 columns to view, compute day client-side, render in PostCard header
+### Findings
+- The nightly failed-post automation **did not exist**. No cron job, Edge Function, or trigger handled this.
+- Migration 008 comment references "cron job at midnight (fail)" but no implementation existed.
+- The `posts` table already supports `type = 'fail'` via the `completion_status` enum.
+- `challenge_participants.days_completed` tracks resolved days (success or fail).
+- `useCompleteDay.ts` handles the success path only.
 
-### Reflection
-Clean approach — no new tables/columns, just exposing existing challenge data through the view.
+### Implementation Plan
+Single SQL migration using pg_cron to schedule a nightly function.
 
-**Fix:**
-- Track whether the initial load has completed using a `useRef`
-- Only set `loading: true` for the initial fetch (when no data has been loaded yet)
-- Subsequent refetches (triggered by `useFocusEffect`) update data silently in the background
-
-### Files to modify
-1. `hooks/useChallenges.ts` — Add initial load tracking, prevent loading flash on refetch
+---
 
 ## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
 ### Tasks
-- [x] Create migration 016 to update posts_with_details view
-- [x] Update PostWithDetails type in database.example.ts
-- [x] Add challengeDay to Post interface in PostCard.tsx
-- [x] Update mapPostToFeedPost to compute and map challenge day
-- [x] Render "Day X of Y" indicator in PostCard
-- [x] Update database-schema.md
-
-### Self-Review Checklist
-- [x] All phase tasks checked off
-- [x] Code follows project patterns (NativeWind classes, existing component structure)
-- [x] NativeWind/Tailwind classes used for styling
-- [x] Error handling in place (null start_date gracefully handled)
-- [x] TypeScript types defined (challengeDay interface, PostWithDetails updates)
-- [x] No console.log statements left
-- [x] Supabase queries use proper error handling (view change only)
-- [x] current-task.md updated with progress
+- [x] Create migration `017_nightly_failed_posts_cron.sql`
+- [x] Create `process_nightly_failed_posts()` SQL function
+- [x] Schedule with pg_cron at 5:00 AM UTC daily
+- [x] Update `.claude/database-schema.md` with new function, migration log entry, and cron verification instructions
 
 ---
 
 ## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
-### What was built
-Added "Day X of Y" challenge progress indicators to every post on the main social feed. The indicator appears as a subtle pill badge next to the challenge name in the post header.
+### Reflection
+The nightly failed-post automation was entirely missing from the codebase despite being referenced in migration 008's comments. The implementation uses a pure SQL approach with pg_cron, which is the most reliable option for Supabase — no Edge Functions or external schedulers needed.
 
-### Approach
-1. **Database layer**: Updated `posts_with_details` view (migration 016) to expose `challenge_start_date`, `challenge_duration`, `challenge_duration_type` from the existing challenges table join.
-2. **Type layer**: Extended `PostWithDetails` with three new fields; added `challengeDay` optional object to `Post` interface.
-3. **Logic layer**: Added `computeChallengeDay()` in useFeedPosts.ts that calculates the day number from the challenge start date and post creation date. Clamps to valid range (1 to totalDays).
-4. **UI layer**: Rendered a `bg-white/10` rounded pill showing "Day X of Y" next to the challenge name, only when start_date is available.
+The `process_nightly_failed_posts()` function correctly mirrors the success-path logic in `useCompleteDay.ts`:
+- Creates a fail post (matching the success post creation pattern)
+- Increments `days_completed` (matching the success increment)
+- Resets `current_streak` to 0 (streak-breaking on miss)
+- Handles challenge completion when all days are resolved
 
-### Edge cases handled
-- Null start_date → indicator not shown
-- Post before start date → clamped to Day 1
-- Post after challenge end → clamped to max day
-- Weeks-based challenges → correctly converted to total days
+Key design decisions:
+- **5:00 AM UTC schedule** — gives buffer for US timezones (midnight EST, 9 PM PST previous day)
+- **SECURITY DEFINER** — function runs with elevated privileges to insert posts on behalf of users
+- **Idempotent** — skips users who already have a post for yesterday, safe to re-run
+- **Task-aware** — only creates fail posts when required tasks were actually available on that day
 
-### Technical debt
-- None introduced. Clean additive change.
-
-### Files changed
-- `supabase/migrations/016_add_challenge_dates_to_posts_view.sql` (new)
-- `types/database.example.ts`
-- `components/PostCard.tsx`
-- `hooks/useFeedPosts.ts`
-- `.claude/database-schema.md`
+### Technical Debt
+- Timezone handling is UTC-based. If the app needs per-user timezone support in the future, the function would need to be updated to check each user's local midnight.
+- No push notification is sent for failed posts. Could be added later by calling `get_opted_in_users()` within the function.
 
 ---
 
 ## TASK COMPLETE
-All 3 phases executed successfully.
+
+**Files Changed:**
+- `supabase/migrations/017_nightly_failed_posts_cron.sql` (new)
+- `.claude/database-schema.md` (updated)
+- `.claude/tasks/current-task.md` (updated)
