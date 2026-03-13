@@ -62,11 +62,16 @@ export function CommentsSheet({ visible, onClose, postId, onCommentCountChange }
     if (!text.trim() || submitting) return;
     const content = text;
     setText('');
-    await addComment(content);
-    if (postId) {
-      onCommentCountChange?.(postId, 1);
+    const success = await addComment(content);
+    if (success) {
+      if (postId) {
+        onCommentCountChange?.(postId, 1);
+      }
+      scrollRef.current?.scrollToEnd({ animated: true });
+    } else {
+      setText(content);
+      Alert.alert('Error', 'Failed to post comment. Please try again.');
     }
-    scrollRef.current?.scrollToEnd({ animated: true });
   };
 
   const handleDelete = (commentId: string) => {

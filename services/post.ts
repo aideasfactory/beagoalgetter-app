@@ -158,35 +158,32 @@ export const postService = {
     } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    // Insert and select only the comment columns (no join) to avoid
+    // PostgREST relationship resolution issues with profiles:user_id
     const { data, error } = await supabase
       .from('post_comments')
       .insert({ post_id: postId, user_id: user.id, content })
-      .select(`
-        id,
-        post_id,
-        user_id,
-        content,
-        created_at,
-        profiles:user_id (
-          display_name,
-          avatar_url,
-          username
-        )
-      `)
+      .select('id, post_id, user_id, content, created_at')
       .single();
 
     if (error) throw error;
 
-    const row = data as any;
+    // Fetch the user's profile separately for display info
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name, avatar_url, username')
+      .eq('id', user.id)
+      .single();
+
     return {
-      id: row.id,
-      post_id: row.post_id,
-      user_id: row.user_id,
-      content: row.content,
-      created_at: row.created_at,
-      user_name: row.profiles?.display_name ?? null,
-      user_avatar: row.profiles?.avatar_url ?? null,
-      user_username: row.profiles?.username ?? null,
+      id: data.id,
+      post_id: data.post_id,
+      user_id: data.user_id,
+      content: data.content,
+      created_at: data.created_at,
+      user_name: profile?.display_name ?? null,
+      user_avatar: profile?.avatar_url ?? null,
+      user_username: profile?.username ?? null,
     };
   },
 

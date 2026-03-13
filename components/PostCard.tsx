@@ -45,7 +45,7 @@ interface PostCardProps {
   post: Post;
   onChallengeClick: (challengeId: string) => void;
   onGivePoints: (post: Post) => void;
-  onGroupClick?: (group: NonNullable<Post['group']>) => void;;
+  onGroupClick?: (group: NonNullable<Post['group']>) => void;
   onComment?: (postId: string) => void;
   onLike?: (postId: string, liked: boolean, reactionType?: string) => void;
 }

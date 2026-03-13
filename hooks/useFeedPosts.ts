@@ -150,6 +150,15 @@ export function useFeedPosts(activeTab: TabType): UseFeedPostsResult {
   }, [load]);
 
   const handleLike = useCallback(async (postId: string, liked: boolean, reactionType?: ReactionType) => {
+    // Optimistic update in parent state (PostCard also updates locally)
+    setPosts((current) =>
+      current.map((p) =>
+        p.id === postId
+          ? { ...p, isLiked: liked, likes: liked ? p.likes + 1 : Math.max(0, p.likes - 1) }
+          : p,
+      ),
+    );
+
     try {
       if (liked) {
         await postService.likePost(postId, reactionType ?? 'like');
@@ -161,11 +170,7 @@ export function useFeedPosts(activeTab: TabType): UseFeedPostsResult {
       setPosts((current) =>
         current.map((p) =>
           p.id === postId
-            ? {
-                ...p,
-                isLiked: !liked,
-                likes: liked ? p.likes - 1 : p.likes + 1,
-              }
+            ? { ...p, isLiked: !liked, likes: liked ? p.likes - 1 : p.likes + 1 }
             : p,
         ),
       );

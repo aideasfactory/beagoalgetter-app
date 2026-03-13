@@ -8,7 +8,7 @@ interface UsePostCommentsResult {
   loading: boolean;
   submitting: boolean;
   currentUserId: string | null;
-  addComment: (content: string) => Promise<void>;
+  addComment: (content: string) => Promise<boolean>;
   deleteComment: (commentId: string) => Promise<void>;
 }
 
@@ -56,12 +56,16 @@ export function usePostComments(postId: string | null): UsePostCommentsResult {
   }, [postId]);
 
   const addComment = useCallback(
-    async (content: string) => {
-      if (!postId || !content.trim()) return;
+    async (content: string): Promise<boolean> => {
+      if (!postId || !content.trim()) return false;
       setSubmitting(true);
       try {
         const newComment = await postService.createComment(postId, content.trim());
         setComments((prev) => [...prev, newComment]);
+        return true;
+      } catch (err) {
+        console.error('Failed to create comment:', err);
+        return false;
       } finally {
         setSubmitting(false);
       }
