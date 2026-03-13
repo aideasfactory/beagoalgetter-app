@@ -35,6 +35,7 @@ export interface Post {
   timestamp: string;
   likes: number;
   abilityPointsGiven: number;
+  commentsCount: number;
   isLiked?: boolean;
   isOwnPost?: boolean;
 }
@@ -45,11 +46,12 @@ interface PostCardProps {
   onGivePoints: (post: Post) => void;
   onGroupClick?: (group: NonNullable<Post['group']>) => void;
   onLike?: (postId: string, liked: boolean) => void;
+  onComment?: (postId: string) => void;
 }
 
 const APP_ICON = require('@/assets/images/icon.png');
 
-export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, onLike }: PostCardProps) {
+export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, onLike, onComment }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
@@ -189,12 +191,18 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
         <View className="flex-row items-center gap-6 pt-3 border-t border-white/10">
           {/* Like Button */}
           <TouchableOpacity onPress={handleLike} className="flex-row items-center gap-2">
-            <Ionicons 
-              name={isLiked ? "heart" : "heart-outline"} 
-              size={20} 
-              color={isLiked ? "#ef4444" : "rgba(255,255,255,0.6)"} 
+            <Ionicons
+              name={isLiked ? "heart" : "heart-outline"}
+              size={20}
+              color={isLiked ? "#ef4444" : "rgba(255,255,255,0.6)"}
             />
             <Text className="text-white/60 text-sm">{likeCount}</Text>
+          </TouchableOpacity>
+
+          {/* Comment Button */}
+          <TouchableOpacity onPress={() => onComment?.(post.id)} className="flex-row items-center gap-2">
+            <Ionicons name="chatbubble-outline" size={18} color="rgba(255,255,255,0.6)" />
+            <Text className="text-white/60 text-sm">{post.commentsCount || 0}</Text>
           </TouchableOpacity>
 
           {/* Give Points Button (hidden on own posts) */}

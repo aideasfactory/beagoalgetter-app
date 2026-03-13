@@ -21,6 +21,7 @@ This document provides a comprehensive overview of the Supabase database structu
 - `notifications` → User notifications
 - `post_likes` → Like tracking for posts
 - `post_ability_points` → Ability points tracking for posts
+- `post_comments` → Comments on posts
 - `teams` → Teams within groups
 
 **Key Relationships:**
@@ -315,6 +316,7 @@ Social feed posts tied to challenges.
 | `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
 | `likes_count` | INTEGER | - | 0 | Total likes (auto-updated via trigger) |
 | `ability_points_given` | INTEGER | - | 0 | Total AP given to post |
+| `comments_count` | INTEGER | - | 0 | Total comments (auto-updated via trigger) |
 
 **Indexes:**
 - `idx_posts_user_id` on `user_id`
@@ -322,7 +324,7 @@ Social feed posts tied to challenges.
 - `idx_posts_created_at` on `created_at DESC`
 - `idx_posts_type` on `type`
 
-**Triggers:** `on_post_like_added` (increment), `on_post_like_removed` (decrement)
+**Triggers:** `on_post_like_added` (increment), `on_post_like_removed` (decrement), `on_post_comment_added` (increment comments_count), `on_post_comment_removed` (decrement comments_count)
 
 **RLS Policies:**
 - Posts are viewable by everyone (SELECT)
@@ -415,12 +417,40 @@ Tracks which users gave ability points to which posts.
 
 ---
 
+### 12. post_comments
+
+Comments on social feed posts. Text-only, no editing.
+
+| Column | Type | Constraints | Default | Description |
+|--------|------|-------------|---------|-------------|
+| `id` | UUID | PK | uuid_generate_v4() | Comment ID |
+| `post_id` | UUID | FK to posts(id) ON DELETE CASCADE, NOT NULL | - | Parent post |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | Comment author |
+| `content` | TEXT | NOT NULL | - | Comment text |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Creation timestamp |
+
+**Indexes:**
+- `idx_post_comments_post_id` on `post_id`
+- `idx_post_comments_user_id` on `user_id`
+- `idx_post_comments_created_at` on `created_at DESC`
+
+**Triggers:**
+- `on_post_comment_added` — Increments `posts.comments_count` (AFTER INSERT)
+- `on_post_comment_removed` — Decrements `posts.comments_count` (AFTER DELETE)
+
+**RLS Policies:**
+- Comments are viewable by everyone (SELECT)
+- Users can create comments (INSERT where user_id = auth.uid)
+- Users can delete their own comments (DELETE where user_id = auth.uid)
+
+---
+
 ## Database Views
 
 ### posts_with_details
 Posts joined with user, challenge, and group information. The `ability_points_given` field is computed as `SUM(points)` from `post_ability_points` (not the cached column on `posts`).
 
-**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `challenge_start_date`, `challenge_duration`, `challenge_duration_type`, `group_id`, `group_name`, `group_logo`, `group_color`
+**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `comments_count`, `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `challenge_start_date`, `challenge_duration`, `challenge_duration_type`, `group_id`, `group_name`, `group_logo`, `group_color`
 
 ### challenge_leaderboard
 Ranked participants per challenge, with profile and team info.
@@ -456,6 +486,8 @@ Notifications with sender profile details.
 | `recalculate_participant_ability_points(user_id, challenge_id)` | Recalculates `challenge_participants.total_ability_points` as SUM from `post_ability_points` for a specific user+challenge | Called by trigger function below |
 | `trigger_recalculate_participant_points()` | Looks up post author and challenge, then calls `recalculate_participant_ability_points()` | AFTER INSERT/UPDATE/DELETE on post_ability_points |
 | `process_nightly_failed_posts()` | Nightly cron job: creates `type='fail'` posts for active participants who missed their day (had required tasks but no post). Increments `days_completed`, resets `current_streak` to 0, and handles challenge completion. Checks yesterday's date. | Scheduled via pg_cron: `0 5 * * *` (5:00 AM UTC daily) |
+| `increment_post_comments()` | Increments `comments_count` on posts | AFTER INSERT on post_comments |
+| `decrement_post_comments()` | Decrements `comments_count` on posts | AFTER DELETE on post_comments |
 
 ---
 
@@ -491,6 +523,7 @@ Notifications with sender profile details.
 | 015 | `015_sync_participant_ability_points.sql` | Added `recalculate_participant_ability_points()` function + triggers on `post_ability_points` to keep `challenge_participants.total_ability_points` in sync; backfills existing data | 2026-03-11 |
 | 016 | `016_add_challenge_dates_to_posts_view.sql` | Updated `posts_with_details` view to include `challenge_start_date`, `challenge_duration`, `challenge_duration_type` for feed day indicators | 2026-03-11 |
 | 017 | `017_nightly_failed_posts_cron.sql` | Created `process_nightly_failed_posts()` function + pg_cron schedule (5 AM UTC daily) to auto-create fail posts for users who miss their day | 2026-03-12 |
+| 018 | `018_add_post_comments.sql` | Created `post_comments` table with RLS; added `comments_count` to `posts` with auto-update triggers; updated `posts_with_details` view | 2026-03-13 |
 
 ---
 
@@ -517,7 +550,9 @@ auth.users (1) ──── (1) profiles
                          │                   │
                          │                   └── (Many) posts
                          │                        │
-                         │                        └── (Many) post_likes
+                         │                        ├── (Many) post_likes
+                         │                        │
+                         │                        └── (Many) post_comments
                          │
                          ├── joins ──── (Many) challenge_participants
                          │

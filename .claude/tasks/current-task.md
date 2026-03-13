@@ -1,56 +1,68 @@
-# Task: Update create-group settings copy to reflect broader goal-based use cases
+# Task: Add post comments with bottom-sheet viewing and simple comment management
 
-**Created:** 2026-03-12
-**Last Updated:** 2026-03-12
-**Status:** ✅ Complete
+**Created:** 2026-03-13
+**Last Updated:** 2026-03-13T10:30:00Z
+**Status:** Complete
 
 ---
 
 ## Overview
 
 ### Goal
-Update the create-group messaging on the profile/settings page to reflect Goal Getter's broader purpose — achieving goals of all kinds, not just fitness.
+Add a comments feature for posts: view, create, delete own comments via a bottom sheet modal. Show comment count on each post card.
 
 ### Context
-- Tile ID: 019ce2f3-05dc-7270-8ab7-1a1a818b7fd2
-- Branch: feature/019ce2f3-05dc-7270-8ab7-1a1a818b7fd2-update-create-group-settings-copy-to-reflect-broader-goal-ba
+- Tile ID: 019ce62e-6698-701e-aff9-3e8fafa6a821
+- Branch: feature/019ce62e-6698-701e-aff9-3e8fafa6a821-add-post-comments-with-bottom-sheet-viewing-and-simple-comme
 
 ---
 
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Files modified
-1. `app/(tabs)/profile/index.tsx` — React Native profile screen
-2. `ReactProjectFiles/src/components/Profile.tsx` — Web reference component
-
-### Copy changes
-| Location | Old Copy | New Copy |
-|----------|----------|----------|
-| Card subtitle | Start your own fitness community and challenge friends together | Create a group to chase goals together — from reading challenges to accountability circles and beyond |
-| Modal instruction | Fill in the details to create your own fitness group | Fill in the details to create your goal group |
+### Decisions
+- `post_comments` table with auto-updating `comments_count` on posts (matches `likes_count` pattern)
+- Used existing Modal pattern — no new dependencies needed
+- RLS: everyone can view, users create own, users delete own
 
 ---
 
 ## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-- [x] Update card subtitle in `app/(tabs)/profile/index.tsx` (line 456)
-- [x] Update modal instruction in `app/(tabs)/profile/index.tsx` (line 527)
-- [x] Update card subtitle in `ReactProjectFiles/src/components/Profile.tsx` (line 283)
-- [x] Update modal instruction in `ReactProjectFiles/src/components/Profile.tsx` (line 304)
-- [x] Commit changes
+- [x] Create migration 018_add_post_comments.sql
+- [x] Update database-schema.md
+- [x] Add PostComment type + update PostWithDetails
+- [x] Add comment service methods to services/post.ts
+- [x] Create usePostComments hook
+- [x] Create CommentsSheet component
+- [x] Update PostCard with comment count + tap handler
+- [x] Update useFeedPosts to map comments_count
+- [x] Update feed screen to integrate CommentsSheet
+- [x] Update barrel exports
 
 ---
 
 ## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
-### Reflection
-- Straightforward copy update across 2 files (4 string changes total)
-- Existing headings ("Create Your Own Group", "Create New Group") were already goal-agnostic and needed no changes
-- The bio field in the web reference file still says "Fitness enthusiast" but that's mock user data, not app copy — left untouched
-- No database or schema changes required
+### What was built
+- Database: `post_comments` table with RLS, `comments_count` cached column on `posts`, auto-update triggers, updated `posts_with_details` view
+- Service: `getPostComments`, `createComment`, `deleteComment` methods with user profile joins
+- Hook: `usePostComments` — manages comment loading, creation, deletion with optimistic deletes
+- Component: `CommentsSheet` — full-featured bottom sheet with scrollable comments, input bar, keyboard avoiding, delete confirmation for own comments
+- Integration: Comment count button in PostCard action row, optimistic count updates in feed
+
+### Patterns followed
+- Same Modal pattern as GivePointsModal, NotificationsModal (animationType="slide", presentationStyle="pageSheet")
+- Same trigger pattern as likes_count for comments_count
+- Same RLS pattern as post_likes
+- NativeWind styling throughout
+- Proper error handling and loading states
+
+### Technical debt
+- No real-time subscription for new comments (can be added later)
+- No pagination for comments (fine for typical comment volumes)
 
 ### TASK COMPLETE
-All fitness-focused create-group copy has been replaced with broader goal-based messaging.
+All 3 phases executed successfully. Migration, types, services, hooks, components, and integration all implemented.

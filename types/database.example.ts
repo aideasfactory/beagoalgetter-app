@@ -185,6 +185,7 @@ export interface Post {
   created_at: string;
   likes_count: number;
   ability_points_given: number;
+  comments_count: number;
 }
 
 export interface Notification {
@@ -203,6 +204,20 @@ export interface PostLike {
   post_id: string;
   user_id: string;
   created_at: string;
+}
+
+export interface PostComment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+}
+
+export interface PostCommentWithUser extends PostComment {
+  user_name: string | null;
+  user_avatar: string | null;
+  user_username: string | null;
 }
 
 // Extended types with joins

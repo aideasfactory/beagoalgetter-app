@@ -1,5 +1,5 @@
 import { supabase } from '@/supabase';
-import type { PostWithDetails } from '@/types/database.example';
+import type { PostWithDetails, PostCommentWithUser } from '@/types/database.example';
 
 export const postService = {
   async getFeedPosts(limit: number = 20): Promise<PostWithDetails[]> {
@@ -118,5 +118,84 @@ export const postService = {
 
     if (error) throw error;
     return data ?? null;
+  },
+
+  async getPostComments(postId: string): Promise<PostCommentWithUser[]> {
+    const { data, error } = await supabase
+      .from('post_comments')
+      .select(`
+        id,
+        post_id,
+        user_id,
+        content,
+        created_at,
+        profiles:user_id (
+          display_name,
+          avatar_url,
+          username
+        )
+      `)
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) throw error;
+
+    return (data ?? []).map((row: any) => ({
+      id: row.id,
+      post_id: row.post_id,
+      user_id: row.user_id,
+      content: row.content,
+      created_at: row.created_at,
+      user_name: row.profiles?.display_name ?? null,
+      user_avatar: row.profiles?.avatar_url ?? null,
+      user_username: row.profiles?.username ?? null,
+    }));
+  },
+
+  async createComment(postId: string, content: string): Promise<PostCommentWithUser> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error } = await supabase
+      .from('post_comments')
+      .insert({ post_id: postId, user_id: user.id, content })
+      .select(`
+        id,
+        post_id,
+        user_id,
+        content,
+        created_at,
+        profiles:user_id (
+          display_name,
+          avatar_url,
+          username
+        )
+      `)
+      .single();
+
+    if (error) throw error;
+
+    const row = data as any;
+    return {
+      id: row.id,
+      post_id: row.post_id,
+      user_id: row.user_id,
+      content: row.content,
+      created_at: row.created_at,
+      user_name: row.profiles?.display_name ?? null,
+      user_avatar: row.profiles?.avatar_url ?? null,
+      user_username: row.profiles?.username ?? null,
+    };
+  },
+
+  async deleteComment(commentId: string): Promise<void> {
+    const { error } = await supabase
+      .from('post_comments')
+      .delete()
+      .eq('id', commentId);
+
+    if (error) throw error;
   },
 };
