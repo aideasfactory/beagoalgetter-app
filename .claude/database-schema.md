@@ -487,7 +487,7 @@ Notifications with sender profile details.
 | `get_opted_in_users(target_type)` | Returns users (user_id, push_token, device) who have opted in for a notification type and have a push token. Defaults to opted-in when preferences are empty. | Callable function (SECURITY DEFINER) |
 | `recalculate_participant_ability_points(user_id, challenge_id)` | Recalculates `challenge_participants.total_ability_points` as SUM from `post_ability_points` for a specific user+challenge | Called by trigger function below |
 | `trigger_recalculate_participant_points()` | Looks up post author and challenge, then calls `recalculate_participant_ability_points()` | AFTER INSERT/UPDATE/DELETE on post_ability_points |
-| `process_nightly_failed_posts()` | Nightly cron job: creates `type='fail'` posts for active participants who missed their day (had required tasks but no post). Increments `days_completed`, resets `current_streak` to 0, and handles challenge completion. Checks yesterday's date. | Scheduled via pg_cron: `0 5 * * *` (5:00 AM UTC daily) |
+| `process_nightly_failed_posts()` | Nightly cron job: creates `type='fail'` posts for active participants who missed their day (had required tasks but no post). Sets fail post `created_at` to yesterday 23:59 UTC for correct feed placement and idempotency. Increments `days_completed`, resets `current_streak` to 0, and handles challenge completion. Handles both explicit (inclusive) and computed (exclusive) end_date boundaries. | Scheduled via pg_cron: `0 5 * * *` (5:00 AM UTC daily) |
 | `increment_post_comments()` | Increments `comments_count` on posts | AFTER INSERT on post_comments |
 | `decrement_post_comments()` | Decrements `comments_count` on posts | AFTER DELETE on post_comments |
 
@@ -527,6 +527,7 @@ Notifications with sender profile details.
 | 017 | `017_nightly_failed_posts_cron.sql` | Created `process_nightly_failed_posts()` function + pg_cron schedule (5 AM UTC daily) to auto-create fail posts for users who miss their day | 2026-03-12 |
 | 018 | `018_add_post_comments.sql` | Created `post_comments` table with RLS; added `comments_count` to `posts` with auto-update triggers; updated `posts_with_details` view | 2026-03-13 |
 | 018 | `018_add_reaction_type_to_post_likes.sql` | Added `reaction_type` TEXT column to `post_likes` (like/celebrate/encourage) + added 'encourage' to `notification_type` enum | 2026-03-13 |
+| 019 | `019_fix_nightly_failed_posts.sql` | Fixed `process_nightly_failed_posts()`: fail posts now use yesterday's timestamp (23:59 UTC) for correct feed placement and duplicate protection; fixed off-by-one with explicit `end_date` boundary check | 2026-03-13 |
 
 ---
 
