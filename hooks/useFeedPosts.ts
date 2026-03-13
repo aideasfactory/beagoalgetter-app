@@ -18,6 +18,7 @@ interface UseFeedPostsResult {
   refreshing: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
+  updateCommentCount: (postId: string, delta: number) => void;
   handleLike: (postId: string, liked: boolean, reactionType?: ReactionType) => Promise<void>;
 }
 
@@ -105,6 +106,7 @@ function mapPostToFeedPost(
     timestamp: formatRelativeTime(post.created_at),
     likes: post.likes_count ?? 0,
     abilityPointsGiven: post.ability_points_given ?? 0,
+    commentsCount: post.comments_count ?? 0,
     isLiked: likedPostIds.has(post.id),
     isOwnPost: currentUserId != null && post.user_id === currentUserId,
   };
@@ -170,6 +172,16 @@ export function useFeedPosts(activeTab: TabType): UseFeedPostsResult {
     }
   }, []);
 
+  const updateCommentCount = useCallback((postId: string, delta: number) => {
+    setPosts((current) =>
+      current.map((p) =>
+        p.id === postId
+          ? { ...p, commentsCount: Math.max(0, p.commentsCount + delta) }
+          : p,
+      ),
+    );
+  }, []);
+
   const refetch = useCallback(() => load(true), [load]);
 
   return {
@@ -179,5 +191,6 @@ export function useFeedPosts(activeTab: TabType): UseFeedPostsResult {
     error,
     refetch,
     handleLike,
+    updateCommentCount,
   };
 }

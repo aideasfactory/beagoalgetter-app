@@ -36,6 +36,7 @@ export interface Post {
   timestamp: string;
   likes: number;
   abilityPointsGiven: number;
+  commentsCount: number;
   isLiked?: boolean;
   isOwnPost?: boolean;
 }
@@ -44,13 +45,14 @@ interface PostCardProps {
   post: Post;
   onChallengeClick: (challengeId: string) => void;
   onGivePoints: (post: Post) => void;
-  onGroupClick?: (group: NonNullable<Post['group']>) => void;
+  onGroupClick?: (group: NonNullable<Post['group']>) => void;;
+  onComment?: (postId: string) => void;
   onLike?: (postId: string, liked: boolean, reactionType?: string) => void;
 }
 
 const APP_ICON = require('@/assets/images/icon.png');
 
-export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, onLike }: PostCardProps) {
+export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, onLike, onComment }: PostCardProps) {
   const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
@@ -201,6 +203,12 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
               color={isLiked ? reaction.activeColor : reaction.inactiveColor}
             />
             <Text className="text-white/60 text-sm">{likeCount}</Text>
+          </TouchableOpacity>
+
+          {/* Comment Button */}
+          <TouchableOpacity onPress={() => onComment?.(post.id)} className="flex-row items-center gap-2">
+            <Ionicons name="chatbubble-outline" size={18} color="rgba(255,255,255,0.6)" />
+            <Text className="text-white/60 text-sm">{post.commentsCount || 0}</Text>
           </TouchableOpacity>
 
           {/* Give Points Button (hidden on own posts) */}

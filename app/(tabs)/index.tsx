@@ -13,6 +13,7 @@ import {
   GivePointsModal,
   GroupInfoModal,
   GroupInfo,
+  CommentsSheet,
 } from '@/components';
 import type { NotificationWithUser } from '@/types/database.example';
 import { useUserNotifications, useFeedPosts } from '@/hooks';
@@ -51,11 +52,20 @@ export default function HomeScreen() {
   );
 
   const [activeTab, setActiveTab] = useState<TabType>('all');
-  const { posts, loading, refreshing, error, refetch, handleLike } = useFeedPosts(activeTab);
+  const { posts, loading, refreshing, error, refetch, handleLike, updateCommentCount } = useFeedPosts(activeTab);
   const [showNotifications, setShowNotifications] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<ChallengePreview | null>(null);
   const [givePointsPost, setGivePointsPost] = useState<Post | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupInfo | null>(null);
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
+
+  const handleCommentClick = useCallback((postId: string) => {
+    setCommentsPostId(postId);
+  }, []);
+
+  const handleCommentCountChange = useCallback((postId: string, delta: number) => {
+    updateCommentCount(postId, delta);
+  }, [updateCommentCount]);
 
   const handleChallengeClick = useCallback(
     async (challengeId: string) => {
@@ -305,6 +315,7 @@ export default function HomeScreen() {
               onGivePoints={handleGivePoints}
               onGroupClick={handleGroupClick}
               onLike={handleLike}
+              onComment={handleCommentClick}
             />
           ))
         )}
@@ -339,6 +350,13 @@ export default function HomeScreen() {
         visible={selectedGroup !== null}
         onClose={() => setSelectedGroup(null)}
         group={selectedGroup}
+      />
+
+      <CommentsSheet
+        visible={commentsPostId !== null}
+        onClose={() => setCommentsPostId(null)}
+        postId={commentsPostId}
+        onCommentCountChange={handleCommentCountChange}
       />
     </SafeAreaView>
   );
