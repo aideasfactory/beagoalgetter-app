@@ -33,7 +33,7 @@ export const LoadingScreen = () => {
   }, [pulseAnim, fadeAnim])
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#000000" }}>
+    <View style={{ flex: 1, backgroundColor: "#000000" }}>git
       <Animated.View
         className="flex-1 items-center justify-center"
         style={{ opacity: fadeAnim }}

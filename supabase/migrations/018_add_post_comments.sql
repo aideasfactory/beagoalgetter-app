@@ -73,8 +73,9 @@ SET comments_count = (
   SELECT COUNT(*) FROM public.post_comments pc WHERE pc.post_id = p.id
 );
 
--- 9. Update posts_with_details view to include comments_count
-CREATE OR REPLACE VIEW public.posts_with_details AS
+-- 9. Recreate posts_with_details view to include comments_count
+DROP VIEW IF EXISTS public.posts_with_details;
+CREATE VIEW public.posts_with_details AS
 SELECT
   p.id,
   p.user_id,
