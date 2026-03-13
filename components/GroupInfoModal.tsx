@@ -96,14 +96,14 @@ export function GroupInfoModal({ visible, onClose, group }: GroupInfoModalProps)
                   <Ionicons name="location" size={16} color="rgba(255,255,255,0.6)" />
                   <Text className="text-white/60 text-sm">Location</Text>
                 </View>
-                <Text className="text-white font-medium">{group.location}</Text>
+                <Text className="text-white font-medium">{group.location || 'Not set'}</Text>
               </View>
               <View className="flex-1 bg-white/5 rounded-xl p-4 border border-white/10">
                 <View className="flex-row items-center gap-2 mb-1">
                   <Ionicons name="calendar" size={16} color="rgba(255,255,255,0.6)" />
                   <Text className="text-white/60 text-sm">Founded</Text>
                 </View>
-                <Text className="text-white font-medium">{group.founded}</Text>
+                <Text className="text-white font-medium">{group.founded || 'Not set'}</Text>
               </View>
             </View>
  
