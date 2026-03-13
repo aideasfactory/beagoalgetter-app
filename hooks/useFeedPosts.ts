@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { postService } from '@/services';
 import { supabase } from '@/supabase';
 import type { Post } from '@/components/PostCard';
-import type { PostWithDetails } from '@/types/database.example';
+import type { PostWithDetails, ReactionType } from '@/types/database.example';
+import { getReactionType } from '@/utils/reactionConfig';
 
 // Extends Post with groupId so index.tsx can fetch full group details on click
 export interface FeedPost extends Post {
@@ -17,8 +18,8 @@ interface UseFeedPostsResult {
   refreshing: boolean;
   error: Error | null;
   refetch: () => Promise<void>;
-  handleLike: (postId: string, liked: boolean) => Promise<void>;
   updateCommentCount: (postId: string, delta: number) => void;
+  handleLike: (postId: string, liked: boolean, reactionType?: ReactionType) => Promise<void>;
 }
 
 function formatRelativeTime(dateString: string): string {
@@ -148,10 +149,10 @@ export function useFeedPosts(activeTab: TabType): UseFeedPostsResult {
     load();
   }, [load]);
 
-  const handleLike = useCallback(async (postId: string, liked: boolean) => {
+  const handleLike = useCallback(async (postId: string, liked: boolean, reactionType?: ReactionType) => {
     try {
       if (liked) {
-        await postService.likePost(postId);
+        await postService.likePost(postId, reactionType ?? 'like');
       } else {
         await postService.unlikePost(postId);
       }

@@ -89,6 +89,7 @@ export default function ProfileMain() {
   const [groupLogo, setGroupLogo] = useState<string | null>(null);
   const [totalMembers, setTotalMembers] = useState('');
   const [inceptionDate, setInceptionDate] = useState('');
+  const [groupLocation, setGroupLocation] = useState('');
 
   // Preset colors for group branding
   const presetColors = [
@@ -158,6 +159,7 @@ export default function ProfileMain() {
     setGroupLogo(null);
     setTotalMembers('');
     setInceptionDate('');
+    setGroupLocation('');
   };
 
   const handleCloseGroupModal = () => {
@@ -204,6 +206,7 @@ export default function ProfileMain() {
           logo: logoUrl,
           member_count: parseInt(totalMembers) || 0,
           founded: inceptionDate || null,
+          location: groupLocation || null,
         });
       } else {
         await groupService.createGroup({
@@ -213,6 +216,7 @@ export default function ProfileMain() {
           logo: logoUrl,
           member_count: parseInt(totalMembers) || 0,
           founded: inceptionDate || null,
+          location: groupLocation || null,
         });
       }
 
@@ -233,6 +237,7 @@ export default function ProfileMain() {
     setGroupLogo(group.logo);
     setTotalMembers(String(group.member_count));
     setInceptionDate(group.founded || '');
+    setGroupLocation(group.location || '');
     setIsCreateGroupOpen(true);
   };
 
@@ -624,7 +629,7 @@ export default function ProfileMain() {
             </View>
 
             {/* Inception Date */}
-            <View className="mb-8">
+            <View className="mb-6">
               <Text className="text-white text-base mb-2">Inception Date</Text>
               <TextInput
                 value={inceptionDate}
@@ -635,6 +640,21 @@ export default function ProfileMain() {
               />
               <Text className="text-white/40 text-xs mt-2">
                 When was your group founded?
+              </Text>
+            </View>
+
+            {/* Location */}
+            <View className="mb-8">
+              <Text className="text-white text-base mb-2">Location</Text>
+              <TextInput
+                value={groupLocation}
+                onChangeText={setGroupLocation}
+                placeholder="e.g., London, UK"
+                placeholderTextColor="rgba(255,255,255,0.4)"
+                className="bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-base"
+              />
+              <Text className="text-white/40 text-xs mt-2">
+                Where is your group based?
               </Text>
             </View>
 

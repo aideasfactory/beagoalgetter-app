@@ -1,5 +1,5 @@
 import { supabase } from '@/supabase';
-import type { PostWithDetails, PostCommentWithUser } from '@/types/database.example';
+import type { PostWithDetails, ReactionType, PostCommentWithUser } from '@/types/database.example';
 
 export const postService = {
   async getFeedPosts(limit: number = 20): Promise<PostWithDetails[]> {
@@ -58,7 +58,7 @@ export const postService = {
     return new Set((data ?? []).map((row) => row.post_id));
   },
 
-  async likePost(postId: string): Promise<void> {
+  async likePost(postId: string, reactionType: ReactionType = 'like'): Promise<void> {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -66,7 +66,7 @@ export const postService = {
 
     const { error } = await supabase
       .from('post_likes')
-      .insert({ post_id: postId, user_id: user.id });
+      .insert({ post_id: postId, user_id: user.id, reaction_type: reactionType });
 
     if (error) throw error;
   },

@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { ImageViewer } from './ImageViewer';
+import { getReactionConfig } from '@/utils/reactionConfig';
 
 export interface Post {
   id: string;
@@ -44,9 +45,9 @@ interface PostCardProps {
   post: Post;
   onChallengeClick: (challengeId: string) => void;
   onGivePoints: (post: Post) => void;
-  onGroupClick?: (group: NonNullable<Post['group']>) => void;
-  onLike?: (postId: string, liked: boolean) => void;
+  onGroupClick?: (group: NonNullable<Post['group']>) => void;;
   onComment?: (postId: string) => void;
+  onLike?: (postId: string, liked: boolean, reactionType?: string) => void;
 }
 
 const APP_ICON = require('@/assets/images/icon.png');
@@ -55,6 +56,11 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
   const [isLiked, setIsLiked] = useState(post.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
+
+  const reaction = useMemo(
+    () => getReactionConfig(post.type, post.isChallengeComplete),
+    [post.type, post.isChallengeComplete],
+  );
 
   // Sync with parent state (reverts optimistic update on network failure)
   useEffect(() => { setIsLiked(post.isLiked ?? false); }, [post.isLiked]);
@@ -66,7 +72,7 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
     const newLiked = !isLiked;
     setIsLiked(newLiked);
     setLikeCount(prev => newLiked ? prev + 1 : prev - 1);
-    onLike?.(post.id, newLiked);
+    onLike?.(post.id, newLiked, reaction.reactionType);
   };
   return (
     <View className="rounded-2xl overflow-hidden bg-[#1a1a1a] border border-white/10 mb-4">
@@ -189,12 +195,12 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
 
         {/* Post Actions */}
         <View className="flex-row items-center gap-6 pt-3 border-t border-white/10">
-          {/* Like Button */}
+          {/* Reaction Button (post-type-specific) */}
           <TouchableOpacity onPress={handleLike} className="flex-row items-center gap-2">
             <Ionicons
-              name={isLiked ? "heart" : "heart-outline"}
+              name={(isLiked ? reaction.iconFilled : reaction.iconOutline) as any}
               size={20}
-              color={isLiked ? "#ef4444" : "rgba(255,255,255,0.6)"}
+              color={isLiked ? reaction.activeColor : reaction.inactiveColor}
             />
             <Text className="text-white/60 text-sm">{likeCount}</Text>
           </TouchableOpacity>

@@ -53,7 +53,7 @@ challenge_participants ── (0..1) teams (team assignment)
 | `challenge_type` | `'personal'`, `'group'` |
 | `duration_type` | `'days'`, `'weeks'` |
 | `completion_status` | `'success'`, `'fail'`, `'joined'` |
-| `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'`, `'achievement'`, `'team_update'` |
+| `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'`, `'achievement'`, `'team_update'`, `'encourage'` |
 
 ---
 
@@ -364,20 +364,22 @@ User notifications.
 
 ### 10. post_likes
 
-Tracks who liked which posts.
+Tracks who reacted to which posts. Supports post-type-specific reactions.
 
 | Column | Type | Constraints | Default | Description |
 |--------|------|-------------|---------|-------------|
 | `id` | UUID | PK | uuid_generate_v4() | Like ID |
 | `post_id` | UUID | FK to posts(id) ON DELETE CASCADE, NOT NULL | - | Post ID |
-| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | User who liked |
-| `created_at` | TIMESTAMPTZ | - | NOW() | Like timestamp |
+| `user_id` | UUID | FK to auth.users(id) ON DELETE CASCADE, NOT NULL | - | User who reacted |
+| `reaction_type` | TEXT | NOT NULL, CHECK IN ('like', 'celebrate', 'encourage') | 'like' | Type of reaction (like=heart, celebrate=ribbon, encourage=strength) |
+| `created_at` | TIMESTAMPTZ | - | NOW() | Reaction timestamp |
 
 **Constraints:** UNIQUE(`post_id`, `user_id`)
 
 **Indexes:**
 - `idx_post_likes_post_id` on `post_id`
 - `idx_post_likes_user_id` on `user_id`
+- `idx_post_likes_reaction_type` on `reaction_type`
 
 **RLS Policies:**
 - Likes are viewable by everyone (SELECT)
@@ -524,6 +526,7 @@ Notifications with sender profile details.
 | 016 | `016_add_challenge_dates_to_posts_view.sql` | Updated `posts_with_details` view to include `challenge_start_date`, `challenge_duration`, `challenge_duration_type` for feed day indicators | 2026-03-11 |
 | 017 | `017_nightly_failed_posts_cron.sql` | Created `process_nightly_failed_posts()` function + pg_cron schedule (5 AM UTC daily) to auto-create fail posts for users who miss their day | 2026-03-12 |
 | 018 | `018_add_post_comments.sql` | Created `post_comments` table with RLS; added `comments_count` to `posts` with auto-update triggers; updated `posts_with_details` view | 2026-03-13 |
+| 018 | `018_add_reaction_type_to_post_likes.sql` | Added `reaction_type` TEXT column to `post_likes` (like/celebrate/encourage) + added 'encourage' to `notification_type` enum | 2026-03-13 |
 
 ---
 
