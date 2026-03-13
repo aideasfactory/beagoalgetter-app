@@ -121,35 +121,41 @@ export const postService = {
   },
 
   async getPostComments(postId: string): Promise<PostCommentWithUser[]> {
+    // Fetch comments without profile join to avoid PostgREST relationship
+    // resolution issues (post_comments.user_id → auth.users, not profiles)
     const { data, error } = await supabase
       .from('post_comments')
-      .select(`
-        id,
-        post_id,
-        user_id,
-        content,
-        created_at,
-        profiles:user_id (
-          display_name,
-          avatar_url,
-          username
-        )
-      `)
+      .select('id, post_id, user_id, content, created_at')
       .eq('post_id', postId)
       .order('created_at', { ascending: true });
 
     if (error) throw error;
+    if (!data || data.length === 0) return [];
 
-    return (data ?? []).map((row: any) => ({
-      id: row.id,
-      post_id: row.post_id,
-      user_id: row.user_id,
-      content: row.content,
-      created_at: row.created_at,
-      user_name: row.profiles?.display_name ?? null,
-      user_avatar: row.profiles?.avatar_url ?? null,
-      user_username: row.profiles?.username ?? null,
-    }));
+    // Batch-fetch profiles for all unique comment authors
+    const userIds = [...new Set(data.map((c) => c.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, display_name, avatar_url, username')
+      .in('id', userIds);
+
+    const profileMap = new Map(
+      (profiles ?? []).map((p: any) => [p.id, p]),
+    );
+
+    return data.map((row) => {
+      const profile = profileMap.get(row.user_id);
+      return {
+        id: row.id,
+        post_id: row.post_id,
+        user_id: row.user_id,
+        content: row.content,
+        created_at: row.created_at,
+        user_name: profile?.display_name ?? null,
+        user_avatar: profile?.avatar_url ?? null,
+        user_username: profile?.username ?? null,
+      };
+    });
   },
 
   async createComment(postId: string, content: string): Promise<PostCommentWithUser> {
