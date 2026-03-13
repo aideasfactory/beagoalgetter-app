@@ -16,7 +16,8 @@ import { supabase } from '@/supabase';
 export type ChallengeType = 'personal' | 'team' | 'group';
 export type DurationType = 'days' | 'weeks';
 export type CompletionStatus = 'success' | 'fail' | 'joined';
-export type NotificationType = 'like' | 'points' | 'challenge' | 'streak' | 'achievement' | 'team_update';
+export type NotificationType = 'like' | 'points' | 'challenge' | 'streak' | 'achievement' | 'team_update' | 'encourage';
+export type ReactionType = 'like' | 'celebrate' | 'encourage';
 
 export interface NotificationPreferences {
   push_enabled: boolean;
@@ -202,6 +203,7 @@ export interface PostLike {
   id: string;
   post_id: string;
   user_id: string;
+  reaction_type: ReactionType;
   created_at: string;
 }
 
