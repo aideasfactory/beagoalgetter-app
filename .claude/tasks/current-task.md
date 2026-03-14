@@ -1,19 +1,21 @@
-# Task: Auto-create notification when someone comments on your post
+# Task: Remove search challenge functionality from the challenges list page
 
 **Created:** 2026-03-14
 **Last Updated:** 2026-03-14
-**Status:** Complete
+**Status:** ✅ Complete
 
 ---
 
 ## Overview
 
 ### Goal
-Create a database trigger on `post_comments` that automatically inserts a notification for the post author when someone comments on their post.
+Simplify the challenges list page by removing the search functionality.
 
 ### Context
-- Currently no notifications are auto-generated anywhere in the app
-- This is the first notification-creating trigger
+- Tile ID: 019cebc8-26b9-7284-8f17-8b930060df47
+- Repository: beagoalgetter-app
+- Branch: feature/019cebc8-26b9-7284-8f17-8b930060df47-remove-search-challenge-functionality-from-the-challenges-li
+- Priority: MEDIUM
 
 ---
 
@@ -21,50 +23,44 @@ Create a database trigger on `post_comments` that automatically inserts a notifi
 **Status:** ✅ Complete
 
 ### Analysis
-- `post_comments` has `post_id`, `user_id`, `content`
-- `posts` has `user_id` (post author to notify)
-- `notifications` has `user_id` (recipient), `from_user_id`, `post_id`, `type`, `message`
-- Need to add `comment` to `notification_type` enum
-- Trigger fires AFTER INSERT on `post_comments`, skips self-comments
+- Search functionality is self-contained in `app/(tabs)/challenges.tsx`
+- `SearchBar` component is shared and should not be deleted
+- `TextInput` import is still needed for join-by-code modal
+- Low risk — no other screens depend on this search
 
 ---
 
-## PHASE 2: DATABASE MIGRATION
+## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-- [x] Created `supabase/migrations/020_comment_notification_trigger.sql`
-  - Adds `comment` to `notification_type` enum
-  - `notify_post_author_on_comment()` function (SECURITY DEFINER)
-  - Looks up post author, skips if commenter == author
-  - Looks up commenter display_name for notification message
-  - Inserts into `notifications` with type `comment`
-  - Trigger `on_post_comment_notify_author` AFTER INSERT on `post_comments`
+### Tasks:
+- [x] Remove SearchBar import
+- [x] Remove searchQuery state
+- [x] Remove search filtering logic from useMemo
+- [x] Remove SearchBar JSX from header
+- [x] Update empty state to remove searchQuery references
+- [x] Changed empty state icon from `search-outline` to `trophy-outline` (more appropriate without search)
+- [x] Simplified empty state text (removed search match message)
+- [x] Simplified "Create Challenge" button condition (removed `!searchQuery` check)
+- [x] Verified header layout is clean without search bar
+- [x] Self-review: no console.logs, types intact, NativeWind classes used, no unused imports
 
 ---
 
-## PHASE 3: UPDATE DOCS & TYPES
-**Status:** ✅ Complete
-
-- [x] Updated `database-schema.md` — enum, triggers table, post_comments triggers, migration log
-- [x] Updated `types/database.example.ts` — added `comment` to NotificationType
-- [x] Updated `components/NotificationsModal.tsx` — added `comment` to local type + chatbubble icon
-
----
-
-## PHASE 4: REFLECTION & CLEANUP
+## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
 ### Reflection
-- Clean, minimal implementation: one migration file, three small edits
-- Used SECURITY DEFINER so the trigger can always insert notifications regardless of RLS context
-- Self-comment filtering prevents noise
-- This sets the pattern for future notification triggers (likes, points, etc.)
+The task was straightforward. The search functionality was well-isolated, making removal clean. Key decisions:
+- Kept `SearchBar.tsx` component intact since it's exported from `components/index.ts` and may be reused
+- Changed the empty state icon from a search icon to a trophy icon to better fit the challenge context
+- Removed the search-dependent conditional in the empty state text, keeping only the filter-based message
+- No layout issues — the header naturally contracts without the search bar, and the hide-completed toggle + filter buttons provide sufficient list management
 
 ### Files Changed
-- `supabase/migrations/020_comment_notification_trigger.sql` (new)
-- `types/database.example.ts` — added `comment` to NotificationType
-- `.claude/database-schema.md` — updated enum, triggers, migration log
-- `components/NotificationsModal.tsx` — added `comment` type + icon
+- `app/(tabs)/challenges.tsx` — Removed search bar, search state, search filtering logic, and search-related empty state UI
 
-### TASK COMPLETE
-All requirements met. A database trigger now auto-creates a notification for the post author whenever someone else comments on their post.
+---
+
+## TASK COMPLETE
+All phases executed successfully. The challenges list page is simplified with search removed while retaining type filtering, hide-completed toggle, and all other functionality.
