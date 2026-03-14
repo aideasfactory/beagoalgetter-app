@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Share } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -50,20 +50,12 @@ export default function ChallengeDetailsScreen() {
   const typeLabel = challenge.type === 'personal' ? 'Personal' : 'Group';
   const challengeNotStarted = !challenge.hasStarted;
   const showJoinCode = isGroupChallenge && isChallengeOwner && !!challenge.join_code;
-  const shareUrl = challenge.join_code ? `https://beagoalgetter.app/join/${challenge.join_code}` : '';
 
-  const handleCopyJoinLink = async () => {
-    await Clipboard.setStringAsync(shareUrl);
-    Alert.alert('Copied!', 'Challenge link copied to clipboard');
-  };
-
-  const handleShareJoinLink = async () => {
-    try {
-      await Share.share({
-        message: `Join my challenge "${challenge.title}"!\n\n${shareUrl}`,
-        url: shareUrl,
-      });
-    } catch {}
+  const handleCopyJoinCode = async () => {
+    if (challenge.join_code) {
+      await Clipboard.setStringAsync(challenge.join_code);
+      Alert.alert('Copied!', 'Join code copied to clipboard');
+    }
   };
 
   // Format start date for display
@@ -116,16 +108,28 @@ export default function ChallengeDetailsScreen() {
 
           {/* Challenge Title and Type */}
           <View style={{ position: 'absolute', top: 100, left: 0, right: 0 }} className="px-6">
-            <View className="flex-row items-center mb-3">
+            <Text className="text-white text-3xl font-bold tracking-tight mb-2" style={{ textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 0, height: 2}, textShadowRadius: 8 }}>
+              {challenge.title}
+            </Text>
+            <View className="flex-row items-center justify-between">
               <View className="bg-white/10 px-3 py-1 rounded-full border border-white/20">
                 <Text className="text-white text-xs font-bold">
                   {typeLabel} • {challenge.participant_count} members
                 </Text>
               </View>
+              {showJoinCode && (
+                <TouchableOpacity
+                  onPress={handleCopyJoinCode}
+                  className="flex-row items-center gap-1.5 px-3 py-1 rounded-full border border-white/20"
+                  style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+                >
+                  <Ionicons name="key-outline" size={12} color="#00c2ff" />
+                  <Text className="text-cyan-400 font-bold text-xs tracking-widest">
+                    {challenge.join_code}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
-            <Text className="text-white text-3xl font-bold tracking-tight mb-2" style={{ textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: {width: 0, height: 2}, textShadowRadius: 8 }}>
-              {challenge.title}
-            </Text>
           </View>
 
           {/* Stats Overlay - Bottom of Hero */}
@@ -238,44 +242,6 @@ export default function ChallengeDetailsScreen() {
             </View>
           )}
 
-          {/* Join Code Card (group admin only) */}
-          {showJoinCode && (
-            <LinearGradient
-              colors={['rgba(0, 194, 255, 0.1)', 'rgba(0, 194, 255, 0.05)']}
-              className="mt-4 rounded-2xl p-4"
-              style={{ borderWidth: 1, borderColor: 'rgba(0, 194, 255, 0.3)' }}
-            >
-              <View className="flex-row items-center justify-between mb-3">
-                <View className="flex-row items-center gap-2">
-                  <Ionicons name="key-outline" size={16} color="#00c2ff" />
-                  <Text className="text-white/60 text-sm">Join Code</Text>
-                </View>
-                <View className="bg-black/50 rounded-lg px-3 py-1.5">
-                  <Text className="text-cyan-400 font-bold text-base tracking-widest">
-                    {challenge.join_code}
-                  </Text>
-                </View>
-              </View>
-              <View className="flex-row gap-3">
-                <TouchableOpacity
-                  onPress={handleCopyJoinLink}
-                  className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2"
-                  style={{ backgroundColor: '#00c2ff' }}
-                >
-                  <Ionicons name="copy-outline" size={18} color="black" />
-                  <Text className="text-black font-bold text-sm">Copy Link</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleShareJoinLink}
-                  className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 border border-white/20"
-                  style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
-                >
-                  <Ionicons name="share-outline" size={18} color="white" />
-                  <Text className="text-white font-bold text-sm">Share</Text>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
-          )}
         </View>
 
         {/* Tabs Navigation */}

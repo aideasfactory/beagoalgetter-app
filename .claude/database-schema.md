@@ -53,7 +53,7 @@ challenge_participants ── (0..1) teams (team assignment)
 | `challenge_type` | `'personal'`, `'group'` |
 | `duration_type` | `'days'`, `'weeks'` |
 | `completion_status` | `'success'`, `'fail'`, `'joined'` |
-| `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'`, `'achievement'`, `'team_update'`, `'encourage'` |
+| `notification_type` | `'like'`, `'points'`, `'challenge'`, `'streak'`, `'achievement'`, `'team_update'`, `'encourage'`, `'comment'` |
 
 ---
 
@@ -439,6 +439,7 @@ Comments on social feed posts. Text-only, no editing.
 **Triggers:**
 - `on_post_comment_added` — Increments `posts.comments_count` (AFTER INSERT)
 - `on_post_comment_removed` — Decrements `posts.comments_count` (AFTER DELETE)
+- `on_post_comment_notify_author` — Creates a notification for the post author when someone else comments (AFTER INSERT)
 
 **RLS Policies:**
 - Comments are viewable by everyone (SELECT)
@@ -490,6 +491,7 @@ Notifications with sender profile details.
 | `process_nightly_failed_posts()` | Nightly cron job: creates `type='fail'` posts for active participants who missed their day (had required tasks but no post). Sets fail post `created_at` to yesterday 23:59 UTC for correct feed placement and idempotency. Increments `days_completed`, resets `current_streak` to 0, and handles challenge completion. Handles both explicit (inclusive) and computed (exclusive) end_date boundaries. | Scheduled via pg_cron: `0 5 * * *` (5:00 AM UTC daily) |
 | `increment_post_comments()` | Increments `comments_count` on posts | AFTER INSERT on post_comments |
 | `decrement_post_comments()` | Decrements `comments_count` on posts | AFTER DELETE on post_comments |
+| `notify_post_author_on_comment()` | Creates notification for post author when someone else comments; skips self-comments | AFTER INSERT on post_comments |
 
 ---
 
@@ -529,6 +531,7 @@ Notifications with sender profile details.
 | 018 | `018_add_reaction_type_to_post_likes.sql` | Added `reaction_type` TEXT column to `post_likes` (like/celebrate/encourage) + added 'encourage' to `notification_type` enum | 2026-03-13 |
 | 019 | `019_fix_nightly_failed_posts.sql` | Fixed `process_nightly_failed_posts()`: fail posts now use yesterday's timestamp (23:59 UTC) for correct feed placement and duplicate protection; fixed off-by-one with explicit `end_date` boundary check | 2026-03-13 |
 | 020 | `020_fix_posts_view_challenge_streak.sql` | Fixed `posts_with_details` view to use `challenge_participants.current_streak` (challenge-specific) instead of `profiles.current_streak` (user-wide) for `user_streak` | 2026-03-14 |
+| 020 | `020_comment_notification_trigger.sql` | Added `comment` to `notification_type` enum; created `notify_post_author_on_comment()` trigger function to auto-create notifications when someone comments on a post (skips self-comments) | 2026-03-14 |
 
 ---
 

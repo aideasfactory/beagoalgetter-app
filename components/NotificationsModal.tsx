@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export interface Notification {
   id: string;
-  type: 'like' | 'points' | 'challenge' | 'streak';
+  type: 'like' | 'points' | 'challenge' | 'streak' | 'achievement' | 'team_update' | 'encourage' | 'comment';
   user?: {
     name: string;
     avatar: string;
@@ -84,6 +84,8 @@ export function NotificationsModal({ visible, onClose, notifications, onMarkAllR
                     >
                       {notification.type === 'challenge' ? (
                         <Ionicons name="target" size={20} color="black" />
+                      ) : notification.type === 'comment' ? (
+                        <Ionicons name="chatbubble" size={20} color="black" />
                       ) : (
                         <Ionicons name="flame" size={20} color="black" />
                       )}
