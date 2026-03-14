@@ -1,7 +1,7 @@
-# Task: Auto-create notification when someone comments on your post
+# Task: Standardise Goal Getter icons
 
 **Created:** 2026-03-14
-**Last Updated:** 2026-03-14
+**Last Updated:** 2026-03-14T11:15:00Z
 **Status:** Complete
 
 ---
@@ -9,62 +9,96 @@
 ## Overview
 
 ### Goal
-Create a database trigger on `post_comments` that automatically inserts a notification for the post author when someone comments on their post.
+Standardise all "ringed blue icon" treatments across the Goal Getter app to use consistent colour, shape, and sizing.
 
 ### Context
-- Currently no notifications are auto-generated anywhere in the app
-- This is the first notification-creating trigger
+- Tile ID: 019ce3cb-5a27-70fa-869f-9b84ffaa7d18
+- Repository: beagoalgetter-app
+- Branch: feature/019ce3cb-5a27-70fa-869f-9b84ffaa7d18-standardise-goal-getter-icons
+- Priority: MEDIUM
 
 ---
 
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Analysis
-- `post_comments` has `post_id`, `user_id`, `content`
-- `posts` has `user_id` (post author to notify)
-- `notifications` has `user_id` (recipient), `from_user_id`, `post_id`, `type`, `message`
-- Need to add `comment` to `notification_type` enum
-- Trigger fires AFTER INSERT on `post_comments`, skips self-comments
+### Audit Findings
 
----
+**Inconsistencies identified across 7 files:**
 
-## PHASE 2: DATABASE MIGRATION
-**Status:** ✅ Complete
+1. **Avatar.tsx** — Used `bg-blue-600` (Tailwind blue) instead of brand cyan `#00c2ff`
+2. **challenge/[id].tsx** — Stat icons used `rounded-xl` (rounded square) instead of `rounded-full` (circle)
+3. **Mixed sizes** — Icon circles varied: w-8/h-8, w-10/h-10, w-12/h-12 across similar contexts
+4. **No reusable component** — Icon circle pattern duplicated ~15+ times with inline styles
+5. **Inconsistent style approach** — Some used `style={{ backgroundColor }}`, others used NativeWind `bg-[]` classes
 
-- [x] Created `supabase/migrations/020_comment_notification_trigger.sql`
-  - Adds `comment` to `notification_type` enum
-  - `notify_post_author_on_comment()` function (SECURITY DEFINER)
-  - Looks up post author, skips if commenter == author
-  - Looks up commenter display_name for notification message
-  - Inserts into `notifications` with type `comment`
-  - Trigger `on_post_comment_notify_author` AFTER INSERT on `post_comments`
+### Standardisation Rules
 
----
-
-## PHASE 3: UPDATE DOCS & TYPES
-**Status:** ✅ Complete
-
-- [x] Updated `database-schema.md` — enum, triggers table, post_comments triggers, migration log
-- [x] Updated `types/database.example.ts` — added `comment` to NotificationType
-- [x] Updated `components/NotificationsModal.tsx` — added `comment` to local type + chatbubble icon
-
----
-
-## PHASE 4: REFLECTION & CLEANUP
-**Status:** ✅ Complete
+| Property | Standard | Notes |
+|----------|----------|-------|
+| Brand cyan | `#00c2ff` | All blue icon circles use this |
+| Semi-transparent | `{color}20` (12.5% opacity) | Consistent tint backgrounds |
+| Shape | `rounded-full` | All icon circles are perfect circles |
+| Small size | w-8 h-8, icon 18px | Feature list checkmarks |
+| Medium size | w-10 h-10, icon 20px | Stat cards, notifications |
+| Large size | w-12 h-12, icon 24px | Detail cards, community |
 
 ### Reflection
-- Clean, minimal implementation: one migration file, three small edits
-- Used SECURITY DEFINER so the trigger can always insert notifications regardless of RLS context
-- Self-comment filtering prevents noise
-- This sets the pattern for future notification triggers (likes, points, etc.)
+Planning complete. Clear set of inconsistencies identified with straightforward fixes.
+
+---
+
+## PHASE 2: IMPLEMENTATION
+**Status:** ✅ Complete
+
+### Tasks
+- [x] Create `IconCircle` component with size variants (sm, md, lg) and solid/tint variants
+- [x] Update `Avatar.tsx` — changed `bg-blue-600` to `#00c2ff`
+- [x] Update `challenge/[id].tsx` — changed `rounded-xl` to `rounded-full` on all 4 stat icons via IconCircle
+- [x] Update `NotificationsModal.tsx` — replaced inline icon circles with IconCircle
+- [x] Update `JoinChallengeModal.tsx` — replaced all 9 inline icon circles (4 stats + 4 checkmarks + 1 community) with IconCircle
+- [x] Update `challenges.tsx` — replaced join-by-code icon with IconCircle
+- [x] Update `AdminTab.tsx` — replaced settings icon circle with IconCircle
+
+### Self-Review Checklist
+- [x] All phase tasks checked off
+- [x] Code follows project patterns (functional components, TypeScript)
+- [x] NativeWind/Tailwind classes used for styling
+- [x] TypeScript types defined (IoniconsName, IconCircleProps)
+- [x] No console.log statements
+- [x] current-task.md updated
+
+### Reflection
+All icon circle instances now use the centralised `IconCircle` component. The `rounded-xl` squares on the challenge detail page are now `rounded-full` circles. The Avatar component now uses the brand cyan `#00c2ff` instead of Tailwind's `bg-blue-600`. The component supports custom colours for non-cyan icons (green, purple, orange) used in stat grids.
+
+---
+
+## PHASE 3: FINAL REFLECTION & DOCUMENTATION
+**Status:** ✅ Complete
+
+### What Was Done
+- Created a reusable `IconCircle` component with 3 size variants (sm/md/lg) and 2 style variants (solid/tint)
+- Standardised all icon circle instances across 7 files to use consistent shape (`rounded-full`), colours (`#00c2ff` as default), and the centralised component
+- Fixed `Avatar.tsx` using wrong blue shade (`bg-blue-600` → `#00c2ff`)
+- Fixed `challenge/[id].tsx` using wrong shape (`rounded-xl` → `rounded-full`)
 
 ### Files Changed
-- `supabase/migrations/020_comment_notification_trigger.sql` (new)
-- `types/database.example.ts` — added `comment` to NotificationType
-- `.claude/database-schema.md` — updated enum, triggers, migration log
-- `components/NotificationsModal.tsx` — added `comment` type + icon
+1. `components/IconCircle.tsx` (NEW)
+2. `components/Avatar.tsx`
+3. `components/NotificationsModal.tsx`
+4. `components/JoinChallengeModal.tsx`
+5. `components/challenge-tabs/AdminTab.tsx`
+6. `app/challenge/[id].tsx`
+7. `app/(tabs)/challenges.tsx`
 
-### TASK COMPLETE
-All requirements met. A database trigger now auto-creates a notification for the post author whenever someone else comments on their post.
+### Technical Debt
+- None introduced. The `IconCircle` component actually reduces existing debt by centralising a repeated pattern.
+
+### Future Improvements
+- Could extend `IconCircle` to support custom icon sizes beyond the 3 presets if needed
+- The leaderboard team rank circles use text (not Ionicons) inside circles — these could get a companion `TextCircle` component if needed
+
+---
+
+## TASK COMPLETE
+All phases executed successfully. Icon treatments are now visually standardised across the app.

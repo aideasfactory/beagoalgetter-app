@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, ScrollView, Text, TouchableOpacity, Alert, Modal, TextInput, Switch, ActivityIndicator, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from '@/components/IconCircle';
 import { router, useFocusEffect } from 'expo-router';
 import { SearchBar } from '@/components/SearchBar';
 import { ChallengeCard } from '@/components/ChallengeCard';
@@ -371,8 +372,8 @@ export default function ChallengesScreen() {
 
               <View className="bg-white/5 border border-white/15 rounded-2xl p-4 mb-8">
                 <View className="flex-row items-center mb-4">
-                  <View className="w-10 h-10 rounded-full bg-[#00c2ff20] items-center justify-center mr-3">
-                    <Ionicons name="key-outline" size={22} color="#00c2ff" />
+                  <View className="mr-3">
+                    <IconCircle icon="key-outline" size="md" variant="tint" />
                   </View>
                   <View className="flex-1">
                     <Text className="text-white font-semibold">Invite code</Text>

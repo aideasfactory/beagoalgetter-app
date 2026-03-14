@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, Modal, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from './IconCircle';
 
 export interface Notification {
   id: string;
@@ -78,18 +78,17 @@ export function NotificationsModal({ visible, onClose, notifications, onMarkAllR
                       />
                     </View>
                   ) : (
-                    <View
-                      className="w-10 h-10 rounded-full items-center justify-center"
-                      style={{ backgroundColor: '#00c2ff' }}
-                    >
-                      {notification.type === 'challenge' ? (
-                        <Ionicons name="target" size={20} color="black" />
-                      ) : notification.type === 'comment' ? (
-                        <Ionicons name="chatbubble" size={20} color="black" />
-                      ) : (
-                        <Ionicons name="flame" size={20} color="black" />
-                      )}
-                    </View>
+                    <IconCircle
+                      icon={
+                        notification.type === 'challenge'
+                          ? 'target'
+                          : notification.type === 'comment'
+                            ? 'chatbubble'
+                            : 'flame'
+                      }
+                      size="md"
+                      variant="solid"
+                    />
                   )}
 
                   {/* Content */}

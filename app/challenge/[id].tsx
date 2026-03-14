@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert } fr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from '@/components/IconCircle';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Clipboard from 'expo-clipboard';
@@ -137,8 +138,8 @@ export default function ChallengeDetailsScreen() {
             <View className="flex-row gap-3">
               {/* Streak */}
               <View className="flex-1 rounded-2xl p-4 items-center border border-white/20" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                <View className="w-10 h-10 rounded-xl mb-2 items-center justify-center" style={{ backgroundColor: '#00c2ff' }}>
-                  <Ionicons name="trending-up" size={20} color="black" />
+                <View className="mb-2">
+                  <IconCircle icon="trending-up" size="md" variant="solid" />
                 </View>
                 <Text className="text-white font-bold mb-1">{challenge.currentStreak}</Text>
                 <Text className="text-white/80 text-xs">Streak</Text>
@@ -146,8 +147,8 @@ export default function ChallengeDetailsScreen() {
 
               {/* Points */}
               <View className="flex-1 rounded-2xl p-4 items-center border border-white/20" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                <View className="w-10 h-10 rounded-xl mb-2 items-center justify-center" style={{ backgroundColor: '#84cc16' }}>
-                  <Ionicons name="trophy" size={20} color="black" />
+                <View className="mb-2">
+                  <IconCircle icon="trophy" size="md" variant="solid" color="#84cc16" />
                 </View>
                 <Text className="text-white font-bold mb-1">{challenge.totalPoints}</Text>
                 <Text className="text-white/80 text-xs">Points</Text>
@@ -155,8 +156,8 @@ export default function ChallengeDetailsScreen() {
 
               {/* Members */}
               <View className="flex-1 rounded-2xl p-4 items-center border border-white/20" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                <View className="w-10 h-10 rounded-xl mb-2 items-center justify-center" style={{ backgroundColor: '#a855f7' }}>
-                  <Ionicons name="people" size={20} color="black" />
+                <View className="mb-2">
+                  <IconCircle icon="people" size="md" variant="solid" color="#a855f7" />
                 </View>
                 <Text className="text-white font-bold mb-1">{challenge.participant_count}</Text>
                 <Text className="text-white/80 text-xs">Active</Text>
@@ -164,8 +165,8 @@ export default function ChallengeDetailsScreen() {
 
               {/* Days Remaining */}
               <View className="flex-1 rounded-2xl p-4 items-center border border-white/20" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
-                <View className="w-10 h-10 rounded-xl mb-2 items-center justify-center" style={{ backgroundColor: '#f97316' }}>
-                  <Ionicons name="calendar" size={20} color="black" />
+                <View className="mb-2">
+                  <IconCircle icon="calendar" size="md" variant="solid" color="#f97316" />
                 </View>
                 <Text className="text-white font-bold mb-1">{challenge.daysRemaining}</Text>
                 <Text className="text-white/80 text-xs">Days</Text>

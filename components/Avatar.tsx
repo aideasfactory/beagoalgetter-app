@@ -33,7 +33,8 @@ export const Avatar: React.FC<AvatarProps> = ({
     <View className="items-center mb-8">
       <View
         style={{ width: size, height: size }}
-        className="rounded-full bg-blue-600 items-center justify-center mb-4"
+        className="rounded-full items-center justify-center mb-4"
+        style={{ backgroundColor: '#00c2ff' }}
       >
         {avatarUrl ? (
           <Image
