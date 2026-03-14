@@ -1,4 +1,4 @@
-# Task: Auto-create notification when someone comments on your post
+# Task: Fix social feed streak display so it shows the streak for that specific challenge
 
 **Created:** 2026-03-14
 **Last Updated:** 2026-03-14
@@ -9,45 +9,46 @@
 ## Overview
 
 ### Goal
-Create a database trigger on `post_comments` that automatically inserts a notification for the post author when someone comments on their post.
+Fix the streak value shown on the social feed so it displays the challenge-specific streak instead of the user's overall profile streak.
 
 ### Context
-- Currently no notifications are auto-generated anywhere in the app
-- This is the first notification-creating trigger
+- Tile ID: 019ce35e-14d1-7068-8fd6-66fc9e470553
+- Repository: beagoalgetter-app
+- Branch: feature/019ce35e-14d1-7068-8fd6-66fc9e470553-fix-social-feed-streak-display-so-it-shows-the-streak-for-th
+- Priority: MEDIUM
 
 ---
 
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Analysis
-- `post_comments` has `post_id`, `user_id`, `content`
-- `posts` has `user_id` (post author to notify)
-- `notifications` has `user_id` (recipient), `from_user_id`, `post_id`, `type`, `message`
-- Need to add `comment` to `notification_type` enum
-- Trigger fires AFTER INSERT on `post_comments`, skips self-comments
+### Bug Analysis
+
+**Root Cause:** The `posts_with_details` SQL view joins `profiles` and uses `pr.current_streak AS user_streak` — this is the user's **overall** current streak from the `profiles` table, not the streak for the specific challenge tied to the post.
+
+**Correct Source:** The `challenge_participants` table has a `current_streak` column that tracks the streak per user per challenge. Each post already has both `user_id` and `challenge_id`, so we can join `challenge_participants` to get the challenge-specific streak.
+
+### Plan
+1. Create migration to fix the view — join `challenge_participants` and use `cp.current_streak`
+2. No frontend changes needed — field name stays `user_streak`
+3. Update database-schema.md
 
 ---
 
 ## PHASE 2: DATABASE MIGRATION
 **Status:** ✅ Complete
 
-- [x] Created `supabase/migrations/020_comment_notification_trigger.sql`
-  - Adds `comment` to `notification_type` enum
-  - `notify_post_author_on_comment()` function (SECURITY DEFINER)
-  - Looks up post author, skips if commenter == author
-  - Looks up commenter display_name for notification message
-  - Inserts into `notifications` with type `comment`
-  - Trigger `on_post_comment_notify_author` AFTER INSERT on `post_comments`
+### Tasks
+- [x] Create migration `020_fix_posts_view_challenge_streak.sql`
+- [x] Update `.claude/database-schema.md` view documentation and migrations log
+- [x] Self-review checklist
 
----
-
-## PHASE 3: UPDATE DOCS & TYPES
-**Status:** ✅ Complete
-
-- [x] Updated `database-schema.md` — enum, triggers table, post_comments triggers, migration log
-- [x] Updated `types/database.example.ts` — added `comment` to NotificationType
-- [x] Updated `components/NotificationsModal.tsx` — added `comment` to local type + chatbubble icon
+### Self-Review
+- [x] All phase tasks checked off
+- [x] Code follows project patterns (matches existing view recreation pattern from migrations 016/018)
+- [x] TypeScript types unaffected (field name unchanged)
+- [x] Supabase queries use proper error handling (N/A — view definition only)
+- [x] current-task.md updated with progress
 
 ---
 
@@ -55,16 +56,19 @@ Create a database trigger on `post_comments` that automatically inserts a notifi
 **Status:** ✅ Complete
 
 ### Reflection
-- Clean, minimal implementation: one migration file, three small edits
-- Used SECURITY DEFINER so the trigger can always insert notifications regardless of RLS context
-- Self-comment filtering prevents noise
-- This sets the pattern for future notification triggers (likes, points, etc.)
+The fix was straightforward — a single SQL view change. The `posts_with_details` view was pulling `current_streak` from the `profiles` table (user's overall streak across all challenges) when it should have been pulling from `challenge_participants` (the streak for the specific challenge associated with each post). The fix adds a `LEFT JOIN` to `challenge_participants` on `(user_id, challenge_id)` and uses `COALESCE(cp.current_streak, 0)` to handle edge cases where a participant record might not exist.
+
+No frontend changes were needed since the field name (`user_streak`) is preserved.
 
 ### Files Changed
-- `supabase/migrations/020_comment_notification_trigger.sql` (new)
-- `types/database.example.ts` — added `comment` to NotificationType
-- `.claude/database-schema.md` — updated enum, triggers, migration log
-- `components/NotificationsModal.tsx` — added `comment` type + icon
+- `supabase/migrations/020_fix_posts_view_challenge_streak.sql` (new)
+- `.claude/database-schema.md` (updated view docs + migrations log)
+- `.claude/tasks/current-task.md` (task tracking)
 
-### TASK COMPLETE
-All requirements met. A database trigger now auto-creates a notification for the post author whenever someone else comments on their post.
+### Technical Debt
+- None introduced
+
+---
+
+## TASK COMPLETE
+**Summary:** Fixed social feed streak display by updating the `posts_with_details` database view to source the streak from `challenge_participants.current_streak` (challenge-specific) instead of `profiles.current_streak` (user-wide overall streak).
