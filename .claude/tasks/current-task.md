@@ -1,20 +1,20 @@
-# Task: Fix social feed streak display so it shows the streak for that specific challenge
+# Task: Remove search challenge functionality from the challenges list page
 
 **Created:** 2026-03-14
 **Last Updated:** 2026-03-14
-**Status:** Complete
+**Status:** ✅ Complete
 
 ---
 
 ## Overview
 
 ### Goal
-Fix the streak value shown on the social feed so it displays the challenge-specific streak instead of the user's overall profile streak.
+Simplify the challenges list page by removing the search functionality.
 
 ### Context
-- Tile ID: 019ce35e-14d1-7068-8fd6-66fc9e470553
+- Tile ID: 019cebc8-26b9-7284-8f17-8b930060df47
 - Repository: beagoalgetter-app
-- Branch: feature/019ce35e-14d1-7068-8fd6-66fc9e470553-fix-social-feed-streak-display-so-it-shows-the-streak-for-th
+- Branch: feature/019cebc8-26b9-7284-8f17-8b930060df47-remove-search-challenge-functionality-from-the-challenges-li
 - Priority: MEDIUM
 
 ---
@@ -22,53 +22,45 @@ Fix the streak value shown on the social feed so it displays the challenge-speci
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Bug Analysis
-
-**Root Cause:** The `posts_with_details` SQL view joins `profiles` and uses `pr.current_streak AS user_streak` — this is the user's **overall** current streak from the `profiles` table, not the streak for the specific challenge tied to the post.
-
-**Correct Source:** The `challenge_participants` table has a `current_streak` column that tracks the streak per user per challenge. Each post already has both `user_id` and `challenge_id`, so we can join `challenge_participants` to get the challenge-specific streak.
-
-### Plan
-1. Create migration to fix the view — join `challenge_participants` and use `cp.current_streak`
-2. No frontend changes needed — field name stays `user_streak`
-3. Update database-schema.md
+### Analysis
+- Search functionality is self-contained in `app/(tabs)/challenges.tsx`
+- `SearchBar` component is shared and should not be deleted
+- `TextInput` import is still needed for join-by-code modal
+- Low risk — no other screens depend on this search
 
 ---
 
-## PHASE 2: DATABASE MIGRATION
+## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-### Tasks
-- [x] Create migration `020_fix_posts_view_challenge_streak.sql`
-- [x] Update `.claude/database-schema.md` view documentation and migrations log
-- [x] Self-review checklist
-
-### Self-Review
-- [x] All phase tasks checked off
-- [x] Code follows project patterns (matches existing view recreation pattern from migrations 016/018)
-- [x] TypeScript types unaffected (field name unchanged)
-- [x] Supabase queries use proper error handling (N/A — view definition only)
-- [x] current-task.md updated with progress
+### Tasks:
+- [x] Remove SearchBar import
+- [x] Remove searchQuery state
+- [x] Remove search filtering logic from useMemo
+- [x] Remove SearchBar JSX from header
+- [x] Update empty state to remove searchQuery references
+- [x] Changed empty state icon from `search-outline` to `trophy-outline` (more appropriate without search)
+- [x] Simplified empty state text (removed search match message)
+- [x] Simplified "Create Challenge" button condition (removed `!searchQuery` check)
+- [x] Verified header layout is clean without search bar
+- [x] Self-review: no console.logs, types intact, NativeWind classes used, no unused imports
 
 ---
 
-## PHASE 4: REFLECTION & CLEANUP
+## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
 ### Reflection
-The fix was straightforward — a single SQL view change. The `posts_with_details` view was pulling `current_streak` from the `profiles` table (user's overall streak across all challenges) when it should have been pulling from `challenge_participants` (the streak for the specific challenge associated with each post). The fix adds a `LEFT JOIN` to `challenge_participants` on `(user_id, challenge_id)` and uses `COALESCE(cp.current_streak, 0)` to handle edge cases where a participant record might not exist.
-
-No frontend changes were needed since the field name (`user_streak`) is preserved.
+The task was straightforward. The search functionality was well-isolated, making removal clean. Key decisions:
+- Kept `SearchBar.tsx` component intact since it's exported from `components/index.ts` and may be reused
+- Changed the empty state icon from a search icon to a trophy icon to better fit the challenge context
+- Removed the search-dependent conditional in the empty state text, keeping only the filter-based message
+- No layout issues — the header naturally contracts without the search bar, and the hide-completed toggle + filter buttons provide sufficient list management
 
 ### Files Changed
-- `supabase/migrations/020_fix_posts_view_challenge_streak.sql` (new)
-- `.claude/database-schema.md` (updated view docs + migrations log)
-- `.claude/tasks/current-task.md` (task tracking)
-
-### Technical Debt
-- None introduced
+- `app/(tabs)/challenges.tsx` — Removed search bar, search state, search filtering logic, and search-related empty state UI
 
 ---
 
 ## TASK COMPLETE
-**Summary:** Fixed social feed streak display by updating the `posts_with_details` database view to source the streak from `challenge_participants.current_streak` (challenge-specific) instead of `profiles.current_streak` (user-wide overall streak).
+All phases executed successfully. The challenges list page is simplified with search removed while retaining type filtering, hide-completed toggle, and all other functionality.
