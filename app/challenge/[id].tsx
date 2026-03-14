@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Share } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Clipboard from 'expo-clipboard';
 import { TaskTrackerTab, LeaderboardTab, MessagesTab, AdminTab } from '@/components/challenge-tabs';
 import { useChallengeDetail } from '@/hooks/useChallengeDetail';
 import { useSession } from '@/context/auth';
@@ -48,6 +49,22 @@ export default function ChallengeDetailsScreen() {
   const showAdminTab = isGroupChallenge && isChallengeOwner;
   const typeLabel = challenge.type === 'personal' ? 'Personal' : 'Group';
   const challengeNotStarted = !challenge.hasStarted;
+  const showJoinCode = isGroupChallenge && isChallengeOwner && !!challenge.join_code;
+  const shareUrl = challenge.join_code ? `https://beagoalgetter.app/join/${challenge.join_code}` : '';
+
+  const handleCopyJoinLink = async () => {
+    await Clipboard.setStringAsync(shareUrl);
+    Alert.alert('Copied!', 'Challenge link copied to clipboard');
+  };
+
+  const handleShareJoinLink = async () => {
+    try {
+      await Share.share({
+        message: `Join my challenge "${challenge.title}"!\n\n${shareUrl}`,
+        url: shareUrl,
+      });
+    } catch {}
+  };
 
   // Format start date for display
   const formattedStartDate = challenge.start_date
@@ -219,6 +236,45 @@ export default function ChallengeDetailsScreen() {
                 You&apos;ve successfully finished this challenge. Great work!
               </Text>
             </View>
+          )}
+
+          {/* Join Code Card (group admin only) */}
+          {showJoinCode && (
+            <LinearGradient
+              colors={['rgba(0, 194, 255, 0.1)', 'rgba(0, 194, 255, 0.05)']}
+              className="mt-4 rounded-2xl p-4"
+              style={{ borderWidth: 1, borderColor: 'rgba(0, 194, 255, 0.3)' }}
+            >
+              <View className="flex-row items-center justify-between mb-3">
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="key-outline" size={16} color="#00c2ff" />
+                  <Text className="text-white/60 text-sm">Join Code</Text>
+                </View>
+                <View className="bg-black/50 rounded-lg px-3 py-1.5">
+                  <Text className="text-cyan-400 font-bold text-base tracking-widest">
+                    {challenge.join_code}
+                  </Text>
+                </View>
+              </View>
+              <View className="flex-row gap-3">
+                <TouchableOpacity
+                  onPress={handleCopyJoinLink}
+                  className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2"
+                  style={{ backgroundColor: '#00c2ff' }}
+                >
+                  <Ionicons name="copy-outline" size={18} color="black" />
+                  <Text className="text-black font-bold text-sm">Copy Link</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleShareJoinLink}
+                  className="flex-1 py-3 rounded-xl flex-row items-center justify-center gap-2 border border-white/20"
+                  style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                >
+                  <Ionicons name="share-outline" size={18} color="white" />
+                  <Text className="text-white font-bold text-sm">Share</Text>
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
           )}
         </View>
 

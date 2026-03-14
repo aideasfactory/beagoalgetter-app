@@ -16,6 +16,7 @@ export interface ChallengeDetail {
   participant_count: number;
   group_id: string | null;
   created_by: string;
+  join_code: string | null;
   // Computed fields
   progress: number;
   daysCompleted: number;
@@ -44,6 +45,7 @@ interface RawChallengeRow {
   participant_count: number;
   group_id: string | null;
   created_by: string;
+  join_code: string | null;
 }
 
 interface RawParticipantRow {
@@ -86,7 +88,7 @@ export function useChallengeDetail(challengeId: string) {
       const [challengeResult, participantResult, pointsResult] = await Promise.all([
         supabase
           .from('challenges')
-          .select('id, title, description, image_url, type, status, start_date, end_date, duration, duration_type, participant_count, group_id, created_by')
+          .select('id, title, description, image_url, type, status, start_date, end_date, duration, duration_type, participant_count, group_id, created_by, join_code')
           .eq('id', challengeId)
           .single(),
         supabase
@@ -145,6 +147,7 @@ export function useChallengeDetail(challengeId: string) {
         participant_count: Math.max(c.participant_count, 1),
         group_id: c.group_id,
         created_by: c.created_by,
+        join_code: c.join_code,
         progress,
         daysCompleted,
         totalDays,
