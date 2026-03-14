@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { IconCircle } from '@/components/IconCircle';
 import { router, useFocusEffect } from 'expo-router';
-import { SearchBar } from '@/components/SearchBar';
 import { ChallengeCard } from '@/components/ChallengeCard';
 import type { Challenge } from '@/components/ChallengeCard';
 import { JoinChallengeModal, JoinChallengeContent } from '@/components/JoinChallengeModal';
@@ -17,7 +16,6 @@ export default function ChallengesScreen() {
   const { lookupByCode, loading: lookupLoading } = useLookupByJoinCode();
   const { joinChallenge, loading: joinLoading } = useJoinChallenge();
 
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterType>('All');
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -41,7 +39,7 @@ export default function ChallengesScreen() {
     setRefreshing(false);
   }, [refetch]);
 
-  // Filter and search challenges
+  // Filter challenges
   const filteredChallenges = useMemo(() => {
     let filtered = challenges;
 
@@ -55,18 +53,8 @@ export default function ChallengesScreen() {
       filtered = filtered.filter((challenge) => challenge.status !== 'completed');
     }
 
-    // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        challenge =>
-          challenge.title.toLowerCase().includes(query) ||
-          challenge.description.toLowerCase().includes(query)
-      );
-    }
-
     return filtered;
-  }, [challenges, searchQuery, activeFilter, hideCompleted]);
+  }, [challenges, activeFilter, hideCompleted]);
 
   const handleChallengePress = (challengeId: string) => {
     router.push(`/challenge/${challengeId}`);
@@ -202,13 +190,6 @@ export default function ChallengesScreen() {
             <Text className="text-white font-medium ml-2">Join</Text>
           </TouchableOpacity>
         </View>
-
-        {/* Search Bar */}
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search challenges..."
-        />
       </View>
 
       {/* Hide completed row */}
@@ -288,15 +269,13 @@ export default function ChallengesScreen() {
             // Empty State
             <View className="items-center justify-center py-16">
               <View className="w-20 h-20 rounded-full bg-white/5 border border-white/10 items-center justify-center mb-4">
-                <Ionicons name="search-outline" size={40} color="rgba(255,255,255,0.4)" />
+                <Ionicons name="trophy-outline" size={40} color="rgba(255,255,255,0.4)" />
               </View>
               <Text className="text-white text-xl font-bold mb-2">No Challenges Found</Text>
               <Text className="text-white/60 text-center px-8 mb-6">
-                {searchQuery
-                  ? `No challenges match "${searchQuery}"`
-                  : `No ${activeFilter.toLowerCase()} challenges available`}
+                {`No ${activeFilter.toLowerCase()} challenges available`}
               </Text>
-              {activeFilter === 'All' && !searchQuery && (
+              {activeFilter === 'All' && (
                 <TouchableOpacity
                   onPress={handleCreateChallenge}
                   className="rounded-xl px-6 py-3"
