@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Challenge } from './ChallengeCard';
+import { IconCircle } from './IconCircle';
 
 interface JoinChallengeModalProps {
   visible: boolean;
@@ -81,8 +82,8 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
             <View className="flex-row flex-wrap gap-3">
               {/* Duration */}
               <View className="flex-1 min-w-[45%] bg-white/5 border border-white/10 rounded-xl p-4 items-center">
-                <View className="w-12 h-12 rounded-full mb-2 items-center justify-center" style={{ backgroundColor: '#00c2ff20' }}>
-                  <Ionicons name="calendar" size={24} color="#00c2ff" />
+                <View className="mb-2">
+                  <IconCircle icon="calendar" size="lg" variant="tint" />
                 </View>
                 <Text className="text-white text-2xl font-bold">{challenge.totalDays}</Text>
                 <Text className="text-white/60 text-sm">Days</Text>
@@ -90,8 +91,8 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
 
               {/* Members */}
               <View className="flex-1 min-w-[45%] bg-white/5 border border-white/10 rounded-xl p-4 items-center">
-                <View className="w-12 h-12 rounded-full mb-2 items-center justify-center" style={{ backgroundColor: '#a855f720' }}>
-                  <Ionicons name="people" size={24} color="#a855f7" />
+                <View className="mb-2">
+                  <IconCircle icon="people" size="lg" variant="tint" color="#a855f7" />
                 </View>
                 <Text className="text-white text-2xl font-bold">{challenge.members}</Text>
                 <Text className="text-white/60 text-sm">{challenge.members === 1 ? 'Member' : 'Members'}</Text>
@@ -99,8 +100,8 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
 
               {/* Status */}
               <View className="flex-1 min-w-[45%] bg-white/5 border border-white/10 rounded-xl p-4 items-center">
-                <View className="w-12 h-12 rounded-full mb-2 items-center justify-center" style={{ backgroundColor: '#10b98120' }}>
-                  <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                <View className="mb-2">
+                  <IconCircle icon="checkmark-circle" size="lg" variant="tint" color="#10b981" />
                 </View>
                 <Text className="text-white text-2xl font-bold">{Math.round(challenge.progress)}%</Text>
                 <Text className="text-white/60 text-sm">Completion</Text>
@@ -108,8 +109,8 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
 
               {/* End Date */}
               <View className="flex-1 min-w-[45%] bg-white/5 border border-white/10 rounded-xl p-4 items-center">
-                <View className="w-12 h-12 rounded-full mb-2 items-center justify-center" style={{ backgroundColor: '#f9731620' }}>
-                  <Ionicons name="time" size={24} color="#f97316" />
+                <View className="mb-2">
+                  <IconCircle icon="time" size="lg" variant="tint" color="#f97316" />
                 </View>
                 <Text className="text-white text-lg font-bold">{challenge.endDate}</Text>
                 <Text className="text-white/60 text-sm">Ends</Text>
@@ -122,9 +123,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
             <Text className="text-white text-lg font-bold mb-4">What You’ll Get</Text>
             <View className="space-y-3">
               <View className="flex-row items-start gap-3">
-                <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: '#00c2ff20' }}>
-                  <Ionicons name="checkmark" size={18} color="#00c2ff" />
-                </View>
+                <IconCircle icon="checkmark" size="sm" variant="tint" />
                 <View className="flex-1">
                   <Text className="text-white font-semibold mb-1">Daily Task Tracking</Text>
                   <Text className="text-white/60 text-sm">Keep track of your progress with daily tasks and streaks</Text>
@@ -132,9 +131,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
               </View>
 
               <View className="flex-row items-start gap-3">
-                <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: '#00c2ff20' }}>
-                  <Ionicons name="checkmark" size={18} color="#00c2ff" />
-                </View>
+                <IconCircle icon="checkmark" size="sm" variant="tint" />
                 <View className="flex-1">
                   <Text className="text-white font-semibold mb-1">Compete & Collaborate</Text>
                   <Text className="text-white/60 text-sm">Join the leaderboard and see how you stack up</Text>
@@ -142,9 +139,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
               </View>
 
               <View className="flex-row items-start gap-3">
-                <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: '#00c2ff20' }}>
-                  <Ionicons name="checkmark" size={18} color="#00c2ff" />
-                </View>
+                <IconCircle icon="checkmark" size="sm" variant="tint" />
                 <View className="flex-1">
                   <Text className="text-white font-semibold mb-1">Earn Ability Points</Text>
                   <Text className="text-white/60 text-sm">Complete tasks to earn points and level up</Text>
@@ -152,9 +147,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
               </View>
 
               <View className="flex-row items-start gap-3">
-                <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: '#00c2ff20' }}>
-                  <Ionicons name="checkmark" size={18} color="#00c2ff" />
-                </View>
+                <IconCircle icon="checkmark" size="sm" variant="tint" />
                 <View className="flex-1">
                   <Text className="text-white font-semibold mb-1">Stay Accountable</Text>
                   <Text className="text-white/60 text-sm">Share progress with others and stay motivated</Text>
@@ -169,9 +162,7 @@ export function JoinChallengeContent({ challenge, onClose, onJoin }: JoinChallen
               <Text className="text-white text-lg font-bold mb-4">Community</Text>
               <View className="bg-white/5 border border-white/10 rounded-xl p-4">
                 <View className="flex-row items-center gap-3 mb-3">
-                  <View className="w-12 h-12 rounded-full items-center justify-center" style={{ backgroundColor: '#00c2ff' }}>
-                    <Ionicons name="people" size={24} color="black" />
-                  </View>
+                  <IconCircle icon="people" size="lg" variant="solid" />
                   <View className="flex-1">
                     <Text className="text-white font-bold text-lg">{challenge.members} Active Members</Text>
                     <Text className="text-white/60 text-sm">Join the community today</Text>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, View, Text, TouchableOpacity, Modal, Alert, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { IconCircle } from '@/components/IconCircle';
 import { Image } from 'expo-image';
 import { useTeams, type ParticipantWithProfile } from '@/hooks/useTeams';
 import type { Team } from '@/types/database.example';
@@ -612,12 +613,7 @@ export function AdminTab({ challengeId, groupId }: AdminTabProps) {
       <ScrollView className="flex-1 bg-black">
         <View className="p-6 pb-24">
           <View className="flex-row items-center gap-3 mb-4">
-            <View
-              className="w-10 h-10 rounded-full items-center justify-center"
-              style={{ backgroundColor: '#00c2ff20' }}
-            >
-              <Ionicons name="settings" size={20} color="#00c2ff" />
-            </View>
+            <IconCircle icon="settings" size="md" variant="tint" />
             <View>
               <Text className="text-white text-lg font-bold">Admin controls</Text>
               <Text className="text-white/60 text-xs mt-1">Only visible to the challenge owner.</Text>
