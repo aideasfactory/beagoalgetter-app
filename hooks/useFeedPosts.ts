@@ -81,6 +81,15 @@ function mapPostToFeedPost(
     post.challenge_duration_type,
   );
 
+  // Determine if the challenge has started yet
+  let challengeHasStarted = true;
+  if (post.challenge_start_date) {
+    const startDate = new Date(post.challenge_start_date + 'T00:00:00');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    challengeHasStarted = startDate.getTime() <= today.getTime();
+  }
+
   return {
     id: post.id,
     user: {
@@ -96,6 +105,8 @@ function mapPostToFeedPost(
       members: post.challenge_participant_count ?? 0,
     },
     challengeDay,
+    challengeStartDate: post.challenge_start_date,
+    challengeHasStarted,
     group,
     groupId: post.group_id ?? null,
     type: post.type as 'success' | 'fail' | 'joined',

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, Image, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -125,6 +125,21 @@ export default function HomeScreen() {
   };
 
   const handleGivePoints = (post: Post) => {
+    if (post.challengeHasStarted === false) {
+      const startLabel = post.challengeStartDate
+        ? new Date(post.challengeStartDate + 'T00:00:00').toLocaleDateString(undefined, {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          })
+        : 'a future date';
+      Alert.alert(
+        'Challenge Not Started',
+        `This challenge hasn't started yet. You can give ability points once the challenge begins on ${startLabel}.`,
+        [{ text: 'OK' }],
+      );
+      return;
+    }
     setGivePointsPost(post);
   };
 

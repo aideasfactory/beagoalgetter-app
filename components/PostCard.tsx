@@ -23,6 +23,8 @@ export interface Post {
     current: number;
     total: number;
   };
+  challengeStartDate?: string | null;
+  challengeHasStarted?: boolean;
   group?: {
     name: string;
     logo: string;
@@ -153,11 +155,20 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
                 </Text>
               </TouchableOpacity>
               {/* Day Indicator — subtitle under challenge name */}
-              {post.challengeDay && (
+              {post.challengeHasStarted === false && post.challengeStartDate ? (
+                <Text className="text-xs text-orange-400 mt-0.5">
+                  Challenge starts on{' '}
+                  {new Date(post.challengeStartDate + 'T00:00:00').toLocaleDateString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </Text>
+              ) : post.challengeDay ? (
                 <Text className="text-xs text-white/40 mt-0.5">
                   Day {post.challengeDay.current} of {post.challengeDay.total}
                 </Text>
-              )}
+              ) : null}
             </View>
           </View>
         </View>

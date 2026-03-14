@@ -1,7 +1,7 @@
-# Task: Standardise Goal Getter icons
+# Task: Handle pre-start challenge state correctly on joined posts and challenge progress labels
 
 **Created:** 2026-03-14
-**Last Updated:** 2026-03-14T11:15:00Z
+**Last Updated:** 2026-03-14T15:00:00Z
 **Status:** Complete
 
 ---
@@ -9,12 +9,12 @@
 ## Overview
 
 ### Goal
-Standardise all "ringed blue icon" treatments across the Goal Getter app to use consistent colour, shape, and sizing.
+Build correct pre-start behaviour for joined challenge posts: show "Challenge starts on X" instead of "Day X of Y" when a challenge hasn't started, and block ability-point giving with a clear alert message.
 
 ### Context
-- Tile ID: 019ce3cb-5a27-70fa-869f-9b84ffaa7d18
+- Tile ID: 019cecb9-d97e-7233-bbae-7a72d4cc51de
 - Repository: beagoalgetter-app
-- Branch: feature/019ce3cb-5a27-70fa-869f-9b84ffaa7d18-standardise-goal-getter-icons
+- Branch: feature/019cecb9-d97e-7233-bbae-7a72d4cc51de-handle-pre-start-challenge-state-correctly-on-joined-posts-a
 - Priority: MEDIUM
 
 ---
@@ -22,83 +22,71 @@ Standardise all "ringed blue icon" treatments across the Goal Getter app to use 
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Audit Findings
+### Analysis
+- `PostCard.tsx` renders posts with a `challengeDay` field showing "Day X of Y"
+- `useFeedPosts.ts` computes `challengeDay` from challenge start_date but doesn't check if the challenge has actually started
+- Trophy/ability-points action on `PostCard` calls `onGivePoints` with no pre-start guard
+- `index.tsx` handles `onGivePoints` by opening `GivePointsModal` directly
 
-**Inconsistencies identified across 7 files:**
-
-1. **Avatar.tsx** — Used `bg-blue-600` (Tailwind blue) instead of brand cyan `#00c2ff`
-2. **challenge/[id].tsx** — Stat icons used `rounded-xl` (rounded square) instead of `rounded-full` (circle)
-3. **Mixed sizes** — Icon circles varied: w-8/h-8, w-10/h-10, w-12/h-12 across similar contexts
-4. **No reusable component** — Icon circle pattern duplicated ~15+ times with inline styles
-5. **Inconsistent style approach** — Some used `style={{ backgroundColor }}`, others used NativeWind `bg-[]` classes
-
-### Standardisation Rules
-
-| Property | Standard | Notes |
-|----------|----------|-------|
-| Brand cyan | `#00c2ff` | All blue icon circles use this |
-| Semi-transparent | `{color}20` (12.5% opacity) | Consistent tint backgrounds |
-| Shape | `rounded-full` | All icon circles are perfect circles |
-| Small size | w-8 h-8, icon 18px | Feature list checkmarks |
-| Medium size | w-10 h-10, icon 20px | Stat cards, notifications |
-| Large size | w-12 h-12, icon 24px | Detail cards, community |
-
-### Reflection
-Planning complete. Clear set of inconsistencies identified with straightforward fixes.
+### Plan
+1. Add `challengeStartDate` and `challengeHasStarted` fields to Post interface
+2. Compute `challengeHasStarted` in `useFeedPosts.ts` mapPostToFeedPost
+3. Update PostCard day label to show "Challenge starts on X" when not started
+4. Intercept trophy action in index.tsx to show Alert when challenge not started
 
 ---
 
 ## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-### Tasks
-- [x] Create `IconCircle` component with size variants (sm, md, lg) and solid/tint variants
-- [x] Update `Avatar.tsx` — changed `bg-blue-600` to `#00c2ff`
-- [x] Update `challenge/[id].tsx` — changed `rounded-xl` to `rounded-full` on all 4 stat icons via IconCircle
-- [x] Update `NotificationsModal.tsx` — replaced inline icon circles with IconCircle
-- [x] Update `JoinChallengeModal.tsx` — replaced all 9 inline icon circles (4 stats + 4 checkmarks + 1 community) with IconCircle
-- [x] Update `challenges.tsx` — replaced join-by-code icon with IconCircle
-- [x] Update `AdminTab.tsx` — replaced settings icon circle with IconCircle
+### Changes Made
 
-### Self-Review Checklist
+1. **`components/PostCard.tsx`**
+   - Added `challengeStartDate?: string | null` and `challengeHasStarted?: boolean` to `Post` interface
+   - Updated day label rendering: shows orange "Challenge starts on Mar 20, 2026" when `challengeHasStarted === false`, otherwise shows normal "Day X of Y"
+
+2. **`hooks/useFeedPosts.ts`**
+   - Added `challengeHasStarted` computation comparing challenge start_date to today
+   - Passes `challengeStartDate` and `challengeHasStarted` through to FeedPost
+
+3. **`app/(tabs)/index.tsx`**
+   - Added `Alert` import
+   - Updated `handleGivePoints` to check `post.challengeHasStarted` — if false, shows an Alert with the start date and returns early instead of opening the GivePointsModal
+
+### Self-Review
 - [x] All phase tasks checked off
-- [x] Code follows project patterns (functional components, TypeScript)
+- [x] Code follows project patterns
 - [x] NativeWind/Tailwind classes used for styling
-- [x] TypeScript types defined (IoniconsName, IconCircleProps)
-- [x] No console.log statements
-- [x] current-task.md updated
-
-### Reflection
-All icon circle instances now use the centralised `IconCircle` component. The `rounded-xl` squares on the challenge detail page are now `rounded-full` circles. The Avatar component now uses the brand cyan `#00c2ff` instead of Tailwind's `bg-blue-600`. The component supports custom colours for non-cyan icons (green, purple, orange) used in stat grids.
+- [x] Error handling in place
+- [x] TypeScript types defined
+- [x] No console.log statements left
+- [x] current-task.md updated with progress
 
 ---
 
 ## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
-### What Was Done
-- Created a reusable `IconCircle` component with 3 size variants (sm/md/lg) and 2 style variants (solid/tint)
-- Standardised all icon circle instances across 7 files to use consistent shape (`rounded-full`), colours (`#00c2ff` as default), and the centralised component
-- Fixed `Avatar.tsx` using wrong blue shade (`bg-blue-600` → `#00c2ff`)
-- Fixed `challenge/[id].tsx` using wrong shape (`rounded-xl` → `rounded-full`)
-
-### Files Changed
-1. `components/IconCircle.tsx` (NEW)
-2. `components/Avatar.tsx`
-3. `components/NotificationsModal.tsx`
-4. `components/JoinChallengeModal.tsx`
-5. `components/challenge-tabs/AdminTab.tsx`
-6. `app/challenge/[id].tsx`
-7. `app/(tabs)/challenges.tsx`
+### What Worked Well
+- Clean data flow: start-state computed once in the feed mapper, consumed by PostCard and the feed screen
+- Minimal changes: only 3 files modified, no new components or hooks needed
+- Consistent with existing patterns (e.g., `useChallengeDetail.ts` already computes `hasStarted` the same way)
 
 ### Technical Debt
-- None introduced. The `IconCircle` component actually reduces existing debt by centralising a repeated pattern.
+- None introduced. The approach mirrors the existing `hasStarted` pattern from `useChallengeDetail.ts`.
 
-### Future Improvements
-- Could extend `IconCircle` to support custom icon sizes beyond the 3 presets if needed
-- The leaderboard team rank circles use text (not Ionicons) inside circles — these could get a companion `TextCircle` component if needed
+### Files Changed
+- `components/PostCard.tsx` — Post interface + day label rendering
+- `hooks/useFeedPosts.ts` — challengeHasStarted computation + field mapping
+- `app/(tabs)/index.tsx` — Alert import + pre-start guard on ability points
 
 ---
 
 ## TASK COMPLETE
-All phases executed successfully. Icon treatments are now visually standardised across the app.
+All requirements addressed:
+- ✅ "X joined a challenge" posts reviewed
+- ✅ Pre-start challenge state detected correctly
+- ✅ Trophy/ability-points blocked with clear alert when challenge not started
+- ✅ "Day X of Y" replaced with "Challenge starts on X" for pre-start challenges
+- ✅ Start date displayed accurately from challenge data
+- ✅ Works correctly both before and after challenge starts
