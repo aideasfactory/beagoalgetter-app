@@ -1,43 +1,47 @@
-# Task: Investigate and fix comment reloading after the app is reopened
+# Task: Expose the join code on the view challenge page for group challenges
 
-**Created:** 2026-03-13
-**Last Updated:** 2026-03-13T18:05:00Z
-**Status:** ✅ TASK COMPLETE
+**Created:** 2026-03-14
+**Last Updated:** 2026-03-14
+**Status:** Complete
 
 ---
 
 ## Overview
 
 ### Goal
-Fix comment loading so previously created comments load correctly when the user opens the comment section after restarting the app.
+Add join code visibility on the challenge detail page for group challenge admins, with copy and share functionality.
 
 ### Context
-- Tile ID: 019ce83c-a35b-721e-bc6f-e724c840023f
-- Repository: beagoalgetter-app
-- Branch: feature/019ce83c-a35b-721e-bc6f-e724c840023f-investigate-and-fix-comment-reloading-after-the-app-is-reope
-- Priority: MEDIUM
+- Tile ID: 019ce832-f489-724b-ad5d-4593b0219253
+- Branch: feature/019ce832-f489-724b-ad5d-4593b0219253-expose-the-join-code-on-the-view-challenge-page-for-group-ch
 
 ---
 
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Root Cause
-`postService.getPostComments()` used a PostgREST embedded join `profiles:user_id(...)` but `post_comments.user_id` references `auth.users(id)`, not `profiles(id)`. PostgREST couldn't resolve the relationship, causing the query to fail silently. The error was caught and `comments` was set to `[]`, showing "No comments yet" after restart.
-
-Comments appeared to work when freshly added because `createComment()` already used a separate profile fetch (avoiding the join) and added results to local state via optimistic update.
-
-### Fix
-Replace the broken embedded join with a two-step query: fetch comments first, then batch-fetch profiles by unique user IDs.
+### Analysis
+- `join_code` exists in DB but was not fetched by `useChallengeDetail` hook
+- Existing share pattern in `Step3ShareLink.tsx` uses `expo-clipboard` + `Share.share()`
+- Join code card should only show for group challenge owners
 
 ---
 
 ## PHASE 2: IMPLEMENTATION
 **Status:** ✅ Complete
 
-### Tasks
-- [x] Update `getPostComments()` in `services/post.ts` to use two-step query
-- [x] Self-review checklist passed
+- [x] Update `useChallengeDetail.ts` — added `join_code` to `ChallengeDetail` interface, `RawChallengeRow`, SELECT query, and state mapping
+- [x] Update `app/challenge/[id].tsx` — added imports for `Alert`, `Share`, `Clipboard`; added join code visibility logic; added cyan-gradient join code card with "Copy Link" and "Share" buttons
+
+### Self-Review
+- [x] All phase tasks checked off
+- [x] Code follows project patterns (NativeWind, existing component style)
+- [x] NativeWind/Tailwind classes used for styling
+- [x] Error handling in place (try/catch on share)
+- [x] TypeScript types defined (`join_code: string | null` in both interfaces)
+- [x] No console.log statements
+- [x] Supabase query includes proper field
+- [x] current-task.md updated
 
 ---
 
@@ -45,7 +49,14 @@ Replace the broken embedded join with a two-step query: fetch comments first, th
 **Status:** ✅ Complete
 
 ### Reflection
-- **What worked:** The root cause was identifiable from a comment in `createComment` that explicitly noted "PostgREST relationship resolution issues with profiles:user_id". The fix was straightforward — apply the same pattern to `getPostComments`.
-- **Files changed:** `services/post.ts` (single file, single method)
-- **Technical debt:** None introduced. The fix actually reduces inconsistency — both `getPostComments` and `createComment` now use the same two-step approach.
-- **Future note:** If a `post_comments_with_user` view is ever created in the database, both methods could be simplified to a single query.
+- Clean implementation: only 2 files changed, minimal footprint
+- Reused existing patterns from `Step3ShareLink.tsx` for consistency
+- Join code card only appears for group challenge owners — no clutter for participants
+- The card shows the raw join code (for verbal sharing) plus copy/share buttons for link sharing
+
+### Files Changed
+- `hooks/useChallengeDetail.ts` — added `join_code` to interfaces and query
+- `app/challenge/[id].tsx` — added join code card UI with copy/share functionality
+
+### TASK COMPLETE
+All requirements met. Join code is visible, copyable, and shareable for group challenge admins on the challenge detail page.
