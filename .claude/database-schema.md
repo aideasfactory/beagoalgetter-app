@@ -477,7 +477,8 @@ Notifications with sender profile details.
 | Function | Purpose | Trigger |
 |----------|---------|---------|
 | `update_updated_at_column()` | Auto-updates `updated_at` timestamp | ON UPDATE for profiles, challenges, groups, tasks |
-| `handle_new_user()` | Auto-creates profile on signup; generates random `display_name` (e.g. `user_04821`) when none provided | AFTER INSERT on auth.users |
+| `generate_unique_username()` | Generates a unique word-combo username (e.g. `BraveRunner4821`) by picking random adjective + noun + 4-digit suffix with uniqueness retry loop (up to 10 attempts, UUID fallback) | Callable function (SECURITY DEFINER) |
+| `handle_new_user()` | Auto-creates profile on signup; generates unique word-combo username via `generate_unique_username()` when none provided; uses provided `display_name` from auth metadata if available | AFTER INSERT on auth.users |
 | `increment_post_likes()` | Increments `likes_count` on posts | AFTER INSERT on post_likes |
 | `decrement_post_likes()` | Decrements `likes_count` on posts | AFTER DELETE on post_likes |
 | `recalculate_post_ability_points()` | Recalculates `ability_points_given` on posts as SUM | AFTER INSERT/UPDATE/DELETE on post_ability_points |
@@ -532,6 +533,7 @@ Notifications with sender profile details.
 | 019 | `019_fix_nightly_failed_posts.sql` | Fixed `process_nightly_failed_posts()`: fail posts now use yesterday's timestamp (23:59 UTC) for correct feed placement and duplicate protection; fixed off-by-one with explicit `end_date` boundary check | 2026-03-13 |
 | 020 | `020_fix_posts_view_challenge_streak.sql` | Fixed `posts_with_details` view to use `challenge_participants.current_streak` (challenge-specific) instead of `profiles.current_streak` (user-wide) for `user_streak` | 2026-03-14 |
 | 020 | `020_comment_notification_trigger.sql` | Added `comment` to `notification_type` enum; created `notify_post_author_on_comment()` trigger function to auto-create notifications when someone comments on a post (skips self-comments) | 2026-03-14 |
+| 021 | `021_unique_word_combo_usernames.sql` | Created `generate_unique_username()` function for word-combo usernames (e.g. `BraveRunner4821`); updated `handle_new_user()` to use it with uniqueness retry loop | 2026-03-14 |
 
 ---
 
