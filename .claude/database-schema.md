@@ -450,9 +450,9 @@ Comments on social feed posts. Text-only, no editing.
 ## Database Views
 
 ### posts_with_details
-Posts joined with user, challenge, and group information. The `ability_points_given` field is computed as `SUM(points)` from `post_ability_points` (not the cached column on `posts`).
+Posts joined with user, challenge, group, and challenge_participants information. The `ability_points_given` field is computed as `SUM(points)` from `post_ability_points` (not the cached column on `posts`). The `user_streak` field comes from `challenge_participants.current_streak` (challenge-specific streak, not the user's overall profile streak).
 
-**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `comments_count`, `user_name`, `user_avatar`, `user_username`, `user_streak`, `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `challenge_start_date`, `challenge_duration`, `challenge_duration_type`, `group_id`, `group_name`, `group_logo`, `group_color`
+**Fields:** `id`, `user_id`, `challenge_id`, `message`, `note`, `image_url`, `type`, `is_challenge_complete`, `created_at`, `likes_count`, `ability_points_given` (computed SUM), `comments_count`, `user_name`, `user_avatar`, `user_username`, `user_streak` (from challenge_participants), `user_ability_points`, `challenge_title`, `challenge_type`, `challenge_participant_count`, `challenge_start_date`, `challenge_duration`, `challenge_duration_type`, `group_id`, `group_name`, `group_logo`, `group_color`
 
 ### challenge_leaderboard
 Ranked participants per challenge, with profile and team info.
@@ -528,6 +528,7 @@ Notifications with sender profile details.
 | 018 | `018_add_post_comments.sql` | Created `post_comments` table with RLS; added `comments_count` to `posts` with auto-update triggers; updated `posts_with_details` view | 2026-03-13 |
 | 018 | `018_add_reaction_type_to_post_likes.sql` | Added `reaction_type` TEXT column to `post_likes` (like/celebrate/encourage) + added 'encourage' to `notification_type` enum | 2026-03-13 |
 | 019 | `019_fix_nightly_failed_posts.sql` | Fixed `process_nightly_failed_posts()`: fail posts now use yesterday's timestamp (23:59 UTC) for correct feed placement and duplicate protection; fixed off-by-one with explicit `end_date` boundary check | 2026-03-13 |
+| 020 | `020_fix_posts_view_challenge_streak.sql` | Fixed `posts_with_details` view to use `challenge_participants.current_streak` (challenge-specific) instead of `profiles.current_streak` (user-wide) for `user_streak` | 2026-03-14 |
 
 ---
 
