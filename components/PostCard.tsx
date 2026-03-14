@@ -146,21 +146,18 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
                 </View>
               </View>
 
-              {/* Challenge Name (clickable, underlined) + Day Indicator */}
+              {/* Challenge Name (clickable, underlined) */}
               <TouchableOpacity onPress={() => onChallengeClick(post.challenge.id)}>
-                <View className="flex-row items-center gap-2">
-                  <Text className="text-sm text-white/60 underline">
-                    {post.challenge.name}
-                  </Text>
-                  {post.challengeDay && (
-                    <View className="bg-white/10 px-2 py-0.5 rounded-full">
-                      <Text className="text-xs text-white/50">
-                        Day {post.challengeDay.current} of {post.challengeDay.total}
-                      </Text>
-                    </View>
-                  )}
-                </View>
+                <Text className="text-sm text-white/60 underline">
+                  {post.challenge.name}
+                </Text>
               </TouchableOpacity>
+              {/* Day Indicator — subtitle under challenge name */}
+              {post.challengeDay && (
+                <Text className="text-xs text-white/40 mt-0.5">
+                  Day {post.challengeDay.current} of {post.challengeDay.total}
+                </Text>
+              )}
             </View>
           </View>
         </View>
@@ -211,29 +208,35 @@ export function PostCard({ post, onChallengeClick, onGivePoints, onGroupClick, o
             <Text className="text-white/60 text-sm">{post.commentsCount || 0}</Text>
           </TouchableOpacity>
 
-          {/* Give Points Button (hidden on own posts) */}
-          {!post.isOwnPost && (
+          {/* Trophy + Ability Points (combined) */}
+          {!post.isOwnPost ? (
             <TouchableOpacity
               onPress={() => onGivePoints(post)}
-              className="flex-row items-center gap-2"
+              className="flex-row items-center gap-1 px-2 py-1 rounded-full"
+              style={post.abilityPointsGiven > 0 ? { backgroundColor: '#00c2ff20' } : undefined}
             >
-              <Ionicons name="trophy-outline" size={20} color="rgba(255,255,255,0.6)" />
-              <Text className="text-white/60 text-sm">Give Points</Text>
+              <Ionicons
+                name={post.abilityPointsGiven > 0 ? 'trophy' : 'trophy-outline'}
+                size={18}
+                color={post.abilityPointsGiven > 0 ? '#00c2ff' : 'rgba(255,255,255,0.6)'}
+              />
+              {post.abilityPointsGiven > 0 && (
+                <Text className="text-sm font-medium" style={{ color: '#00c2ff' }}>
+                  +{post.abilityPointsGiven} AP
+                </Text>
+              )}
             </TouchableOpacity>
-          )}
-
-          {/* Ability Points Indicator (if > 0) */}
-          {post.abilityPointsGiven > 0 && (
+          ) : post.abilityPointsGiven > 0 ? (
             <View
               className="flex-row items-center gap-1 px-2 py-1 rounded-full"
               style={{ backgroundColor: '#00c2ff20' }}
             >
-              <Ionicons name="trending-up" size={16} color="#00c2ff" />
-              <Text className="text-sm" style={{ color: '#00c2ff' }}>
+              <Ionicons name="trophy" size={18} color="#00c2ff" />
+              <Text className="text-sm font-medium" style={{ color: '#00c2ff' }}>
                 +{post.abilityPointsGiven} AP
               </Text>
             </View>
-          )}
+          ) : null}
 
           {/* Timestamp */}
           <Text className="text-xs text-white/40 ml-auto">{post.timestamp}</Text>

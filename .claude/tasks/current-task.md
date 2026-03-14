@@ -1,4 +1,4 @@
-# Task: Expose the join code on the view challenge page for group challenges
+# Task: Auto-create notification when someone comments on your post
 
 **Created:** 2026-03-14
 **Last Updated:** 2026-03-14
@@ -9,11 +9,11 @@
 ## Overview
 
 ### Goal
-Add join code visibility on the challenge detail page for group challenge admins, with copy and share functionality.
+Create a database trigger on `post_comments` that automatically inserts a notification for the post author when someone comments on their post.
 
 ### Context
-- Tile ID: 019ce832-f489-724b-ad5d-4593b0219253
-- Branch: feature/019ce832-f489-724b-ad5d-4593b0219253-expose-the-join-code-on-the-view-challenge-page-for-group-ch
+- Currently no notifications are auto-generated anywhere in the app
+- This is the first notification-creating trigger
 
 ---
 
@@ -21,42 +21,50 @@ Add join code visibility on the challenge detail page for group challenge admins
 **Status:** ✅ Complete
 
 ### Analysis
-- `join_code` exists in DB but was not fetched by `useChallengeDetail` hook
-- Existing share pattern in `Step3ShareLink.tsx` uses `expo-clipboard` + `Share.share()`
-- Join code card should only show for group challenge owners
+- `post_comments` has `post_id`, `user_id`, `content`
+- `posts` has `user_id` (post author to notify)
+- `notifications` has `user_id` (recipient), `from_user_id`, `post_id`, `type`, `message`
+- Need to add `comment` to `notification_type` enum
+- Trigger fires AFTER INSERT on `post_comments`, skips self-comments
 
 ---
 
-## PHASE 2: IMPLEMENTATION
+## PHASE 2: DATABASE MIGRATION
 **Status:** ✅ Complete
 
-- [x] Update `useChallengeDetail.ts` — added `join_code` to `ChallengeDetail` interface, `RawChallengeRow`, SELECT query, and state mapping
-- [x] Update `app/challenge/[id].tsx` — added imports for `Alert`, `Share`, `Clipboard`; added join code visibility logic; added cyan-gradient join code card with "Copy Link" and "Share" buttons
-
-### Self-Review
-- [x] All phase tasks checked off
-- [x] Code follows project patterns (NativeWind, existing component style)
-- [x] NativeWind/Tailwind classes used for styling
-- [x] Error handling in place (try/catch on share)
-- [x] TypeScript types defined (`join_code: string | null` in both interfaces)
-- [x] No console.log statements
-- [x] Supabase query includes proper field
-- [x] current-task.md updated
+- [x] Created `supabase/migrations/020_comment_notification_trigger.sql`
+  - Adds `comment` to `notification_type` enum
+  - `notify_post_author_on_comment()` function (SECURITY DEFINER)
+  - Looks up post author, skips if commenter == author
+  - Looks up commenter display_name for notification message
+  - Inserts into `notifications` with type `comment`
+  - Trigger `on_post_comment_notify_author` AFTER INSERT on `post_comments`
 
 ---
 
-## PHASE 3: FINAL REFLECTION & DOCUMENTATION
+## PHASE 3: UPDATE DOCS & TYPES
+**Status:** ✅ Complete
+
+- [x] Updated `database-schema.md` — enum, triggers table, post_comments triggers, migration log
+- [x] Updated `types/database.example.ts` — added `comment` to NotificationType
+- [x] Updated `components/NotificationsModal.tsx` — added `comment` to local type + chatbubble icon
+
+---
+
+## PHASE 4: REFLECTION & CLEANUP
 **Status:** ✅ Complete
 
 ### Reflection
-- Clean implementation: only 2 files changed, minimal footprint
-- Reused existing patterns from `Step3ShareLink.tsx` for consistency
-- Join code card only appears for group challenge owners — no clutter for participants
-- The card shows the raw join code (for verbal sharing) plus copy/share buttons for link sharing
+- Clean, minimal implementation: one migration file, three small edits
+- Used SECURITY DEFINER so the trigger can always insert notifications regardless of RLS context
+- Self-comment filtering prevents noise
+- This sets the pattern for future notification triggers (likes, points, etc.)
 
 ### Files Changed
-- `hooks/useChallengeDetail.ts` — added `join_code` to interfaces and query
-- `app/challenge/[id].tsx` — added join code card UI with copy/share functionality
+- `supabase/migrations/020_comment_notification_trigger.sql` (new)
+- `types/database.example.ts` — added `comment` to NotificationType
+- `.claude/database-schema.md` — updated enum, triggers, migration log
+- `components/NotificationsModal.tsx` — added `comment` type + icon
 
 ### TASK COMPLETE
-All requirements met. Join code is visible, copyable, and shareable for group challenge admins on the challenge detail page.
+All requirements met. A database trigger now auto-creates a notification for the post author whenever someone else comments on their post.
