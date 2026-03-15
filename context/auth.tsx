@@ -24,7 +24,7 @@ const AuthContext = React.createContext<{
   signInWithGoogle: () => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<void>;
   signOut: () => void;
-  signUp: (email: string, password: string) => void;
+  signUp: (email: string, password: string, name?: string) => void;
   resetPassword: (email: string) => void;
   updatePassword: (newPassword: string) => Promise<boolean>;
   updateProfile: (profileData: any) => Promise<void>;
@@ -180,16 +180,22 @@ export function SessionProvider(props: React.PropsWithChildren) {
     }
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+  const signUp = async (email: string, password: string, name?: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: name || undefined,
+        },
+      },
+    });
 
     if (error) {
       Alert.alert(error.message);
       console.error('Sign up error:', error.message);
       return;
     }
-
-    await supabase.from('profiles').insert({ id: data.user?.id });
 
     setSession([!!data?.session?.access_token ? data?.session?.access_token : null, data?.user]);
     router.navigate('/(tabs)');
