@@ -43,7 +43,7 @@ export function NotificationsModal({ visible, onClose, notifications, onMarkAllR
               </Text>
             </View>
             <TouchableOpacity onPress={onClose} className="w-10 h-10 items-center justify-center">
-              <Ionicons name="close" size={28} color="white" />
+              <IconCircle icon="close" size="md" variant="tint" color="#ffffff" />
             </TouchableOpacity>
           </View>
           {hasUnread && onMarkAllRead && (
@@ -81,10 +81,10 @@ export function NotificationsModal({ visible, onClose, notifications, onMarkAllR
                     <IconCircle
                       icon={
                         notification.type === 'challenge'
-                          ? 'target'
+                          ? 'trophy-outline'
                           : notification.type === 'comment'
-                            ? 'chatbubble'
-                            : 'flame'
+                            ? 'chatbubble-outline'
+                            : 'flame-outline'
                       }
                       size="md"
                       variant="solid"
