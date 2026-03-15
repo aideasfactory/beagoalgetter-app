@@ -49,7 +49,7 @@ export function AuthScreen({ mode }: AuthScreenProps) {
     setIsLoading(true);
     try {
       if (mode === 'signup') {
-        await signUp(email, password);
+        await signUp(email, password, name);
       } else {
         await signIn(email, password);
       }

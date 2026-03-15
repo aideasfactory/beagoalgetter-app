@@ -1,7 +1,7 @@
-# Task: Standardise Goal Getter icons
+# Task: Generate a unique default username for new signups instead of using member
 
 **Created:** 2026-03-14
-**Last Updated:** 2026-03-14T11:15:00Z
+**Last Updated:** 2026-03-14T14:35:00Z
 **Status:** Complete
 
 ---
@@ -9,12 +9,12 @@
 ## Overview
 
 ### Goal
-Standardise all "ringed blue icon" treatments across the Goal Getter app to use consistent colour, shape, and sizing.
+Replace the generic "member" fallback and weak `user_XXXXX` username generation with a fun, readable, unique word-combo username for every new signup.
 
 ### Context
-- Tile ID: 019ce3cb-5a27-70fa-869f-9b84ffaa7d18
+- Tile ID: 019cecb4-771c-7144-85ac-b3aaadf31710
 - Repository: beagoalgetter-app
-- Branch: feature/019ce3cb-5a27-70fa-869f-9b84ffaa7d18-standardise-goal-getter-icons
+- Branch: feature/019cecb4-771c-7144-85ac-b3aaadf31710-generate-a-unique-default-username-for-new-signups-instead-o
 - Priority: MEDIUM
 
 ---
@@ -22,29 +22,17 @@ Standardise all "ringed blue icon" treatments across the Goal Getter app to use 
 ## PHASE 1: PLANNING
 **Status:** ✅ Complete
 
-### Audit Findings
+### Analysis
+- `handle_new_user()` trigger generated weak `user_XXXXX` usernames (100k combos, no uniqueness check)
+- `signUp` function did a redundant `profiles.insert` after the trigger already created the profile
+- The `name` field collected in signup form was never passed to Supabase auth metadata
+- "Member" appeared as UI fallback when both display_name and username were null
 
-**Inconsistencies identified across 7 files:**
-
-1. **Avatar.tsx** — Used `bg-blue-600` (Tailwind blue) instead of brand cyan `#00c2ff`
-2. **challenge/[id].tsx** — Stat icons used `rounded-xl` (rounded square) instead of `rounded-full` (circle)
-3. **Mixed sizes** — Icon circles varied: w-8/h-8, w-10/h-10, w-12/h-12 across similar contexts
-4. **No reusable component** — Icon circle pattern duplicated ~15+ times with inline styles
-5. **Inconsistent style approach** — Some used `style={{ backgroundColor }}`, others used NativeWind `bg-[]` classes
-
-### Standardisation Rules
-
-| Property | Standard | Notes |
-|----------|----------|-------|
-| Brand cyan | `#00c2ff` | All blue icon circles use this |
-| Semi-transparent | `{color}20` (12.5% opacity) | Consistent tint backgrounds |
-| Shape | `rounded-full` | All icon circles are perfect circles |
-| Small size | w-8 h-8, icon 18px | Feature list checkmarks |
-| Medium size | w-10 h-10, icon 20px | Stat cards, notifications |
-| Large size | w-12 h-12, icon 24px | Detail cards, community |
-
-### Reflection
-Planning complete. Clear set of inconsistencies identified with straightforward fixes.
+### Plan
+- New SQL function `generate_unique_username()` with adjective+noun+4-digit format
+- Update `handle_new_user()` to use it with uniqueness retry
+- Fix signUp to pass name as auth metadata, remove redundant insert
+- Fix AuthScreen to pass name to signUp
 
 ---
 
@@ -52,53 +40,48 @@ Planning complete. Clear set of inconsistencies identified with straightforward 
 **Status:** ✅ Complete
 
 ### Tasks
-- [x] Create `IconCircle` component with size variants (sm, md, lg) and solid/tint variants
-- [x] Update `Avatar.tsx` — changed `bg-blue-600` to `#00c2ff`
-- [x] Update `challenge/[id].tsx` — changed `rounded-xl` to `rounded-full` on all 4 stat icons via IconCircle
-- [x] Update `NotificationsModal.tsx` — replaced inline icon circles with IconCircle
-- [x] Update `JoinChallengeModal.tsx` — replaced all 9 inline icon circles (4 stats + 4 checkmarks + 1 community) with IconCircle
-- [x] Update `challenges.tsx` — replaced join-by-code icon with IconCircle
-- [x] Update `AdminTab.tsx` — replaced settings icon circle with IconCircle
+- [x] Create migration 021 with word-combo username generation
+- [x] Fix `signUp` in `context/auth.tsx` to accept name and pass as metadata
+- [x] Fix `AuthScreen.tsx` to pass name to signUp
+- [x] Update `.claude/database-schema.md`
 
-### Self-Review Checklist
+### Self-Review
 - [x] All phase tasks checked off
-- [x] Code follows project patterns (functional components, TypeScript)
-- [x] NativeWind/Tailwind classes used for styling
-- [x] TypeScript types defined (IoniconsName, IconCircleProps)
-- [x] No console.log statements
-- [x] current-task.md updated
-
-### Reflection
-All icon circle instances now use the centralised `IconCircle` component. The `rounded-xl` squares on the challenge detail page are now `rounded-full` circles. The Avatar component now uses the brand cyan `#00c2ff` instead of Tailwind's `bg-blue-600`. The component supports custom colours for non-cyan icons (green, purple, orange) used in stat grids.
+- [x] Code follows project patterns
+- [x] Error handling in place (retry loop with fallback)
+- [x] TypeScript types defined (optional name param)
+- [x] No console.log statements left
+- [x] Supabase queries use proper error handling
+- [x] current-task.md updated with progress
 
 ---
 
 ## PHASE 3: FINAL REFLECTION & DOCUMENTATION
 **Status:** ✅ Complete
 
-### What Was Done
-- Created a reusable `IconCircle` component with 3 size variants (sm/md/lg) and 2 style variants (solid/tint)
-- Standardised all icon circle instances across 7 files to use consistent shape (`rounded-full`), colours (`#00c2ff` as default), and the centralised component
-- Fixed `Avatar.tsx` using wrong blue shade (`bg-blue-600` → `#00c2ff`)
-- Fixed `challenge/[id].tsx` using wrong shape (`rounded-xl` → `rounded-full`)
+### What was done
+1. **Migration 021**: Created `generate_unique_username()` function with 50 adjectives × 55 nouns × 10000 suffixes = ~27.5M unique combinations. Includes uniqueness retry loop (10 attempts) with UUID-based fallback.
+2. **Auth context**: Fixed `signUp` to accept optional `name` parameter, pass it as `display_name` in Supabase auth metadata, and removed the redundant `profiles.insert` call that was fighting with the trigger.
+3. **AuthScreen**: Now passes the collected name field to `signUp`.
+4. **Database docs**: Updated functions table and migrations log.
 
-### Files Changed
-1. `components/IconCircle.tsx` (NEW)
-2. `components/Avatar.tsx`
-3. `components/NotificationsModal.tsx`
-4. `components/JoinChallengeModal.tsx`
-5. `components/challenge-tabs/AdminTab.tsx`
-6. `app/challenge/[id].tsx`
-7. `app/(tabs)/challenges.tsx`
+### What went well
+- Clean separation: username generation is its own reusable function
+- The word lists produce fun, readable usernames suitable for a social app (e.g. `SwiftFalcon3921`, `BoldPioneer0847`)
+- Uniqueness is guaranteed via retry + UUID fallback
 
-### Technical Debt
-- None introduced. The `IconCircle` component actually reduces existing debt by centralising a repeated pattern.
+### Technical debt
+- The "Member" fallback still exists in `useFeedPosts.ts` and `CommentsSheet.tsx` — it's now a last-resort safety net that should never be reached for new signups
+- Existing users who signed up with `user_XXXXX` usernames will keep them; no backfill migration was added
 
-### Future Improvements
-- Could extend `IconCircle` to support custom icon sizes beyond the 3 presets if needed
-- The leaderboard team rank circles use text (not Ionicons) inside circles — these could get a companion `TextCircle` component if needed
+### Files changed
+- `supabase/migrations/021_unique_word_combo_usernames.sql` (NEW)
+- `context/auth.tsx`
+- `components/AuthScreen.tsx`
+- `.claude/database-schema.md`
+- `.claude/tasks/current-task.md`
 
 ---
 
 ## TASK COMPLETE
-All phases executed successfully. Icon treatments are now visually standardised across the app.
+All 3 phases executed successfully.
