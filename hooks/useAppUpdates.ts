@@ -1,6 +1,6 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { AppState, Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 
 // Lazy-load expo-updates to prevent crash when native module isn't available (dev builds, Expo Go)
 let Updates: typeof import('expo-updates') | null = null;
@@ -17,11 +17,15 @@ const SIMULATE_UPDATE = __DEV__ && false;
 const SIMULATE_DELAY_MS = 4000; // how long the "downloading" toast stays visible
 // ────────────────────────────────────────────────────────────────
 
+// Minimum interval between update checks (5 minutes)
+const CHECK_COOLDOWN_MS = 5 * 60 * 1000;
+
 /**
  * Hook that manages OTA updates via expo-updates.
  *
  * On mount, checks for available updates in the background.
- * If an update is found, it downloads and applies it on next app restart.
+ * When the app returns from background, checks again (with cooldown).
+ * If an update is found, it downloads and applies it automatically.
  *
  * Also exposes `checkForUpdate` for manual triggering.
  *
@@ -31,6 +35,8 @@ export function useAppUpdates() {
   const isExpoGo = Constants.appOwnership === 'expo';
   const isWeb = Platform.OS === 'web';
   const updatesEnabled = !isExpoGo && !isWeb && !__DEV__ && Updates !== null;
+
+  const lastCheckRef = useRef<number>(0);
 
   // ── Simulated state (dev only) ──
   const [simChecking, setSimChecking] = useState(false);
@@ -92,12 +98,34 @@ export function useAppUpdates() {
 
   const checkForUpdate = useCallback(async () => {
     if (!updatesEnabled || !Updates) return;
+    const now = Date.now();
+    if (now - lastCheckRef.current < CHECK_COOLDOWN_MS) return;
+    lastCheckRef.current = now;
     try {
       await Updates.checkForUpdateAsync();
     } catch {
       // Silently fail — update check is non-critical
     }
   }, [updatesEnabled]);
+
+  // Check for updates on mount (cold launch)
+  useEffect(() => {
+    if (!updatesEnabled) return;
+    checkForUpdate();
+  }, [updatesEnabled, checkForUpdate]);
+
+  // Check for updates when app returns from background
+  useEffect(() => {
+    if (!updatesEnabled) return;
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        checkForUpdate();
+      }
+    });
+
+    return () => subscription.remove();
+  }, [updatesEnabled, checkForUpdate]);
 
   return {
     isChecking,
