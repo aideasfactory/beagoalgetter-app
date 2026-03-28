@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Text, TouchableOpacity, Switch, Alert, ActivityIndicator } from 'react-native';
+import { View, ScrollView, Text, TouchableOpacity, Switch, Alert, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -185,10 +185,19 @@ export default function SettingsScreen() {
           {/* Logout Button */}
           <TouchableOpacity
             onPress={handleLogout}
-            className="bg-red-500/20 border border-red-500/40 rounded-xl px-4 py-4 flex-row items-center justify-center active:bg-red-500/30 mb-8"
+            className="bg-red-500/20 border border-red-500/40 rounded-xl px-4 py-4 flex-row items-center justify-center active:bg-red-500/30"
           >
             <Ionicons name="log-out-outline" size={20} color="#ef4444" />
             <Text className="text-red-500 font-bold text-lg ml-2">Log Out</Text>
+          </TouchableOpacity>
+
+          {/* Delete Account */}
+          <TouchableOpacity
+            onPress={() => Linking.openURL('https://beagoalgetter.com/delete-account')}
+            className="py-4 flex-row items-center justify-center mb-8"
+          >
+            <Ionicons name="trash-outline" size={16} color="rgba(255,255,255,0.4)" />
+            <Text className="text-white/40 text-sm ml-1">Delete My Account</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
